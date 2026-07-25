@@ -150,16 +150,24 @@ Permission keys are constants and follow `<domain>.<resource>.<action>` where pr
 - `catalog.categories.read`
 - `catalog.categories.write`
 - `catalog.pricing.write`
+- `pricing.read`
+- `pricing.write`
 - `inventory.read`
 - `inventory.adjust`
+- `shipping.read`
+- `shipping.write`
 
 ### Orders and customers
 
 - `orders.read`
+- `orders.accept`
+- `orders.reject`
 - `orders.notes.write`
 - `orders.fulfill`
 - `orders.cancel`
 - `orders.refund`
+- `payments.read`
+- `payments.manual_confirm`
 - `customers.read`
 - `customers.update`
 
@@ -178,10 +186,10 @@ Every role assignment below is seeded explicitly. There is no runtime wildcard.
 | Role | Exact permissions |
 | --- | --- |
 | `owner` | Every permission currently listed in the catalogue; the seed still writes each relationship explicitly |
-| `administrator` | `admin.access`, `staff.read`, `staff.create`, `staff.assign_roles`, `staff.suspend`, `roles.read`, `audit.read`, every catalog/inventory permission, every order/customer permission, every promotion/reporting permission; explicitly excludes `staff.assign_owner` |
+| `administrator` | `admin.access`, `staff.read`, `staff.create`, `staff.assign_roles`, `staff.suspend`, `roles.read`, `audit.read`, every catalog/pricing/inventory/shipping permission, every order/payment/customer permission, every promotion/reporting permission; explicitly excludes `staff.assign_owner` |
 | `catalog_manager` | `admin.access`, every catalog permission, `inventory.read`, `inventory.adjust` |
-| `order_manager` | `admin.access`, every order permission, `customers.read`, `inventory.read` |
-| `support_agent` | `admin.access`, `orders.read`, `orders.notes.write`, `customers.read` |
+| `order_manager` | `admin.access`, every order and payment permission, `shipping.read`, `customers.read`, `inventory.read` |
+| `support_agent` | `admin.access`, `orders.read`, `orders.notes.write`, `payments.read`, `customers.read` |
 | `marketing_manager` | `admin.access`, `promotions.read`, `promotions.write`, `catalog.products.read`, `catalog.categories.read`, `reports.read` |
 | `analyst` | `admin.access`, `catalog.products.read`, `catalog.categories.read`, `inventory.read`, `orders.read`, `customers.read`, `promotions.read`, `reports.read` |
 
@@ -374,6 +382,6 @@ Version 1 does not include:
 - delegated merchant administration;
 - field-level authorization rules;
 - a separate administrator authentication provider;
-- domain endpoints for catalog, inventory, orders, refunds, or promotions.
+- refunds, promotions, carrier integrations, or online payment gateways.
 
 These capabilities require separate contracts and must not be inferred from this authorization foundation.

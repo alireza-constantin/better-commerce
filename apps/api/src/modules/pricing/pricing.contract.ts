@@ -1,3 +1,5 @@
+import type { DatabaseTransactionContext } from '../../platform/database';
+
 export const PRICING_MODULE_CONTRACT = Symbol('pricing-module-contract');
 
 export interface Money {
@@ -14,5 +16,6 @@ export interface VariantPriceQuote {
 export interface PricingModuleContract {
   quoteVariantPrices(
     variantIds: readonly string[],
+    transaction?: DatabaseTransactionContext,
   ): Promise<readonly VariantPriceQuote[]>;
 }

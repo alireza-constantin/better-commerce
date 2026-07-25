@@ -6,3 +6,4 @@ export type {
   PurchasableVariantResolution,
   VariantSnapshotFact,
 } from './application/catalog-contract';
+export type { FulfillmentClassification } from './domain';

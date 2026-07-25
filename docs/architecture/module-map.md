@@ -1,7 +1,7 @@
 # Backend Module Map
 
 Status: Living document  
-Last verified: 2026-07-23
+Last verified: 2026-07-25
 
 ## Purpose
 
@@ -41,6 +41,12 @@ apps/api/src/
       catalog.module.ts
       index.ts                  Narrow Variant-facts Module Public Contract
 
+    pricing/                    Money, immutable Price versions, Admin API
+    inventory/                  Stock, adjustments, reservations, Admin API
+    shipping/                   Zones, methods, rate rules, quotes, Admin API
+    payments/                   Manual-payment state and history
+    orders/                     Checkout orchestration, snapshots, Order APIs
+
   platform/
     config/                     Environment parsing and validation
     database/                   TypeORM configuration and opaque transactions
@@ -55,8 +61,10 @@ apps/api/src/
     module-boundaries.spec.ts   Automated ADR-0003 dependency checks
 ```
 
-Catalog is implemented for Products and Variants only. Pricing, Inventory, and
-Orders remain accepted future capabilities in ADR-0004 and are not implemented.
+The first commerce implementation supports Products and Variants, versioned
+Prices, stock reservations, subtotal-based Shipping, manual Payments, and
+submitted Orders. Its deferred verification work is tracked in
+`docs/plans/commerce-implementation-status.md`.
 
 ## Dependency direction
 
@@ -66,6 +74,11 @@ flowchart TD
     Identity["Identity module"]
     Authorization["Authorization module"]
     Catalog["Catalog module"]
+    Pricing["Pricing module"]
+    Inventory["Inventory module"]
+    Shipping["Shipping module"]
+    Payments["Payments module"]
+    Orders["Orders and Checkout module"]
     Platform["Platform facilities"]
     IdentityContract["Identity Module Public Contract"]
     AuthorizationContract["Authorization Module Public Contract"]
@@ -74,6 +87,11 @@ flowchart TD
     Composition --> Identity
     Composition --> Authorization
     Composition --> Catalog
+    Composition --> Pricing
+    Composition --> Inventory
+    Composition --> Shipping
+    Composition --> Payments
+    Composition --> Orders
     Composition --> Platform
     Authorization --> IdentityContract
     Identity --> Platform
@@ -81,6 +99,14 @@ flowchart TD
     Identity --> IdentityContract
     Authorization --> AuthorizationContract
     Catalog --> CatalogContract
+    Pricing --> CatalogContract
+    Inventory --> CatalogContract
+    Shipping --> Pricing
+    Orders --> CatalogContract
+    Orders --> Pricing
+    Orders --> Inventory
+    Orders --> Shipping
+    Orders --> Payments
 ```
 
 The composition root may know all concrete modules. Platform facilities do not
@@ -135,8 +161,7 @@ architecture tests enforce this exception and reject additional deep imports.
 
 ## Runtime data boundaries
 
-- PostgreSQL is authoritative for Identity, Authorization, and future commerce
-  state.
+- PostgreSQL is authoritative for Identity, Authorization, and commerce state.
 - Redis is authoritative for opaque sessions and distributed abuse-protection
   counters.
 - Every merchant deployment has its own PostgreSQL, Redis, secrets, and

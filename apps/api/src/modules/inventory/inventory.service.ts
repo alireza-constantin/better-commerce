@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource, In, type EntityManager } from 'typeorm';
+import type { DatabaseTransactionContext } from '../../platform/database';
+import { unwrapTypeOrmTransaction } from '../../platform/database/typeorm-transaction-context';
 import { CATALOG_MODULE_CONTRACT, type CatalogModuleContract } from '../catalog';
 import { InventoryAdjustment } from './inventory-adjustment.entity';
 import { InventoryItem, InventoryTrackingMode } from './inventory-item.entity';
@@ -96,9 +98,10 @@ export class InventoryService implements InventoryModuleContract {
     lines: readonly { variantId: string; quantity: number }[],
     correlationKey: string,
     holdMinutes: number,
+    transaction?: DatabaseTransactionContext,
   ): Promise<readonly InventoryReservationReference[]> {
     const normalized = this.normalizeLines(lines);
-    return this.dataSource.transaction(async (manager) => {
+    return this.inTransaction(transaction, async (manager) => {
       const existing = await manager.getRepository(InventoryReservation).find({
         where: { correlationKey },
       });
@@ -132,8 +135,12 @@ export class InventoryService implements InventoryModuleContract {
     });
   }
 
-  async commit(reservationIds: readonly string[], orderId: string): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
+  async commit(
+    reservationIds: readonly string[],
+    orderId: string,
+    transaction?: DatabaseTransactionContext,
+  ): Promise<void> {
+    await this.inTransaction(transaction, async (manager) => {
       const reservations = await manager.getRepository(InventoryReservation).find({
         where: { id: In([...new Set(reservationIds)]) },
         lock: { mode: 'pessimistic_write' },
@@ -166,8 +173,12 @@ export class InventoryService implements InventoryModuleContract {
     });
   }
 
-  async release(reservationIds: readonly string[], reason: string): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
+  async release(
+    reservationIds: readonly string[],
+    reason: string,
+    transaction?: DatabaseTransactionContext,
+  ): Promise<void> {
+    await this.inTransaction(transaction, async (manager) => {
       const reservations = await manager.getRepository(InventoryReservation).find({
         where: { id: In([...new Set(reservationIds)]) },
         lock: { mode: 'pessimistic_write' },
@@ -193,6 +204,15 @@ export class InventoryService implements InventoryModuleContract {
     });
     if (!item) throw new Error(`Inventory is not configured for Variant ${variantId}`);
     return item;
+  }
+
+  private inTransaction<T>(
+    transaction: DatabaseTransactionContext | undefined,
+    work: (manager: EntityManager) => Promise<T>,
+  ): Promise<T> {
+    return transaction
+      ? work(unwrapTypeOrmTransaction(transaction))
+      : this.dataSource.transaction(work);
   }
 
   private async expireStale(manager: EntityManager, item: InventoryItem): Promise<void> {

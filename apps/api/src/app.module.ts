@@ -13,6 +13,8 @@ import { CatalogModule } from './modules/catalog';
 import { PricingModule } from './modules/pricing';
 import { InventoryModule } from './modules/inventory';
 import { ShippingModule } from './modules/shipping';
+import { PaymentsModule } from './modules/payments';
+import { OrdersModule } from './modules/orders';
 import { IdentityModule, SessionAuthGuard } from './modules/identity';
 import { configuration, validateEnvironment } from './platform/config';
 import { buildConfiguration } from './platform/config/configuration';
@@ -48,6 +50,8 @@ import { SecurityModule } from './platform/security';
     PricingModule,
     InventoryModule,
     ShippingModule,
+    PaymentsModule,
+    OrdersModule,
     SecurityModule,
     IdentityModule,
     HealthModule,

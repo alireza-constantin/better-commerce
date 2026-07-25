@@ -66,6 +66,7 @@ authority.
 
 - [Current continuation brief](plans/continuation.md)
 - [Cursor Orders design handoff](plans/cursor-orders-handoff.md)
+- [Commerce implementation checkpoint](plans/commerce-implementation-status.md)
 - [Completed ADR-0005 Catalog implementation plan](plans/adr-0005-implementation.md)
 - [Completed ADR-0003 implementation plan](plans/adr-0003-implementation.md)
 
@@ -86,8 +87,9 @@ conflict through an amendment, superseding decision, or contract revision.
 
 ADR-0001 through ADR-0008, ADR-0013, ADR-0014, and the Catalog behavioral
 contract are accepted. ADR-0005 Catalog implementation is complete. The first
-combined physical-shipping/manual-payment Checkout implementation is in
-progress.
+combined physical-shipping/manual-payment Checkout implementation is present
+and typechecks; its deferred verification work is recorded in the commerce
+implementation checkpoint.
 
 ## Maintenance rules
 

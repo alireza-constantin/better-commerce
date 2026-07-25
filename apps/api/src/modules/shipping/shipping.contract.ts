@@ -1,3 +1,4 @@
+import type { DatabaseTransactionContext } from '../../platform/database';
 import type { Money } from '../pricing';
 
 export const SHIPPING_MODULE_CONTRACT = Symbol('shipping-module-contract');
@@ -22,5 +23,9 @@ export interface ShippingQuote {
 }
 
 export interface ShippingModuleContract {
-  quote(address: DeliveryAddress, merchandiseSubtotal: Money): Promise<readonly ShippingQuote[]>;
+  quote(
+    address: DeliveryAddress,
+    merchandiseSubtotal: Money,
+    transaction?: DatabaseTransactionContext,
+  ): Promise<readonly ShippingQuote[]>;
 }

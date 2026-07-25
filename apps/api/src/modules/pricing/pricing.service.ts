@@ -2,6 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, IsNull } from 'typeorm';
 import type { ApplicationConfiguration } from '../../platform/config';
+import type { DatabaseTransactionContext } from '../../platform/database';
+import { unwrapTypeOrmTransaction } from '../../platform/database/typeorm-transaction-context';
 import { CATALOG_MODULE_CONTRACT, type CatalogModuleContract } from '../catalog';
 import { formatMoney, parseMoney } from './money';
 import { PriceVersion } from './price-version.entity';
@@ -59,10 +61,14 @@ export class PricingService implements PricingModuleContract {
 
   async quoteVariantPrices(
     variantIds: readonly string[],
+    transaction?: DatabaseTransactionContext,
   ): Promise<readonly VariantPriceQuote[]> {
     const ids = [...new Set(variantIds)];
     if (!ids.length) return [];
-    const prices = await this.dataSource.getRepository(PriceVersion).createQueryBuilder('price')
+    const manager = transaction
+      ? unwrapTypeOrmTransaction(transaction)
+      : this.dataSource.manager;
+    const prices = await manager.getRepository(PriceVersion).createQueryBuilder('price')
       .where('price.variant_id IN (:...ids)', { ids })
       .andWhere('price.currency = :currency', { currency: this.currency })
       .andWhere('price.effective_until IS NULL')
