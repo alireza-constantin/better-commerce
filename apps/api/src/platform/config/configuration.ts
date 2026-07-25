@@ -31,6 +31,10 @@ export interface ApplicationConfiguration {
   trustProxyHops: number;
   publicRegistration: boolean;
   requireEmailVerification: boolean;
+  commerce: {
+    currency: string;
+    manualReviewHoldMinutes: number;
+  };
   database: DatabaseConfiguration;
   redis: RedisConfiguration;
   session: SessionConfiguration;
@@ -213,6 +217,17 @@ export const buildConfiguration = (
     ),
     publicRegistration,
     requireEmailVerification,
+    commerce: {
+      currency: readString(source, 'STORE_CURRENCY', {
+        defaultValue: 'USD',
+      }).toUpperCase(),
+      manualReviewHoldMinutes: readInteger(
+        source,
+        'MANUAL_ORDER_HOLD_MINUTES',
+        720,
+        { min: 30, max: 1_440 },
+      ),
+    },
     database: {
       host: readString(source, 'DB_HOST'),
       port: readInteger(source, 'DB_PORT', 5432, { min: 1, max: 65_535 }),

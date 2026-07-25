@@ -18,6 +18,11 @@ amendment or a superseding ADR.
 - [ADR-0003 — Backend Module Architecture](adr/0003-backend.md)
 - [ADR-0004 — Commerce Domain Model](adr/0004-commerce-model.md)
 - [ADR-0005 — Catalog, Products, and Variants](adr/0005-catalog.md)
+- [ADR-0006 — Orders and Historical Purchase State](adr/0006-orders.md)
+- [ADR-0007 — Exact Money and Pricing](adr/0007-pricing.md)
+- [ADR-0008 — Inventory and Reservations](adr/0008-inventory.md)
+- [ADR-0013 — Shipping Methods, Zones, and Rate Rules](adr/0013-shipping.md)
+- [ADR-0014 — Manual Payments and Admin Order Acceptance](adr/0014-manual-payments.md)
 
 ### Living architecture
 
@@ -60,7 +65,8 @@ completion. Mark completed plans clearly; do not treat them as architectural
 authority.
 
 - [Current continuation brief](plans/continuation.md)
-- [Proposed ADR-0005 Catalog implementation plan](plans/adr-0005-implementation.md)
+- [Cursor Orders design handoff](plans/cursor-orders-handoff.md)
+- [Completed ADR-0005 Catalog implementation plan](plans/adr-0005-implementation.md)
 - [Completed ADR-0003 implementation plan](plans/adr-0003-implementation.md)
 
 ## Authority and conflicts
@@ -78,9 +84,10 @@ conflict through an amendment, superseding decision, or contract revision.
 
 ## Current decision sequence
 
-ADR-0001 through ADR-0005 and the Catalog behavioral contract are accepted.
-ADR-0005 Catalog implementation is complete. The next decision is ADR-0006 —
-Orders and historical purchase state.
+ADR-0001 through ADR-0008, ADR-0013, ADR-0014, and the Catalog behavioral
+contract are accepted. ADR-0005 Catalog implementation is complete. The first
+combined physical-shipping/manual-payment Checkout implementation is in
+progress.
 
 ## Maintenance rules
 
