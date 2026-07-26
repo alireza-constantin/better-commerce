@@ -13,23 +13,29 @@ export const OrderDetailRoute = lazy(async () => ({
   default: (await import('@/features/orders/orders-routes')).OrderDetailRoute,
 }));
 export const CatalogRoute = lazy(async () => ({
-  default: (await loadPhaseThreeRoutes()).CatalogRoute,
+  default: (await import('@/features/catalog/catalog-routes')).CatalogRoute,
 }));
 export const PricingRoute = lazy(async () => ({
-  default: (await loadPhaseThreeRoutes()).PricingRoute,
+  default: (await import('@/features/pricing/pricing-routes')).PricingRoute,
 }));
 export const InventoryRoute = lazy(async () => ({
-  default: (await loadPhaseThreeRoutes()).InventoryRoute,
+  default: (await import('@/features/inventory/inventory-routes')).InventoryRoute,
 }));
 export const ShippingRoute = lazy(async () => ({
-  default: (await loadPhaseThreeRoutes()).ShippingRoute,
+  default: (await import('@/features/shipping/shipping-routes')).ShippingRoute,
 }));
 export const StaffRoute = lazy(async () => ({
-  default: (await loadPhaseThreeRoutes()).StaffRoute,
+  default: (await import('@/features/staff/staff-routes')).StaffRoute,
 }));
 export const AuthorizationAuditRoute = lazy(async () => ({
-  default: (await loadPhaseThreeRoutes()).AuthorizationAuditRoute,
+  default: (
+    await import(
+      '@/features/authorization-audit/authorization-audit-routes'
+    )
+  ).AuthorizationAuditRoute,
 }));
 export const CommerceAuditRoute = lazy(async () => ({
-  default: (await loadPhaseThreeRoutes()).CommerceAuditRoute,
+  default: (
+    await import('@/features/commerce-audit/commerce-audit-route')
+  ).CommerceAuditRoute,
 }));

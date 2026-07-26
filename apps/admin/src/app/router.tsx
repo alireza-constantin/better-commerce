@@ -24,11 +24,19 @@ const rootRoute = createRootRoute({
   notFoundComponent: NotFoundPage,
 });
 
-interface OrdersNavigationSearch {
+interface AdminNavigationSearch {
   readonly cursor?: string;
   readonly history?: readonly string[];
   readonly returnCursor?: string;
   readonly returnHistory?: readonly string[];
+  readonly q?: string;
+  readonly sku?: string;
+  readonly status?: 'draft' | 'published' | 'archived';
+  readonly product?: string;
+  readonly create?: boolean;
+  readonly action?: string;
+  readonly targetType?: string;
+  readonly targetId?: string;
 }
 
 function stringValue(value: unknown) {
@@ -39,6 +47,31 @@ function stringArray(value: unknown) {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string')
     : [];
+}
+
+function catalogStatus(value: unknown) {
+  return value === 'draft' || value === 'published' || value === 'archived'
+    ? value
+    : undefined;
+}
+
+function adminNavigationSearch(
+  search: Record<string, unknown>,
+): AdminNavigationSearch {
+  return {
+    cursor: stringValue(search.cursor),
+    history: stringArray(search.history),
+    returnCursor: stringValue(search.returnCursor),
+    returnHistory: stringArray(search.returnHistory),
+    q: stringValue(search.q),
+    sku: stringValue(search.sku),
+    status: catalogStatus(search.status),
+    product: stringValue(search.product),
+    create: search.create === true ? true : undefined,
+    action: stringValue(search.action),
+    targetType: stringValue(search.targetType),
+    targetId: stringValue(search.targetId),
+  };
 }
 
 function protectedRoute<const TPath extends AdminRoutePath>(
@@ -58,34 +91,41 @@ const routeTree = rootRoute.addChildren([
     getParentRoute: () => rootRoute,
     path: adminRoutes.orders.path,
     component: OrdersRoute,
-    validateSearch: (search): OrdersNavigationSearch => ({
-      cursor: stringValue(search.cursor),
-      history: stringArray(search.history),
-      returnCursor: stringValue(search.returnCursor),
-      returnHistory: stringArray(search.returnHistory),
-    }),
+    validateSearch: adminNavigationSearch,
   }),
   createRoute({
     getParentRoute: () => rootRoute,
     path: adminRoutes.orderDetail.path,
     component: OrderDetailRoute,
-    validateSearch: (search): OrdersNavigationSearch => ({
-      cursor: stringValue(search.cursor),
-      history: stringArray(search.history),
-      returnCursor: stringValue(search.returnCursor),
-      returnHistory: stringArray(search.returnHistory),
-    }),
+    validateSearch: adminNavigationSearch,
   }),
-  protectedRoute(adminRoutes.catalog.path, CatalogRoute),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: adminRoutes.catalog.path,
+    component: CatalogRoute,
+    validateSearch: adminNavigationSearch,
+  }),
   protectedRoute(adminRoutes.pricing.path, PricingRoute),
   protectedRoute(adminRoutes.inventory.path, InventoryRoute),
   protectedRoute(adminRoutes.shipping.path, ShippingRoute),
-  protectedRoute(adminRoutes.staff.path, StaffRoute),
-  protectedRoute(
-    adminRoutes.authorizationAudit.path,
-    AuthorizationAuditRoute,
-  ),
-  protectedRoute(adminRoutes.commerceAudit.path, CommerceAuditRoute),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: adminRoutes.staff.path,
+    component: StaffRoute,
+    validateSearch: adminNavigationSearch,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: adminRoutes.authorizationAudit.path,
+    component: AuthorizationAuditRoute,
+    validateSearch: adminNavigationSearch,
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: adminRoutes.commerceAudit.path,
+    component: CommerceAuditRoute,
+    validateSearch: adminNavigationSearch,
+  }),
 ]);
 
 export const router = createRouter({

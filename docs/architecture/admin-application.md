@@ -59,6 +59,35 @@ apps/admin/
       components/                Persian operational list and detail UI
       orders-routes.tsx          Query, cursor, permission, and mutation wiring
 
+    features/catalog/
+      api/                       Product lifecycle and configuration contract
+      catalog-routes.tsx         Filtered list, create, detail, and editing
+
+    features/pricing/
+      api/                       Exact current-price and version creation contract
+      pricing-routes.tsx         Variant price lookup and immutable version form
+
+    features/inventory/
+      api/                       Inventory configuration and adjustment contract
+      inventory-routes.tsx       Variant command workflow and result state
+
+    features/shipping/
+      api/                       Zone, method, and rate-rule contract
+      shipping-routes.tsx        Hierarchical configuration management
+
+    features/staff/
+      api/                       Staff lifecycle and built-in role contract
+      staff-routes.tsx           Staff, role, and status operations
+
+    features/authorization-audit/
+      api/                       Safe filtered authorization-event contract
+      authorization-audit-routes.tsx Cursor list and event inspection
+
+    features/commerce-audit/
+      api/                       Safe commerce-event contract
+      components/                Event list and structured detail presentation
+      commerce-audit-route.tsx   Cursor history and query composition
+
     lib/
       utils.ts                  Class-name composition for UI source
 
@@ -71,7 +100,7 @@ The application is a fully client-rendered React and Vite SPA mounted at
 authenticated shell are RTL-first. Technical identifiers such as email
 addresses and request IDs retain explicit LTR direction.
 
-Phases 2 through 4 implement SDK-backed authentication bootstrap, login, logout,
+Phases 2 through 6 implement SDK-backed authentication bootstrap, login, logout,
 in-memory CSRF management, problem normalization, distinct unauthenticated,
 forbidden, and unavailable states, the responsive authenticated shell, exact
 permission helpers, permission-filtered navigation, and protected operational
@@ -79,9 +108,12 @@ routes. Orders is the first complete operational feature: cursor list and
 detail views, immutable purchase snapshots, manual-payment confirmation,
 acceptance, and rejection.
 
-Other operational feature pages remain deliberate delivery placeholders until
-their own phases connect real API data. They do not invent dashboard metrics
-or imply that an unfinished workflow is available.
+Catalog, Pricing, Inventory, and Shipping are also operational. Catalog owns
+validated URL filters and cursor history. Pricing preserves exact decimal
+strings and creates immutable price versions. Inventory exposes only the
+configuration and adjustment commands supported by its API. Shipping manages
+the accepted Zone, Method, and non-overlapping rate-rule hierarchy. Staff and
+audit screens remain delivery placeholders until Phase 6.
 
 ## Runtime boundary
 
@@ -138,6 +170,22 @@ shared CSRF-aware adapter, never update authoritative state optimistically, and
 invalidate only Order list/detail query families after confirmed server
 success. Exact monetary strings are displayed without floating-point
 conversion.
+
+The same server-authoritative mutation policy applies to Catalog, Pricing,
+Inventory, and Shipping. Pricing and Shipping preserve exact decimal strings.
+Inventory uses an explicit Variant ID command workflow because the accepted API
+does not expose a general inventory collection or single-item read endpoint;
+the Admin does not invent an unavailable browser or cached authority.
+
+Staff operations use only the actor's exact effective permissions. Owner
+assignment and owner-profile status affordances require `staff.assign_owner`;
+role names remain display data rather than browser authorization authority.
+Changes affecting the current actor invalidate the Admin session profile.
+
+Authorization and commerce audit screens are read-only, bounded, cursor-backed
+views. Filter and cursor navigation belongs to validated URL search state.
+Metadata is rendered only as escaped structured text, and technical identifiers
+retain explicit LTR direction.
 
 ## Verification
 
