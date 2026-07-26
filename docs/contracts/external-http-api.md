@@ -94,6 +94,12 @@ clients use credentialed requests and never read the cookie.
 State-changing browser requests obtain a session-bound CSRF token from
 `GET /api/v1/auth/csrf` and send it in `x-csrf-token`.
 
+CSRF middleware rejects a missing, stale, or invalid token before controller
+execution with `403` and problem code `security.csrf_invalid`. A client may
+invalidate its in-memory token, acquire a new one, and replay that rejected
+request exactly once. It must not replay a generic `403` or retry more than once
+without a new user action.
+
 Checkout additionally requires an `Idempotency-Key` header. Reusing a key with
 the identical request returns the original Order. Reusing it for a different
 request returns a conflict.
@@ -107,8 +113,9 @@ request returns a conflict.
 - explicit package exports.
 
 The SDK contains no pricing, inventory, authorization, shipping, payment, or
-order business rules. CSRF lifecycle and checkout orchestration belong to the
-future `storefront-core` package.
+order business rules. CSRF lifecycle belongs to the consuming application's
+integration layer, such as the Admin API adapter or future `storefront-core`.
+Checkout orchestration belongs to future `storefront-core`.
 
 With the API running locally:
 

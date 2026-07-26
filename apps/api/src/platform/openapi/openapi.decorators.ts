@@ -2,6 +2,7 @@ import { applyDecorators } from '@nestjs/common';
 import {
   ApiCookieAuth,
   ApiForbiddenResponse,
+  ApiHeader,
   ApiResponse,
   ApiSecurity,
   ApiUnauthorizedResponse,
@@ -21,6 +22,11 @@ export const ApiSessionAuthenticated = () =>
 export const ApiCsrfProtected = () =>
   applyDecorators(
     ApiSecurity(OPENAPI_CSRF_SCHEME),
+    ApiHeader({
+      name: 'x-csrf-token',
+      description: 'Session-bound token returned by GET /api/v1/auth/csrf.',
+      required: true,
+    }),
     ApiForbiddenResponse({
       description: 'The session-bound CSRF token is missing or invalid.',
       type: ProblemDetailsDto,

@@ -57,6 +57,13 @@ export class StaffAdminController {
   @ApiOperation({ summary: 'Return the current staff authorization profile' })
   @RequirePermissions(PermissionKey.ADMIN_ACCESS)
   @ApiOkResponse({ type: StaffProfileResponseDto })
+  @ApiForbiddenResponse({
+    description:
+      'The authenticated user does not have active administrative access.',
+  })
+  @ApiServiceUnavailableResponse({
+    description: 'Authorization data is unavailable; access fails closed.',
+  })
   async me(@Req() request: Request): Promise<StaffProfileResponse> {
     return this.staff.me(this.actor(request));
   }

@@ -1606,7 +1606,10 @@ export interface operations {
     readonly CatalogAdmin_create: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path?: never;
             readonly cookie?: never;
         };
@@ -1748,7 +1751,10 @@ export interface operations {
     readonly CatalogAdmin_edit: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly productId: string;
             };
@@ -1838,7 +1844,10 @@ export interface operations {
     readonly CatalogAdmin_archive: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly productId: string;
             };
@@ -1917,7 +1926,10 @@ export interface operations {
     readonly CatalogAdmin_configuration: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly productId: string;
             };
@@ -2007,7 +2019,10 @@ export interface operations {
     readonly CatalogAdmin_publish: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly productId: string;
             };
@@ -2097,7 +2112,10 @@ export interface operations {
     readonly CatalogAdmin_restore: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly productId: string;
             };
@@ -2176,7 +2194,10 @@ export interface operations {
     readonly CatalogAdmin_unpublish: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly productId: string;
             };
@@ -2313,7 +2334,10 @@ export interface operations {
     readonly InventoryAdmin_adjust: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly variantId: string;
             };
@@ -2373,7 +2397,10 @@ export interface operations {
     readonly InventoryAdmin_configure: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly variantId: string;
             };
@@ -2451,6 +2478,28 @@ export interface operations {
             };
             /** @description A valid server-side session is required. */
             readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The authenticated user does not have active administrative access. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Authorization data is unavailable; access fails closed. */
+            readonly 503: {
                 headers: {
                     /** @description Request correlation identifier. */
                     readonly "x-request-id"?: string;
@@ -2590,7 +2639,10 @@ export interface operations {
     readonly AdminOrders_accept: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly orderId: string;
             };
@@ -2683,7 +2735,10 @@ export interface operations {
     readonly AdminOrders_confirmPayment: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly orderId: string;
             };
@@ -2776,7 +2831,10 @@ export interface operations {
     readonly AdminOrders_reject: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly orderId: string;
             };
@@ -2869,7 +2927,10 @@ export interface operations {
     readonly PricingAdmin_list: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path?: never;
             readonly cookie?: never;
         };
@@ -2927,7 +2988,10 @@ export interface operations {
     readonly PricingAdmin_set: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly variantId: string;
             };
@@ -3072,7 +3136,10 @@ export interface operations {
     readonly ShippingAdmin_deleteMethod: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly id: string;
             };
@@ -3126,7 +3193,10 @@ export interface operations {
     readonly ShippingAdmin_updateMethod: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly id: string;
             };
@@ -3186,7 +3256,10 @@ export interface operations {
     readonly ShippingAdmin_createRule: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly methodId: string;
             };
@@ -3246,7 +3319,10 @@ export interface operations {
     readonly ShippingAdmin_deleteRule: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly id: string;
             };
@@ -3300,7 +3376,10 @@ export interface operations {
     readonly ShippingAdmin_updateRule: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly id: string;
             };
@@ -3360,7 +3439,10 @@ export interface operations {
     readonly ShippingAdmin_createZone: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path?: never;
             readonly cookie?: never;
         };
@@ -3418,7 +3500,10 @@ export interface operations {
     readonly ShippingAdmin_deleteZone: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly id: string;
             };
@@ -3472,7 +3557,10 @@ export interface operations {
     readonly ShippingAdmin_updateZone: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly id: string;
             };
@@ -3532,7 +3620,10 @@ export interface operations {
     readonly ShippingAdmin_createMethod: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly zoneId: string;
             };
@@ -3648,7 +3739,10 @@ export interface operations {
     readonly StaffAdmin_create: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path?: never;
             readonly cookie?: never;
         };
@@ -3742,7 +3836,10 @@ export interface operations {
     readonly StaffAdmin_activate: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly userId: string;
             };
@@ -3798,7 +3895,10 @@ export interface operations {
     readonly StaffAdmin_replaceRoles: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly userId: string;
             };
@@ -3884,7 +3984,10 @@ export interface operations {
     readonly StaffAdmin_suspend: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path: {
                 readonly userId: string;
             };
@@ -3983,7 +4086,10 @@ export interface operations {
     readonly EmailVerification_confirm: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path?: never;
             readonly cookie?: never;
         };
@@ -4041,7 +4147,10 @@ export interface operations {
     readonly EmailVerification_request: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path?: never;
             readonly cookie?: never;
         };
@@ -4111,7 +4220,10 @@ export interface operations {
     readonly Auth_login: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path?: never;
             readonly cookie?: never;
         };
@@ -4180,7 +4292,10 @@ export interface operations {
     readonly Auth_logout: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path?: never;
             readonly cookie?: never;
         };
@@ -4236,7 +4351,10 @@ export interface operations {
     readonly Auth_logoutAll: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path?: never;
             readonly cookie?: never;
         };
@@ -4339,7 +4457,10 @@ export interface operations {
     readonly Auth_changePassword: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path?: never;
             readonly cookie?: never;
         };
@@ -4399,7 +4520,10 @@ export interface operations {
     readonly Auth_register: {
         readonly parameters: {
             readonly query?: never;
-            readonly header?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
             readonly path?: never;
             readonly cookie?: never;
         };
@@ -4563,6 +4687,8 @@ export interface operations {
             readonly header: {
                 /** @description Caller-generated key. Replaying the same key and body returns the original order. */
                 readonly "Idempotency-Key": string;
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
             };
             readonly path?: never;
             readonly cookie?: never;

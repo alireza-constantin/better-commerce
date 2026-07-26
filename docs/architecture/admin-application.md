@@ -22,14 +22,28 @@ apps/admin/
     main.tsx                    Browser composition root
 
     app/
+      admin-root.tsx             Authenticated application boundary
       router.tsx                TanStack Router composition
       query-client.ts           TanStack Query policy
+
+    api/
+      client/                    SDK client, response handling, session loss
+      csrf/                      In-memory CSRF lifecycle
+      problems/                  Safe RFC 9457 normalization
 
     components/ui/
       button.tsx                First source-owned UI primitive
 
+    features/auth/
+      api/                       Admin profile, login, logout, query contract
+      admin-bootstrap.tsx        Session state boundary
+      login-page.tsx             Password login
+      access-denied-page.tsx     Authenticated non-staff state
+      session-loading-page.tsx   Initial bootstrap state
+      session-unavailable-page.tsx Recoverable service failure
+
     features/foundation/
-      foundation-page.tsx       Temporary Phase 1 verification route
+      foundation-page.tsx       Temporary authenticated route
       not-found-page.tsx        Route-level missing-page state
 
     lib/
@@ -40,9 +54,12 @@ apps/admin/
 ```
 
 The application is a fully client-rendered React and Vite SPA mounted at
-`/admin/`. It currently contains only the technical foundation. Authentication,
-the SDK-backed API adapter, CSRF lifecycle, protected shell, permissions, and
-commerce features are not implemented yet.
+`/admin/`. Phase 2 implements SDK-backed authentication bootstrap, login,
+logout, in-memory CSRF management, problem normalization, and distinct
+unauthenticated, forbidden, and unavailable states.
+
+The protected operational shell, permission-driven navigation, and commerce
+features are not implemented yet.
 
 ## Runtime boundary
 
@@ -70,9 +87,13 @@ features/foundation
   └── components/ui
 ```
 
-TanStack Query is installed and configured but does not fetch API data yet.
-TanStack Router owns client routing. Zustand is intentionally not installed
-because Phase 1 has no proven client-only global state requirement.
+TanStack Query owns the server-authoritative Admin profile and mutation states.
+TanStack Router owns client routing. Zustand remains intentionally absent
+because there is no proven client-only global state requirement.
+
+The API adapter consumes `@better-commerce/sdk`, captures safe problem details
+and request IDs, and publishes authentication loss without persisting session
+data. CSRF tokens exist only inside the in-memory token manager.
 
 ## Verification
 

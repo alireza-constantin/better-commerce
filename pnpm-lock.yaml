@@ -14,6 +14,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@better-commerce/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       '@radix-ui/react-slot':
         specifier: ^1.3.3
         version: 1.3.3(@types/react@19.2.17)(react@19.2.8)

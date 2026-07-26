@@ -1,14 +1,14 @@
 import {
-  Outlet,
   createRootRoute,
   createRoute,
   createRouter,
 } from '@tanstack/react-router';
+import { AdminRoot } from './admin-root';
 import { FoundationPage } from '@/features/foundation/foundation-page';
 import { NotFoundPage } from '@/features/foundation/not-found-page';
 
 const rootRoute = createRootRoute({
-  component: Outlet,
+  component: AdminRoot,
   notFoundComponent: NotFoundPage,
 });
 

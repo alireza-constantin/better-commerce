@@ -1,5 +1,6 @@
 import { Check, Layers3, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LogoutButton } from '@/features/auth/logout-button';
 
 const foundations = [
   {
@@ -25,13 +26,16 @@ export function FoundationPage() {
             </p>
             <h1 className="text-lg font-semibold tracking-tight">Admin</h1>
           </div>
-          <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-            <span
-              aria-hidden="true"
-              className="size-2 rounded-full bg-emerald-500"
-            />
-            Foundation ready
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="hidden items-center gap-2 text-sm text-muted-foreground sm:inline-flex">
+              <span
+                aria-hidden="true"
+                className="size-2 rounded-full bg-emerald-500"
+              />
+              Foundation ready
+            </span>
+            <LogoutButton />
+          </div>
         </header>
 
         <section className="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">

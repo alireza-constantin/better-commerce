@@ -6,7 +6,10 @@ import {
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import type { Request } from 'express';
 import type { Session } from 'express-session';
-import { CSRF_HEADER_NAME } from './security.constants';
+import {
+  CSRF_HEADER_NAME,
+  CSRF_INVALID_PROBLEM_CODE,
+} from './security.constants';
 
 const TOKEN_BYTES = 32;
 const TOKEN_LENGTH = 43;
@@ -62,14 +65,21 @@ export class CsrfService {
     const supplied = request.get(CSRF_HEADER_NAME);
 
     if (!isValidTokenShape(expected) || !isValidTokenShape(supplied)) {
-      throw new ForbiddenException('Invalid CSRF token');
+      throw this.invalidToken();
     }
 
     const expectedBuffer = Buffer.from(expected, 'ascii');
     const suppliedBuffer = Buffer.from(supplied, 'ascii');
 
     if (!timingSafeEqual(expectedBuffer, suppliedBuffer)) {
-      throw new ForbiddenException('Invalid CSRF token');
+      throw this.invalidToken();
     }
+  }
+
+  private invalidToken(): ForbiddenException {
+    return new ForbiddenException({
+      message: 'Invalid CSRF token',
+      code: CSRF_INVALID_PROBLEM_CODE,
+    });
   }
 }

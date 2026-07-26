@@ -1,4 +1,4 @@
-import { Controller, Get, type INestApplication } from '@nestjs/common';
+import { Controller, Get, Post, type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import type { App } from 'supertest/types';
@@ -12,12 +12,19 @@ import {
   OPENAPI_SESSION_SCHEME,
   VERSION_NEUTRAL,
 } from './api-contract';
+import { ApiCsrfProtected } from './openapi.decorators';
 
 @Controller('probe')
 class VersionedProbeController {
   @Get()
   get(): string {
     return 'versioned';
+  }
+
+  @Post('mutation')
+  @ApiCsrfProtected()
+  mutate(): string {
+    return 'mutated';
   }
 }
 
@@ -66,6 +73,15 @@ describe('API contract bootstrap', () => {
     expect(schemes).toHaveProperty(OPENAPI_CSRF_SCHEME);
     expect(configuration.info.description).toContain('/api/v1/auth/csrf');
     expect(configuration.info.description).toContain('x-csrf-token');
+    expect(
+      document.paths['/api/v1/probe/mutation']?.post?.parameters,
+    ).toContainEqual(
+      expect.objectContaining({
+        in: 'header',
+        name: 'x-csrf-token',
+        required: true,
+      }),
+    );
   });
 
   it('exports the same development document over HTTP', async () => {
