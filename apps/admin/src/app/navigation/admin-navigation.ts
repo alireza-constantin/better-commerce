@@ -16,9 +16,11 @@ import {
   type AdminRoutePath,
 } from '@/app/routes/admin-route-contract';
 
+type AdminNavigationPath = Exclude<AdminRoutePath, '/orders/$orderId'>;
+
 export interface AdminNavigationItem {
   readonly label: string;
-  readonly path: AdminRoutePath;
+  readonly path: AdminNavigationPath;
   readonly permissions: readonly AdminPermission[];
   readonly icon: LucideIcon;
 }

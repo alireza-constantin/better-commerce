@@ -54,6 +54,11 @@ apps/admin/
       feature-placeholder-page.tsx Honest feature delivery boundary
       not-found-page.tsx        Route-level missing-page state
 
+    features/orders/
+      api/                       SDK-backed list, detail, and decisions
+      components/                Persian operational list and detail UI
+      orders-routes.tsx          Query, cursor, permission, and mutation wiring
+
     lib/
       utils.ts                  Class-name composition for UI source
 
@@ -66,15 +71,17 @@ The application is a fully client-rendered React and Vite SPA mounted at
 authenticated shell are RTL-first. Technical identifiers such as email
 addresses and request IDs retain explicit LTR direction.
 
-Phases 2 and 3 implement SDK-backed authentication bootstrap, login, logout,
+Phases 2 through 4 implement SDK-backed authentication bootstrap, login, logout,
 in-memory CSRF management, problem normalization, distinct unauthenticated,
 forbidden, and unavailable states, the responsive authenticated shell, exact
 permission helpers, permission-filtered navigation, and protected operational
-routes.
+routes. Orders is the first complete operational feature: cursor list and
+detail views, immutable purchase snapshots, manual-payment confirmation,
+acceptance, and rejection.
 
-Operational feature pages are deliberately delivery placeholders until their
-own phases connect real API data. They do not invent dashboard metrics or imply
-that an unfinished workflow is available.
+Other operational feature pages remain deliberate delivery placeholders until
+their own phases connect real API data. They do not invent dashboard metrics
+or imply that an unfinished workflow is available.
 
 ## Runtime boundary
 
@@ -125,6 +132,12 @@ the router, navigation, and route access boundaries. Operational route screens
 are loaded outside the initial application chunk. Navigation transitions move
 keyboard focus into the main content, while Escape closes the mobile menu and
 restores focus to its toggle.
+
+Orders keep cursor state in validated URL search parameters. Mutations use the
+shared CSRF-aware adapter, never update authoritative state optimistically, and
+invalidate only Order list/detail query families after confirmed server
+success. Exact monetary strings are displayed without floating-point
+conversion.
 
 ## Verification
 

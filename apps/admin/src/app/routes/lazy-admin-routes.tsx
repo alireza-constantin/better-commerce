@@ -7,7 +7,10 @@ export const OverviewRoute = lazy(async () => ({
   default: (await loadPhaseThreeRoutes()).OverviewRoute,
 }));
 export const OrdersRoute = lazy(async () => ({
-  default: (await loadPhaseThreeRoutes()).OrdersRoute,
+  default: (await import('@/features/orders/orders-routes')).OrdersRoute,
+}));
+export const OrderDetailRoute = lazy(async () => ({
+  default: (await import('@/features/orders/orders-routes')).OrderDetailRoute,
 }));
 export const CatalogRoute = lazy(async () => ({
   default: (await loadPhaseThreeRoutes()).CatalogRoute,

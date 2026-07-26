@@ -24,6 +24,7 @@ import {
   ManualPaymentMethod,
   ManualPaymentStatus,
   PAYMENTS_MODULE_CONTRACT,
+  type ManualPaymentView,
   type PaymentsModuleContract,
 } from '../payments';
 import {
@@ -275,6 +276,54 @@ export class OrdersService {
     const order = await this.persistence.findForAdmin(orderId);
     if (!order) throw new Error('Order was not found');
     return this.hydrate(order);
+  }
+
+  confirmManualPayment(
+    orderId: string,
+    actorUserId: string,
+    reference?: string,
+    note?: string,
+    requestId: string | null = null,
+  ): Promise<ManualPaymentView> {
+    return this.transactions.run(async (transaction) => {
+      const order = await this.persistence.lockForDecision(
+        orderId,
+        transaction,
+      );
+      if (!order) throw new Error('Order was not found');
+
+      const payment = await this.payments.getForOrder(orderId, transaction);
+      if (!payment) throw new Error('Order payment was not found');
+
+      if (payment.status !== ManualPaymentStatus.CONFIRMED) {
+        if (
+          payment.method === ManualPaymentMethod.BANK_TRANSFER &&
+          order.status !== CommerceOrderStatus.SUBMITTED
+        ) {
+          throw new Error(
+            'Bank transfer payment can only be confirmed before order acceptance',
+          );
+        }
+
+        if (
+          payment.method !== ManualPaymentMethod.BANK_TRANSFER &&
+          order.status !== CommerceOrderStatus.ACCEPTED
+        ) {
+          throw new Error(
+            'Cash collection can only be confirmed after order acceptance',
+          );
+        }
+      }
+
+      return this.payments.confirmManualPayment(
+        orderId,
+        actorUserId,
+        reference,
+        note,
+        transaction,
+        requestId,
+      );
+    });
   }
 
   accept(

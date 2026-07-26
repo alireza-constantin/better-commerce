@@ -11,17 +11,6 @@ export function OverviewRoute() {
   );
 }
 
-export function OrdersRoute() {
-  return (
-    <PermissionBoundary required={adminRoutes.orders.permissions}>
-      <FeaturePlaceholderPage
-        description="مشاهده و مدیریت سفارش‌های ثبت‌شده در فروشگاه."
-        title="سفارش‌ها"
-      />
-    </PermissionBoundary>
-  );
-}
-
 export function CatalogRoute() {
   return (
     <PermissionBoundary required={adminRoutes.catalog.permissions}>

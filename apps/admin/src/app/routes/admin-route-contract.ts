@@ -18,6 +18,10 @@ export const adminRoutes = {
     path: '/orders',
     permissions: ['orders.read'],
   },
+  orderDetail: {
+    path: '/orders/$orderId',
+    permissions: ['orders.read'],
+  },
   catalog: {
     path: '/catalog',
     permissions: ['catalog.products.read'],

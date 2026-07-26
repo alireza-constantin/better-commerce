@@ -5,7 +5,6 @@ import {
   Controller,
   Get,
   Headers,
-  Inject,
   NotFoundException,
   Param,
   ParseUUIDPipe,
@@ -29,10 +28,6 @@ import {
 } from '../../platform/openapi';
 import { PermissionKey } from '../authorization/data';
 import { AdminApi, RequirePermissions } from '../authorization/enforcement';
-import {
-  PAYMENTS_MODULE_CONTRACT,
-  type PaymentsModuleContract,
-} from '../payments';
 import { formatMoney } from '../pricing';
 import {
   ConfirmManualPaymentDto,
@@ -142,8 +137,6 @@ export class CustomerOrdersController {
 export class AdminOrdersController {
   constructor(
     private readonly orders: OrdersService,
-    @Inject(PAYMENTS_MODULE_CONTRACT)
-    private readonly payments: PaymentsModuleContract,
     private readonly requestContext: RequestContextService,
   ) {}
 
@@ -189,12 +182,11 @@ export class AdminOrdersController {
     @Body() dto: ConfirmManualPaymentDto,
   ) {
     try {
-      const payment = await this.payments.confirmManualPayment(
+      const payment = await this.orders.confirmManualPayment(
         orderId,
         request.authUser!.id,
         dto.reference,
         dto.note,
-        undefined,
         this.requestContext.getRequestId() ?? null,
       );
       return {

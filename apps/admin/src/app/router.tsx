@@ -11,6 +11,7 @@ import {
   CatalogRoute,
   CommerceAuditRoute,
   InventoryRoute,
+  OrderDetailRoute,
   OrdersRoute,
   OverviewRoute,
   PricingRoute,
@@ -23,8 +24,25 @@ const rootRoute = createRootRoute({
   notFoundComponent: NotFoundPage,
 });
 
-function protectedRoute(
-  path: AdminRoutePath,
+interface OrdersNavigationSearch {
+  readonly cursor?: string;
+  readonly history?: readonly string[];
+  readonly returnCursor?: string;
+  readonly returnHistory?: readonly string[];
+}
+
+function stringValue(value: unknown) {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+function stringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function protectedRoute<const TPath extends AdminRoutePath>(
+  path: TPath,
   component: React.LazyExoticComponent<() => React.JSX.Element>,
 ) {
   return createRoute({
@@ -36,7 +54,28 @@ function protectedRoute(
 
 const routeTree = rootRoute.addChildren([
   protectedRoute(adminRoutes.overview.path, OverviewRoute),
-  protectedRoute(adminRoutes.orders.path, OrdersRoute),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: adminRoutes.orders.path,
+    component: OrdersRoute,
+    validateSearch: (search): OrdersNavigationSearch => ({
+      cursor: stringValue(search.cursor),
+      history: stringArray(search.history),
+      returnCursor: stringValue(search.returnCursor),
+      returnHistory: stringArray(search.returnHistory),
+    }),
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: adminRoutes.orderDetail.path,
+    component: OrderDetailRoute,
+    validateSearch: (search): OrdersNavigationSearch => ({
+      cursor: stringValue(search.cursor),
+      history: stringArray(search.history),
+      returnCursor: stringValue(search.returnCursor),
+      returnHistory: stringArray(search.returnHistory),
+    }),
+  }),
   protectedRoute(adminRoutes.catalog.path, CatalogRoute),
   protectedRoute(adminRoutes.pricing.path, PricingRoute),
   protectedRoute(adminRoutes.inventory.path, InventoryRoute),
