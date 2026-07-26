@@ -10,6 +10,7 @@ Social providers and OTP are intentionally outside the current release.
 ```text
 apps/
   api/                  NestJS modular-monolith API
+  admin/                React + Vite merchant Admin SPA
 packages/
   sdk/                  Generated-backed external API client and types
 docs/                   Architecture, contracts, and runbooks
@@ -68,6 +69,8 @@ Development OpenAPI is available at `http://localhost:3000/docs`, liveness at
 | Command | Purpose |
 | --- | --- |
 | `pnpm start:dev` | Run the API in watch mode |
+| `pnpm dev` | Run the API and Admin development servers together |
+| `pnpm admin:dev` | Run only the Admin Vite development server |
 | `pnpm build` | Build every applicable workspace package |
 | `pnpm typecheck` | Type-check every applicable workspace package |
 | `pnpm lint` | Run the non-mutating lint gate |

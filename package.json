@@ -11,6 +11,8 @@
     "pnpm": "11.9.0"
   },
   "scripts": {
+    "dev": "turbo run dev",
+    "admin:dev": "pnpm --filter @better-commerce/admin dev",
     "build": "turbo run build",
     "format": "pnpm --filter @better-commerce/api format",
     "start": "pnpm --filter @better-commerce/api start",

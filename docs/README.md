@@ -21,8 +21,13 @@ amendment or a superseding ADR.
 - [ADR-0006 — Orders and Historical Purchase State](adr/0006-orders.md)
 - [ADR-0007 — Exact Money and Pricing](adr/0007-pricing.md)
 - [ADR-0008 — Inventory and Reservations](adr/0008-inventory.md)
+- [ADR-0010 — Admin Application Architecture](adr/0010-admin.md)
 - [ADR-0013 — Shipping Methods, Zones, and Rate Rules](adr/0013-shipping.md)
 - [ADR-0014 — Manual Payments and Admin Order Acceptance](adr/0014-manual-payments.md)
+
+Proposed decisions under review:
+
+- [ADR-0011 — Storefront Rendering and Integration Architecture](adr/0011-storefront.md)
 
 ### Living architecture
 
@@ -31,6 +36,7 @@ together. They are updated when code structure, dependency direction, runtime
 flow, or deployment topology changes.
 
 - [Backend module map](architecture/module-map.md)
+- [Admin application map](architecture/admin-application.md)
 
 ### Behavioral contracts
 
@@ -87,11 +93,11 @@ conflict through an amendment, superseding decision, or contract revision.
 
 ## Current decision sequence
 
-ADR-0001 through ADR-0008, ADR-0013, ADR-0014, and the Catalog behavioral
-contract are accepted. ADR-0005 Catalog implementation is complete. The first
-combined physical-shipping/manual-payment Checkout implementation is present
-and typechecks; its deferred verification work is recorded in the commerce
-implementation checkpoint.
+ADR-0001 through ADR-0008, ADR-0010, ADR-0013, ADR-0014, and the Catalog
+behavioral contract are accepted. ADR-0005 Catalog implementation is complete.
+The first combined physical-shipping/manual-payment Checkout implementation is
+present and typechecks; its deferred verification work is recorded in the
+commerce implementation checkpoint.
 
 ## Maintenance rules
 
