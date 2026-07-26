@@ -1,7 +1,7 @@
 # Backend Module Map
 
 Status: Living document  
-Last verified: 2026-07-25
+Last verified: 2026-07-26
 
 ## Purpose
 
@@ -46,6 +46,7 @@ apps/api/src/
     shipping/                   Zones, methods, rate rules, quotes, Admin API
     payments/                   Manual-payment state and history
     orders/                     Checkout orchestration, snapshots, Order APIs
+    commerce-audit/             Append-only operational commerce history
 
   platform/
     config/                     Environment parsing and validation
@@ -65,6 +66,17 @@ The first commerce implementation supports Products and Variants, versioned
 Prices, stock reservations, subtotal-based Shipping, manual Payments, and
 submitted Orders. Its deferred verification work is tracked in
 `docs/plans/commerce-implementation-status.md`.
+
+The external contract toolchain now also contains:
+
+```text
+packages/sdk/
+  src/generated/schema.ts      Generated immutable OpenAPI contract types
+  src/index.ts                 Thin typed HTTP-client public entry point
+```
+
+The SDK depends on the served OpenAPI document. The API has no source or runtime
+dependency on the SDK.
 
 ## Dependency direction
 

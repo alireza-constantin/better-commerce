@@ -1,17 +1,26 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, IsNull } from 'typeorm';
-import type { ApplicationConfiguration } from '../../platform/config';
-import type { DatabaseTransactionContext } from '../../platform/database';
-import { unwrapTypeOrmTransaction } from '../../platform/database/typeorm-transaction-context';
-import { CATALOG_MODULE_CONTRACT, type CatalogModuleContract } from '../catalog';
-import { formatMoney, parseMoney } from './money';
-import { PriceVersion } from './price-version.entity';
+import type { ApplicationConfiguration } from '../../../platform/config';
+import type { DatabaseTransactionContext } from '../../../platform/database';
+import { DatabaseTransactionRunner } from '../../../platform/database';
+import { unwrapTypeOrmTransaction } from '../../../platform/database/typeorm-transaction-context';
+import {
+  CATALOG_MODULE_CONTRACT,
+  type CatalogModuleContract,
+} from '../../catalog';
+import {
+  COMMERCE_AUDIT_CONTRACT,
+  CommerceAuditAction,
+  type CommerceAuditContract,
+} from '../../commerce-audit';
+import { formatMoney, parseMoney } from '../money';
+import { PriceVersion } from '../price-version.entity';
 import {
   PRICING_MODULE_CONTRACT,
   type PricingModuleContract,
   type VariantPriceQuote,
-} from './pricing.contract';
+} from '../pricing.contract';
 
 @Injectable()
 export class PricingService implements PricingModuleContract {
@@ -19,23 +28,33 @@ export class PricingService implements PricingModuleContract {
 
   constructor(
     private readonly dataSource: DataSource,
+    private readonly transactions: DatabaseTransactionRunner,
     config: ConfigService<ApplicationConfiguration, true>,
     @Inject(CATALOG_MODULE_CONTRACT)
     private readonly catalog: CatalogModuleContract,
+    @Inject(COMMERCE_AUDIT_CONTRACT)
+    private readonly audit: CommerceAuditContract,
   ) {
-    this.currency = config.getOrThrow('commerce').currency;
+    this.currency =
+      config.getOrThrow<ApplicationConfiguration['commerce']>(
+        'commerce',
+      ).currency;
   }
 
   async setCurrentPrice(
     variantId: string,
     amount: string,
     actorUserId: string,
+    requestId: string | null = null,
   ) {
     const money = parseMoney(amount, this.currency);
     if (money.minorAmount <= 0n) throw new Error('Price must be positive');
-    const [variant] = await this.catalog.resolvePurchasableVariants([variantId]);
+    const [variant] = await this.catalog.resolvePurchasableVariants([
+      variantId,
+    ]);
     if (!variant) throw new Error('Variant was not found');
-    return this.dataSource.transaction(async (manager) => {
+    return this.transactions.run(async (transaction) => {
+      const manager = unwrapTypeOrmTransaction(transaction);
       const repository = manager.getRepository(PriceVersion);
       const current = await repository.findOne({
         where: { variantId, currency: this.currency, effectiveUntil: IsNull() },
@@ -55,6 +74,21 @@ export class PricingService implements PricingModuleContract {
         createdByUserId: actorUserId,
       });
       await repository.save(version);
+      await this.audit.record(
+        {
+          actorUserId,
+          action: CommerceAuditAction.PRICE_CHANGED,
+          targetType: 'variant',
+          targetId: variantId,
+          requestId,
+          metadata: {
+            priceVersionId: version.id,
+            amount,
+            currency: this.currency,
+          },
+        },
+        transaction,
+      );
       return this.toResponse(version);
     });
   }
@@ -68,7 +102,9 @@ export class PricingService implements PricingModuleContract {
     const manager = transaction
       ? unwrapTypeOrmTransaction(transaction)
       : this.dataSource.manager;
-    const prices = await manager.getRepository(PriceVersion).createQueryBuilder('price')
+    const prices = await manager
+      .getRepository(PriceVersion)
+      .createQueryBuilder('price')
       .where('price.variant_id IN (:...ids)', { ids })
       .andWhere('price.currency = :currency', { currency: this.currency })
       .andWhere('price.effective_until IS NULL')
@@ -76,11 +112,15 @@ export class PricingService implements PricingModuleContract {
     const byVariant = new Map(prices.map((price) => [price.variantId, price]));
     return ids.map((variantId) => {
       const price = byVariant.get(variantId);
-      if (!price) throw new Error(`Missing current price for Variant ${variantId}`);
+      if (!price)
+        throw new Error(`Missing current price for Variant ${variantId}`);
       return {
         variantId,
         priceVersionId: price.id,
-        unitPrice: { minorAmount: BigInt(price.minorAmount), currency: price.currency },
+        unitPrice: {
+          minorAmount: BigInt(price.minorAmount),
+          currency: price.currency,
+        },
       };
     });
   }
@@ -98,7 +138,10 @@ export class PricingService implements PricingModuleContract {
     return {
       id: price.id,
       variantId: price.variantId,
-      ...formatMoney({ minorAmount: BigInt(price.minorAmount), currency: price.currency }),
+      ...formatMoney({
+        minorAmount: BigInt(price.minorAmount),
+        currency: price.currency,
+      }),
       effectiveFrom: price.effectiveFrom,
     };
   }

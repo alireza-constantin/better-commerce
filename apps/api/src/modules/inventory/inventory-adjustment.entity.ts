@@ -7,7 +7,10 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'inventory_adjustments' })
-@Index('IDX_inventory_adjustments_item_created', ['inventoryItemId', 'createdAt'])
+@Index('IDX_inventory_adjustments_item_created', [
+  'inventoryItemId',
+  'createdAt',
+])
 export class InventoryAdjustment {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

@@ -40,3 +40,8 @@ export interface OrderView {
   readonly cancelledAt: Date | null;
   readonly lines: readonly OrderLineView[];
 }
+
+export interface OrderListView {
+  readonly items: readonly OrderView[];
+  readonly nextCursor: string | null;
+}

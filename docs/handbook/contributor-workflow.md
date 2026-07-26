@@ -1,7 +1,7 @@
 # Contributor Workflow
 
 Status: Living handbook  
-Last verified: 2026-07-23
+Last verified: 2026-07-26
 
 ## Before changing code
 
@@ -49,6 +49,16 @@ pnpm test -- --runInBand
 docker compose config --quiet
 pnpm test:e2e -- --runInBand
 ```
+
+When the external HTTP contract changes, run the API and regenerate/verify the
+SDK before completing the change:
+
+```bash
+pnpm sdk:generate
+pnpm sdk:check
+```
+
+Generated SDK schema types are committed and must not be edited by hand.
 
 Use uncached non-daemon Turbo commands when proving a structural migration:
 

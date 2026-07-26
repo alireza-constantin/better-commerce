@@ -7,6 +7,7 @@ import {
   buildOpenApiConfiguration,
   configureApiRouting,
   configureOpenApi,
+  hardenOpenApiDocument,
   OPENAPI_CSRF_SCHEME,
   OPENAPI_SESSION_SCHEME,
   VERSION_NEUTRAL,
@@ -76,7 +77,25 @@ describe('API contract bootstrap', () => {
         const body = response.body as OpenAPIObject;
         expect(body.info.title).toBe('Better Commerce API');
         expect(body.paths).toHaveProperty('/api/v1/probe');
+        expect(body.components?.schemas).toHaveProperty('ProblemDetailsDto');
       });
+  });
+
+  it('adds typed default problems and request IDs to every operation', () => {
+    hardenOpenApiDocument(document);
+    const operation = document.paths['/api/v1/probe']?.get;
+    expect(operation?.responses?.default).toMatchObject({
+      content: {
+        'application/problem+json': {
+          schema: {
+            $ref: '#/components/schemas/ProblemDetailsDto',
+          },
+        },
+      },
+    });
+    expect(operation?.responses?.['200']?.headers).toHaveProperty(
+      'x-request-id',
+    );
   });
 
   it('does not configure OpenAPI in production', () => {

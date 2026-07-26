@@ -1,9 +1,40 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiProperty,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { Public } from '../http/authentication';
 import { VERSION_NEUTRAL } from '../openapi';
 import { HealthService, type ReadinessResult } from './health.service';
+
+class LivenessResponseDto {
+  @ApiProperty({ enum: ['ok'] })
+  status!: 'ok';
+}
+
+class DependencyHealthResponseDto {
+  @ApiProperty({ enum: ['up', 'down'] })
+  status!: 'up' | 'down';
+}
+
+class ReadinessChecksResponseDto {
+  @ApiProperty({ type: () => DependencyHealthResponseDto })
+  database!: DependencyHealthResponseDto;
+
+  @ApiProperty({ type: () => DependencyHealthResponseDto })
+  redis!: DependencyHealthResponseDto;
+}
+
+class ReadinessResponseDto {
+  @ApiProperty({ enum: ['ok', 'error'] })
+  status!: 'ok' | 'error';
+
+  @ApiProperty({ type: () => ReadinessChecksResponseDto })
+  checks!: ReadinessChecksResponseDto;
+}
 
 @Public()
 @ApiTags('Health')
@@ -13,7 +44,11 @@ export class HealthController {
 
   /** Process-only check. It must stay healthy during a dependency outage. */
   @ApiOperation({ summary: 'Process liveness probe' })
-  @ApiResponse({ status: 200, description: 'The HTTP process is alive.' })
+  @ApiResponse({
+    status: 200,
+    description: 'The HTTP process is alive.',
+    type: LivenessResponseDto,
+  })
   @Get('live')
   liveness(): { status: 'ok' } {
     return { status: 'ok' };
@@ -24,10 +59,12 @@ export class HealthController {
   @ApiResponse({
     status: 200,
     description: 'PostgreSQL and Redis are both available.',
+    type: ReadinessResponseDto,
   })
   @ApiResponse({
     status: 503,
     description: 'At least one authoritative dependency is unavailable.',
+    type: ReadinessResponseDto,
   })
   @Get('ready')
   async readiness(

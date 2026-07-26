@@ -8,7 +8,11 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'price_versions' })
-@Index('IDX_price_versions_current', ['variantId', 'currency', 'effectiveUntil'])
+@Index('IDX_price_versions_current', [
+  'variantId',
+  'currency',
+  'effectiveUntil',
+])
 @Check('CHK_price_versions_positive', 'minor_amount > 0')
 export class PriceVersion {
   @PrimaryGeneratedColumn('uuid')

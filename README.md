@@ -10,6 +10,8 @@ Social providers and OTP are intentionally outside the current release.
 ```text
 apps/
   api/                  NestJS modular-monolith API
+packages/
+  sdk/                  Generated-backed external API client and types
 docs/                   Architecture, contracts, and runbooks
 docker-compose.yml      Local PostgreSQL and Redis
 package.json            Root orchestration commands
@@ -76,6 +78,8 @@ Development OpenAPI is available at `http://localhost:3000/docs`, liveness at
 | `pnpm db:logs` | Follow PostgreSQL logs |
 | `pnpm db:reset` | Destroy and recreate local PostgreSQL and Redis volumes |
 | `pnpm staff:bootstrap-owner -- owner@example.test` | Promote one existing account to the initial owner |
+| `pnpm sdk:generate` | Regenerate SDK types from a running local API |
+| `pnpm sdk:check` | Verify committed SDK types match a running local API |
 
 For an API-only command, filter the package explicitly. For example:
 
@@ -132,6 +136,11 @@ session identifier, so fetch a fresh CSRF token after any of them succeeds.
 In development and test, interactive OpenAPI documentation is available at
 `/docs` and the machine-readable document at `/docs/openapi.json`. Both routes
 are absent in production.
+
+The OpenAPI document generates `@better-commerce/sdk`. Start the API, then run
+`pnpm sdk:generate`; CI-compatible freshness verification uses
+`pnpm sdk:check`. The external transport rules are defined in the
+[HTTP API contract](docs/contracts/external-http-api.md).
 
 ## Staff authorization
 

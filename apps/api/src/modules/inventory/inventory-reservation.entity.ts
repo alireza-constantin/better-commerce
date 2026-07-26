@@ -14,8 +14,16 @@ export enum InventoryReservationStatus {
 }
 
 @Entity({ name: 'inventory_reservations' })
-@Index('IDX_inventory_reservations_item_active', ['inventoryItemId', 'status', 'expiresAt'])
-@Index('UQ_inventory_reservations_correlation_variant', ['correlationKey', 'variantId'], { unique: true })
+@Index('IDX_inventory_reservations_item_active', [
+  'inventoryItemId',
+  'status',
+  'expiresAt',
+])
+@Index(
+  'UQ_inventory_reservations_correlation_variant',
+  ['correlationKey', 'variantId'],
+  { unique: true },
+)
 export class InventoryReservation {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -41,7 +49,12 @@ export class InventoryReservation {
   @Column({ name: 'terminal_at', type: 'timestamptz', nullable: true })
   terminalAt!: Date | null;
 
-  @Column({ name: 'terminal_reason', type: 'varchar', length: 80, nullable: true })
+  @Column({
+    name: 'terminal_reason',
+    type: 'varchar',
+    length: 80,
+    nullable: true,
+  })
   terminalReason!: string | null;
 
   @Column({ name: 'order_id', type: 'uuid', nullable: true })

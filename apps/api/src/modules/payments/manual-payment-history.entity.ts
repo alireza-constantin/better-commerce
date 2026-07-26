@@ -25,7 +25,12 @@ export class ManualPaymentHistory {
   @Column({ name: 'actor_user_id', type: 'uuid', nullable: true })
   actorUserId!: string | null;
 
-  @Column({ name: 'safe_reference', type: 'varchar', length: 160, nullable: true })
+  @Column({
+    name: 'safe_reference',
+    type: 'varchar',
+    length: 160,
+    nullable: true,
+  })
   safeReference!: string | null;
 
   @Column({ type: 'varchar', length: 500, nullable: true })

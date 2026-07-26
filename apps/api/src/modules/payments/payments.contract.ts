@@ -34,6 +34,7 @@ export interface PaymentsModuleContract {
     reference: string | undefined,
     note: string | undefined,
     transaction?: DatabaseTransactionContext,
+    requestId?: string | null,
   ): Promise<ManualPaymentView>;
   rejectManualPayment(
     orderId: string,

@@ -34,6 +34,8 @@ export interface ApplicationConfiguration {
   commerce: {
     currency: string;
     manualReviewHoldMinutes: number;
+    reservationSweepIntervalSeconds: number;
+    reservationSweepBatchSize: number;
   };
   database: DatabaseConfiguration;
   redis: RedisConfiguration;
@@ -226,6 +228,18 @@ export const buildConfiguration = (
         'MANUAL_ORDER_HOLD_MINUTES',
         720,
         { min: 30, max: 1_440 },
+      ),
+      reservationSweepIntervalSeconds: readInteger(
+        source,
+        'RESERVATION_SWEEP_INTERVAL_SECONDS',
+        60,
+        { min: 5, max: 3_600 },
+      ),
+      reservationSweepBatchSize: readInteger(
+        source,
+        'RESERVATION_SWEEP_BATCH_SIZE',
+        100,
+        { min: 1, max: 1_000 },
       ),
     },
     database: {

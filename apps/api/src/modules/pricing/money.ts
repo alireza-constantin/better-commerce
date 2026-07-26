@@ -8,6 +8,7 @@ const CURRENCY_SCALES: Readonly<Record<string, number>> = Object.freeze({
   JPY: 0,
   KWD: 3,
 });
+const MAX_DATABASE_MINOR_AMOUNT = 9_223_372_036_854_775_807n;
 
 export function currencyScale(currency: string): number {
   const scale = CURRENCY_SCALES[currency.toUpperCase()];
@@ -20,12 +21,18 @@ export function parseMoney(amount: string, currency: string): Money {
   const scale = currencyScale(normalizedCurrency);
   if (!/^\d+(?:\.\d+)?$/.test(amount)) throw new Error('Invalid money amount');
   const [whole, fraction = ''] = amount.split('.');
-  if (fraction.length > scale) throw new Error('Money amount exceeds currency scale');
+  if (fraction.length > scale)
+    throw new Error('Money amount exceeds currency scale');
   const minorAmount = BigInt(`${whole}${fraction.padEnd(scale, '0')}`);
+  if (minorAmount > MAX_DATABASE_MINOR_AMOUNT)
+    throw new Error('Money amount exceeds the supported range');
   return { minorAmount, currency: normalizedCurrency };
 }
 
-export function formatMoney(money: Money): { amount: string; currency: string } {
+export function formatMoney(money: Money): {
+  amount: string;
+  currency: string;
+} {
   const scale = currencyScale(money.currency);
   const raw = money.minorAmount.toString().padStart(scale + 1, '0');
   if (scale === 0) return { amount: raw, currency: money.currency };

@@ -1,16 +1,13 @@
-import {
-  Check,
-  Column,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Check, Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import type { FulfillmentClassification } from '../catalog';
 
 @Entity({ name: 'commerce_order_lines' })
 @Index(['orderId'])
 @Check('CHK_commerce_order_lines_quantity', 'quantity > 0')
-@Check('CHK_commerce_order_lines_amounts', 'unit_minor >= 0 AND line_minor >= 0')
+@Check(
+  'CHK_commerce_order_lines_amounts',
+  'unit_minor >= 0 AND line_minor >= 0',
+)
 export class CommerceOrderLine {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -27,7 +24,12 @@ export class CommerceOrderLine {
   @Column({ name: 'product_title', type: 'varchar', length: 240 })
   productTitle!: string;
 
-  @Column({ name: 'variant_title', type: 'varchar', length: 240, nullable: true })
+  @Column({
+    name: 'variant_title',
+    type: 'varchar',
+    length: 240,
+    nullable: true,
+  })
   variantTitle!: string | null;
 
   @Column({ type: 'varchar', length: 120, nullable: true })

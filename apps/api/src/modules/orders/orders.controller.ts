@@ -10,16 +10,21 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   Req,
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
+  ApiHeader,
+  ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
+import { RequestContextService } from '../../platform/observability';
 import {
   ApiCsrfProtected,
+  ApiProblemResponse,
   ApiSessionAuthenticated,
 } from '../../platform/openapi';
 import { PermissionKey } from '../authorization/data';
@@ -28,16 +33,22 @@ import {
   PAYMENTS_MODULE_CONTRACT,
   type PaymentsModuleContract,
 } from '../payments';
+import { formatMoney } from '../pricing';
 import {
   ConfirmManualPaymentDto,
+  ManualPaymentResponseDto,
   OrderDecisionDto,
+  OrderResponseDto,
+  OrdersPageResponseDto,
+  OrdersQueryDto,
   SubmitOrderDto,
 } from './orders.dto';
 import { OrdersService } from './orders.service';
 
 function orderError(error: unknown): never {
   if (!(error instanceof Error)) throw error;
-  if (error.message.includes('not found')) throw new NotFoundException(error.message);
+  if (error.message.includes('not found'))
+    throw new NotFoundException(error.message);
   if (
     error.message.includes('already') ||
     error.message.includes('unavailable') ||
@@ -52,11 +63,29 @@ function orderError(error: unknown): never {
 @ApiSessionAuthenticated()
 @Controller()
 export class CustomerOrdersController {
-  constructor(private readonly orders: OrdersService) {}
+  constructor(
+    private readonly orders: OrdersService,
+    private readonly requestContext: RequestContextService,
+  ) {}
 
   @Post('checkout/orders')
   @ApiCsrfProtected()
-  @ApiCreatedResponse()
+  @ApiCreatedResponse({ type: OrderResponseDto })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    description:
+      'Caller-generated key. Replaying the same key and body returns the original order.',
+    required: true,
+    schema: { type: 'string', maxLength: 120 },
+  })
+  @ApiProblemResponse(
+    400,
+    'The checkout request or idempotency key is invalid.',
+  )
+  @ApiProblemResponse(
+    409,
+    'The order cannot be submitted in the current state.',
+  )
   @ApiOperation({ summary: 'Submit an idempotent order for manual review' })
   async submit(
     @Req() request: Request,
@@ -65,20 +94,35 @@ export class CustomerOrdersController {
   ) {
     const normalizedKey = idempotencyKey?.trim();
     if (!normalizedKey || normalizedKey.length > 120)
-      throw new BadRequestException('A valid Idempotency-Key header is required');
+      throw new BadRequestException(
+        'A valid Idempotency-Key header is required',
+      );
     try {
-      return await this.orders.submit(request.authUser!.id, normalizedKey, dto);
+      return await this.orders.submit(
+        request.authUser!.id,
+        normalizedKey,
+        dto,
+        this.requestContext.getRequestId() ?? null,
+      );
     } catch (error) {
       orderError(error);
     }
   }
 
   @Get('orders')
-  list(@Req() request: Request) {
-    return this.orders.listForCustomer(request.authUser!.id);
+  @ApiOkResponse({ type: OrdersPageResponseDto })
+  @ApiProblemResponse(400, 'The cursor or page limit is invalid.')
+  async list(@Req() request: Request, @Query() query: OrdersQueryDto) {
+    try {
+      return await this.orders.listForCustomer(request.authUser!.id, query);
+    } catch (error) {
+      orderError(error);
+    }
   }
 
   @Get('orders/:orderId')
+  @ApiOkResponse({ type: OrderResponseDto })
+  @ApiProblemResponse(404, 'The order does not exist for this customer.')
   async detail(
     @Req() request: Request,
     @Param('orderId', new ParseUUIDPipe({ version: '4' })) orderId: string,
@@ -100,16 +144,25 @@ export class AdminOrdersController {
     private readonly orders: OrdersService,
     @Inject(PAYMENTS_MODULE_CONTRACT)
     private readonly payments: PaymentsModuleContract,
+    private readonly requestContext: RequestContextService,
   ) {}
 
   @Get()
   @RequirePermissions(PermissionKey.ORDERS_READ)
-  list() {
-    return this.orders.listForAdmin();
+  @ApiOkResponse({ type: OrdersPageResponseDto })
+  @ApiProblemResponse(400, 'The cursor or page limit is invalid.')
+  async list(@Query() query: OrdersQueryDto) {
+    try {
+      return await this.orders.listForAdmin(query);
+    } catch (error) {
+      orderError(error);
+    }
   }
 
   @Get(':orderId')
   @RequirePermissions(PermissionKey.ORDERS_READ)
+  @ApiOkResponse({ type: OrderResponseDto })
+  @ApiProblemResponse(404, 'The order was not found.')
   async detail(
     @Param('orderId', new ParseUUIDPipe({ version: '4' })) orderId: string,
   ) {
@@ -123,18 +176,31 @@ export class AdminOrdersController {
   @Post(':orderId/payment/confirm')
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.PAYMENTS_MANUAL_CONFIRM)
+  @ApiCreatedResponse({ type: ManualPaymentResponseDto })
+  @ApiProblemResponse(400, 'The payment confirmation is invalid.')
+  @ApiProblemResponse(404, 'The order or payment was not found.')
+  @ApiProblemResponse(
+    409,
+    'The payment cannot be confirmed in its current state.',
+  )
   async confirmPayment(
     @Req() request: Request,
     @Param('orderId', new ParseUUIDPipe({ version: '4' })) orderId: string,
     @Body() dto: ConfirmManualPaymentDto,
   ) {
     try {
-      return await this.payments.confirmManualPayment(
+      const payment = await this.payments.confirmManualPayment(
         orderId,
         request.authUser!.id,
         dto.reference,
         dto.note,
+        undefined,
+        this.requestContext.getRequestId() ?? null,
       );
+      return {
+        ...payment,
+        expectedAmount: formatMoney(payment.expectedAmount),
+      };
     } catch (error) {
       orderError(error);
     }
@@ -143,13 +209,22 @@ export class AdminOrdersController {
   @Post(':orderId/accept')
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.ORDERS_ACCEPT)
+  @ApiCreatedResponse({ type: OrderResponseDto })
+  @ApiProblemResponse(400, 'The order decision is invalid.')
+  @ApiProblemResponse(404, 'The order was not found.')
+  @ApiProblemResponse(409, 'The order cannot be accepted in its current state.')
   async accept(
     @Req() request: Request,
     @Param('orderId', new ParseUUIDPipe({ version: '4' })) orderId: string,
     @Body() dto: OrderDecisionDto,
   ) {
     try {
-      return await this.orders.accept(orderId, request.authUser!.id, dto.note);
+      return await this.orders.accept(
+        orderId,
+        request.authUser!.id,
+        dto.note,
+        this.requestContext.getRequestId() ?? null,
+      );
     } catch (error) {
       orderError(error);
     }
@@ -158,13 +233,22 @@ export class AdminOrdersController {
   @Post(':orderId/reject')
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.ORDERS_REJECT)
+  @ApiCreatedResponse({ type: OrderResponseDto })
+  @ApiProblemResponse(400, 'The order decision is invalid.')
+  @ApiProblemResponse(404, 'The order was not found.')
+  @ApiProblemResponse(409, 'The order cannot be rejected in its current state.')
   async reject(
     @Req() request: Request,
     @Param('orderId', new ParseUUIDPipe({ version: '4' })) orderId: string,
     @Body() dto: OrderDecisionDto,
   ) {
     try {
-      return await this.orders.reject(orderId, request.authUser!.id, dto.note);
+      return await this.orders.reject(
+        orderId,
+        request.authUser!.id,
+        dto.note,
+        this.requestContext.getRequestId() ?? null,
+      );
     } catch (error) {
       orderError(error);
     }

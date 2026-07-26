@@ -10,7 +10,7 @@ describe('authorization catalogue', () => {
     const keys = PERMISSION_CATALOGUE.map(({ key }) => key);
 
     expect(new Set(keys).size).toBe(keys.length);
-    expect(keys).toHaveLength(27);
+    expect(keys).toEqual(Object.values(PermissionKey));
   });
 
   it('contains unique built-in roles with explicit, known permissions', () => {
@@ -62,5 +62,25 @@ describe('authorization catalogue', () => {
       RoleKey.CATALOG_MANAGER,
     ]);
     expect(archived).toEqual(granted);
+  });
+
+  it('grants commerce decision permissions only to operational roles', () => {
+    const acceptors = BUILT_IN_ROLE_CATALOGUE.filter((role) =>
+      role.permissionKeys.includes(PermissionKey.ORDERS_ACCEPT),
+    ).map((role) => role.key);
+    const paymentConfirmers = BUILT_IN_ROLE_CATALOGUE.filter((role) =>
+      role.permissionKeys.includes(PermissionKey.PAYMENTS_MANUAL_CONFIRM),
+    ).map((role) => role.key);
+    const shippingWriters = BUILT_IN_ROLE_CATALOGUE.filter((role) =>
+      role.permissionKeys.includes(PermissionKey.SHIPPING_WRITE),
+    ).map((role) => role.key);
+
+    expect(acceptors).toEqual([
+      RoleKey.OWNER,
+      RoleKey.ADMINISTRATOR,
+      RoleKey.ORDER_MANAGER,
+    ]);
+    expect(paymentConfirmers).toEqual(acceptors);
+    expect(shippingWriters).toEqual([RoleKey.OWNER, RoleKey.ADMINISTRATOR]);
   });
 });

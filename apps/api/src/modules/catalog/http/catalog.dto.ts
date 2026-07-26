@@ -199,3 +199,144 @@ export class PublicProductQueryDto {
   @Max(100)
   limit?: number;
 }
+
+export class CreatedProductResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  productId!: string;
+  @ApiProperty({ format: 'uuid' })
+  variantId!: string;
+  @ApiProperty({ minimum: 1 })
+  version!: number;
+}
+
+export class ProductSummaryResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+  @ApiProperty({ minimum: 1 })
+  version!: number;
+  @ApiProperty({ enum: PRODUCT_STATUSES })
+  status!: (typeof PRODUCT_STATUSES)[number];
+  @ApiProperty()
+  title!: string;
+  @ApiProperty({ nullable: true, type: String })
+  summary!: string | null;
+  @ApiProperty({ nullable: true, type: String })
+  description!: string | null;
+  @ApiProperty()
+  slug!: string;
+  @ApiProperty()
+  everPublished!: boolean;
+  @ApiProperty({ format: 'date-time', nullable: true, type: String })
+  publishedAt!: string | null;
+  @ApiProperty({ format: 'date-time', nullable: true, type: String })
+  archivedAt!: string | null;
+  @ApiProperty({ format: 'date-time' })
+  createdAt!: string;
+  @ApiProperty({ format: 'date-time' })
+  updatedAt!: string;
+}
+
+export class CatalogOptionValueResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+  @ApiProperty()
+  label!: string;
+  @ApiProperty({ minimum: 0 })
+  position!: number;
+}
+
+export class CatalogOptionResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+  @ApiProperty()
+  name!: string;
+  @ApiProperty({ minimum: 0 })
+  position!: number;
+  @ApiProperty({ type: () => [CatalogOptionValueResponseDto] })
+  values!: CatalogOptionValueResponseDto[];
+}
+
+export class CatalogVariantResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+  @ApiProperty({ enum: VARIANT_STATUSES })
+  status!: (typeof VARIANT_STATUSES)[number];
+  @ApiProperty({ nullable: true, type: String })
+  title!: string | null;
+  @ApiProperty({ nullable: true, type: String })
+  sku!: string | null;
+  @ApiProperty({ enum: FULFILLMENT })
+  fulfillmentClassification!: (typeof FULFILLMENT)[number];
+  @ApiProperty({ minimum: 0 })
+  position!: number;
+  @ApiProperty({ format: 'uuid', type: [String] })
+  selectionValueIds!: string[];
+}
+
+export class ProductDetailResponseDto extends ProductSummaryResponseDto {
+  @ApiProperty({ type: () => [CatalogVariantResponseDto] })
+  variants!: CatalogVariantResponseDto[];
+  @ApiProperty({ type: () => [CatalogOptionResponseDto] })
+  options!: CatalogOptionResponseDto[];
+}
+
+export class ProductPageResponseDto {
+  @ApiProperty({ type: () => [ProductSummaryResponseDto] })
+  items!: ProductSummaryResponseDto[];
+  @ApiProperty({ nullable: true, type: String })
+  nextCursor!: string | null;
+}
+
+export class PublicCatalogVariantResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+  @ApiProperty({ nullable: true, type: String })
+  title!: string | null;
+  @ApiProperty({ nullable: true, type: String })
+  sku!: string | null;
+  @ApiProperty({ enum: FULFILLMENT })
+  fulfillmentClassification!: (typeof FULFILLMENT)[number];
+  @ApiProperty({ minimum: 0 })
+  position!: number;
+  @ApiProperty({ format: 'uuid', type: [String] })
+  selectionValueIds!: string[];
+}
+
+export class PublicProductResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+  @ApiProperty()
+  title!: string;
+  @ApiProperty({ nullable: true, type: String })
+  summary!: string | null;
+  @ApiProperty({ nullable: true, type: String })
+  description!: string | null;
+  @ApiProperty()
+  slug!: string;
+  @ApiProperty({ format: 'date-time' })
+  publishedAt!: string;
+  @ApiProperty({ format: 'date-time' })
+  createdAt!: string;
+  @ApiProperty({ format: 'date-time' })
+  updatedAt!: string;
+  @ApiProperty({ type: () => [CatalogOptionResponseDto] })
+  options!: CatalogOptionResponseDto[];
+  @ApiProperty({ type: () => [PublicCatalogVariantResponseDto] })
+  variants!: PublicCatalogVariantResponseDto[];
+}
+
+export class PublicProductPageResponseDto {
+  @ApiProperty({ type: () => [PublicProductResponseDto] })
+  items!: PublicProductResponseDto[];
+  @ApiProperty({ nullable: true, type: String })
+  nextCursor!: string | null;
+}
+
+export class PublicProductResolutionResponseDto {
+  @ApiProperty({ type: () => PublicProductResponseDto })
+  product!: PublicProductResponseDto;
+  @ApiProperty()
+  canonicalSlug!: string;
+  @ApiProperty()
+  requestedSlugIsCanonical!: boolean;
+}

@@ -15,7 +15,7 @@ import {
   AuditEventsService,
   type AuditEventListResponse,
 } from './audit-events.service';
-import { AuditEventsQueryDto } from './dto';
+import { AuditEventPageResponseDto, AuditEventsQueryDto } from './dto';
 
 @AdminApi()
 @ApiTags('Administration')
@@ -31,7 +31,10 @@ export class AuditEventsController {
     description:
       'Requires `admin.access` and `audit.read`. Results are newest-first, cursor-paginated, and expose only safe audit fields.',
   })
-  @ApiOkResponse({ description: 'A bounded page of safe audit events.' })
+  @ApiOkResponse({
+    description: 'A bounded page of safe audit events.',
+    type: AuditEventPageResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'The cursor or query is invalid.' })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()

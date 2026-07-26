@@ -19,7 +19,10 @@ export enum CommerceOrderStatus {
 @Entity({ name: 'commerce_orders' })
 @Index(['userId', 'idempotencyKey'], { unique: true })
 @Index(['status', 'submittedAt'])
-@Check('CHK_commerce_orders_amounts', 'merchandise_subtotal_minor >= 0 AND shipping_minor >= 0 AND grand_total_minor >= 0')
+@Check(
+  'CHK_commerce_orders_amounts',
+  'merchandise_subtotal_minor >= 0 AND shipping_minor >= 0 AND grand_total_minor >= 0',
+)
 export class CommerceOrder {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -113,7 +116,12 @@ export class CommerceOrder {
   @Column({ name: 'decision_actor_user_id', type: 'uuid', nullable: true })
   decisionActorUserId!: string | null;
 
-  @Column({ name: 'decision_note', type: 'varchar', length: 500, nullable: true })
+  @Column({
+    name: 'decision_note',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
   decisionNote!: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

@@ -40,6 +40,8 @@ external consumers exist, a compatibility/versioning decision.
 
 - [Authorization contract](contracts/authorization.md)
 - [Catalog contract](contracts/catalog.md)
+- [Commerce operations and audit](contracts/commerce-operations.md)
+- [External HTTP API and SDK](contracts/external-http-api.md)
 
 ### Contributor handbook
 

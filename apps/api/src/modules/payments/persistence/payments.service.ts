@@ -1,21 +1,32 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
-import type { DatabaseTransactionContext } from '../../platform/database';
-import { unwrapTypeOrmTransaction } from '../../platform/database/typeorm-transaction-context';
-import { ManualPaymentHistory } from './manual-payment-history.entity';
+import type { DatabaseTransactionContext } from '../../../platform/database';
+import { DatabaseTransactionRunner } from '../../../platform/database';
+import { unwrapTypeOrmTransaction } from '../../../platform/database/typeorm-transaction-context';
+import {
+  COMMERCE_AUDIT_CONTRACT,
+  CommerceAuditAction,
+  type CommerceAuditContract,
+} from '../../commerce-audit';
+import { ManualPaymentHistory } from '../manual-payment-history.entity';
 import {
   ManualPayment,
   ManualPaymentMethod,
   ManualPaymentStatus,
-} from './manual-payment.entity';
+} from '../manual-payment.entity';
 import type {
   ManualPaymentView,
   PaymentsModuleContract,
-} from './payments.contract';
+} from '../payments.contract';
 
 @Injectable()
 export class PaymentsService implements PaymentsModuleContract {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly transactions: DatabaseTransactionRunner,
+    @Inject(COMMERCE_AUDIT_CONTRACT)
+    private readonly audit: CommerceAuditContract,
+  ) {}
 
   async createManualPayment(
     input: {
@@ -60,6 +71,7 @@ export class PaymentsService implements PaymentsModuleContract {
     reference: string | undefined,
     note: string | undefined,
     transaction?: DatabaseTransactionContext,
+    requestId: string | null = null,
   ): Promise<ManualPaymentView> {
     return this.transition(
       orderId,
@@ -68,6 +80,7 @@ export class PaymentsService implements PaymentsModuleContract {
       reference,
       note,
       transaction,
+      requestId,
     );
   }
 
@@ -84,6 +97,7 @@ export class PaymentsService implements PaymentsModuleContract {
       undefined,
       note,
       transaction,
+      null,
     );
   }
 
@@ -99,6 +113,7 @@ export class PaymentsService implements PaymentsModuleContract {
       undefined,
       reason,
       transaction,
+      null,
     );
   }
 
@@ -109,36 +124,56 @@ export class PaymentsService implements PaymentsModuleContract {
     reference: string | undefined,
     note: string | undefined,
     transaction?: DatabaseTransactionContext,
+    requestId: string | null = null,
   ): Promise<ManualPaymentView> {
-    return this.inTransaction(transaction, async (manager) => {
-      const repository = manager.getRepository(ManualPayment);
-      const payment = await repository.findOne({
-        where: { orderId },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (!payment) throw new Error('Manual payment was not found');
-      if (
-        payment.status === ManualPaymentStatus.CONFIRMED ||
-        payment.status === ManualPaymentStatus.REJECTED ||
-        payment.status === ManualPaymentStatus.CANCELLED
-      ) {
-        if (payment.status === next) return this.toView(payment);
-        throw new Error('Manual payment is already terminal');
-      }
-      const previous = payment.status;
-      payment.status = next;
-      await repository.save(payment);
-      await this.record(
-        manager,
-        payment,
-        previous,
-        next,
-        actorUserId,
-        reference,
-        note,
-      );
-      return this.toView(payment);
-    });
+    return this.inTransaction(
+      transaction,
+      async (manager, effectiveTransaction) => {
+        const repository = manager.getRepository(ManualPayment);
+        const payment = await repository.findOne({
+          where: { orderId },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!payment) throw new Error('Manual payment was not found');
+        if (
+          payment.status === ManualPaymentStatus.CONFIRMED ||
+          payment.status === ManualPaymentStatus.REJECTED ||
+          payment.status === ManualPaymentStatus.CANCELLED
+        ) {
+          if (payment.status === next) return this.toView(payment);
+          throw new Error('Manual payment is already terminal');
+        }
+        const previous = payment.status;
+        payment.status = next;
+        await repository.save(payment);
+        await this.record(
+          manager,
+          payment,
+          previous,
+          next,
+          actorUserId,
+          reference,
+          note,
+        );
+        if (next === ManualPaymentStatus.CONFIRMED) {
+          await this.audit.record(
+            {
+              actorUserId,
+              action: CommerceAuditAction.PAYMENT_CONFIRMED,
+              targetType: 'order',
+              targetId: orderId,
+              requestId,
+              metadata: {
+                method: payment.method,
+                safeReference: reference?.trim() || null,
+              },
+            },
+            effectiveTransaction,
+          );
+        }
+        return this.toView(payment);
+      },
+    );
   }
 
   private record(
@@ -162,11 +197,19 @@ export class PaymentsService implements PaymentsModuleContract {
 
   private inTransaction<T>(
     transaction: DatabaseTransactionContext | undefined,
-    work: (manager: EntityManager) => Promise<T>,
+    work: (
+      manager: EntityManager,
+      transaction: DatabaseTransactionContext,
+    ) => Promise<T>,
   ): Promise<T> {
     return transaction
-      ? work(unwrapTypeOrmTransaction(transaction))
-      : this.dataSource.transaction(work);
+      ? work(unwrapTypeOrmTransaction(transaction), transaction)
+      : this.transactions.run((createdTransaction) =>
+          work(
+            unwrapTypeOrmTransaction(createdTransaction),
+            createdTransaction,
+          ),
+        );
   }
 
   private toView(payment: ManualPayment): ManualPaymentView {

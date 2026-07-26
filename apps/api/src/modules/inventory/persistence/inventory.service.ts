@@ -1,25 +1,37 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource, In, type EntityManager } from 'typeorm';
-import type { DatabaseTransactionContext } from '../../platform/database';
-import { unwrapTypeOrmTransaction } from '../../platform/database/typeorm-transaction-context';
-import { CATALOG_MODULE_CONTRACT, type CatalogModuleContract } from '../catalog';
-import { InventoryAdjustment } from './inventory-adjustment.entity';
-import { InventoryItem, InventoryTrackingMode } from './inventory-item.entity';
+import type { DatabaseTransactionContext } from '../../../platform/database';
+import { DatabaseTransactionRunner } from '../../../platform/database';
+import { unwrapTypeOrmTransaction } from '../../../platform/database/typeorm-transaction-context';
+import {
+  CATALOG_MODULE_CONTRACT,
+  type CatalogModuleContract,
+} from '../../catalog';
+import {
+  COMMERCE_AUDIT_CONTRACT,
+  CommerceAuditAction,
+  type CommerceAuditContract,
+} from '../../commerce-audit';
+import { InventoryAdjustment } from '../inventory-adjustment.entity';
+import { InventoryItem, InventoryTrackingMode } from '../inventory-item.entity';
 import {
   InventoryReservation,
   InventoryReservationStatus,
-} from './inventory-reservation.entity';
+} from '../inventory-reservation.entity';
 import type {
   InventoryModuleContract,
   InventoryReservationReference,
-} from './inventory.contract';
+} from '../inventory.contract';
 
 @Injectable()
 export class InventoryService implements InventoryModuleContract {
   constructor(
     private readonly dataSource: DataSource,
+    private readonly transactions: DatabaseTransactionRunner,
     @Inject(CATALOG_MODULE_CONTRACT)
     private readonly catalog: CatalogModuleContract,
+    @Inject(COMMERCE_AUDIT_CONTRACT)
+    private readonly audit: CommerceAuditContract,
   ) {}
 
   async configure(
@@ -27,14 +39,21 @@ export class InventoryService implements InventoryModuleContract {
     trackingMode: InventoryTrackingMode,
     initialOnHand: number,
     actorUserId: string,
+    requestId: string | null = null,
   ) {
     if (!Number.isSafeInteger(initialOnHand) || initialOnHand < 0)
       throw new Error('Initial on-hand quantity is invalid');
-    const [variant] = await this.catalog.resolvePurchasableVariants([variantId]);
+    const [variant] = await this.catalog.resolvePurchasableVariants([
+      variantId,
+    ]);
     if (!variant) throw new Error('Variant was not found');
-    return this.dataSource.transaction(async (manager) => {
+    return this.transactions.run(async (transaction) => {
+      const manager = unwrapTypeOrmTransaction(transaction);
       const items = manager.getRepository(InventoryItem);
-      let item = await items.findOne({ where: { variantId }, lock: { mode: 'pessimistic_write' } });
+      let item = await items.findOne({
+        where: { variantId },
+        lock: { mode: 'pessimistic_write' },
+      });
       if (!item) {
         item = items.create({
           variantId,
@@ -44,11 +63,39 @@ export class InventoryService implements InventoryModuleContract {
           version: 1,
         });
       } else {
+        if (item.trackingMode !== trackingMode && item.reservedQuantity !== 0)
+          throw new Error(
+            'Inventory tracking mode cannot change while stock is reserved',
+          );
         if (item.reservedQuantity > initialOnHand)
           throw new Error('Initial quantity cannot be below reserved quantity');
+        const previousOnHand = item.onHand;
         item.trackingMode = trackingMode;
         item.onHand = initialOnHand;
         item.version += 1;
+        await items.save(item);
+        await manager.getRepository(InventoryAdjustment).save({
+          inventoryItemId: item.id,
+          variantId,
+          delta: initialOnHand - previousOnHand,
+          resultingOnHand: initialOnHand,
+          reasonCode: 'stock_reconfigured',
+          note: null,
+          actorUserId,
+        });
+        const view = this.toView(item);
+        await this.audit.record(
+          {
+            actorUserId,
+            action: CommerceAuditAction.INVENTORY_CONFIGURED,
+            targetType: 'variant',
+            targetId: variantId,
+            requestId,
+            metadata: { trackingMode, onHand: initialOnHand },
+          },
+          transaction,
+        );
+        return view;
       }
       await items.save(item);
       await manager.getRepository(InventoryAdjustment).save({
@@ -60,7 +107,19 @@ export class InventoryService implements InventoryModuleContract {
         note: null,
         actorUserId,
       });
-      return this.toView(item);
+      const view = this.toView(item);
+      await this.audit.record(
+        {
+          actorUserId,
+          action: CommerceAuditAction.INVENTORY_CONFIGURED,
+          targetType: 'variant',
+          targetId: variantId,
+          requestId,
+          metadata: { trackingMode, onHand: initialOnHand },
+        },
+        transaction,
+      );
+      return view;
     });
   }
 
@@ -70,14 +129,18 @@ export class InventoryService implements InventoryModuleContract {
     reasonCode: string,
     actorUserId: string,
     note?: string,
+    requestId: string | null = null,
   ) {
-    if (!Number.isSafeInteger(delta) || delta === 0) throw new Error('Adjustment delta is invalid');
-    return this.dataSource.transaction(async (manager) => {
+    if (!Number.isSafeInteger(delta) || delta === 0)
+      throw new Error('Adjustment delta is invalid');
+    return this.transactions.run(async (transaction) => {
+      const manager = unwrapTypeOrmTransaction(transaction);
       const item = await this.lockItem(manager, variantId);
       if (item.trackingMode !== InventoryTrackingMode.TRACKED)
         throw new Error('Untracked Variant cannot be adjusted');
       const next = item.onHand + delta;
-      if (next < item.reservedQuantity) throw new Error('Adjustment would consume reserved stock');
+      if (next < item.reservedQuantity)
+        throw new Error('Adjustment would consume reserved stock');
       item.onHand = next;
       item.version += 1;
       await manager.getRepository(InventoryItem).save(item);
@@ -90,7 +153,19 @@ export class InventoryService implements InventoryModuleContract {
         note: note?.trim() || null,
         actorUserId,
       });
-      return this.toView(item);
+      const view = this.toView(item);
+      await this.audit.record(
+        {
+          actorUserId,
+          action: CommerceAuditAction.INVENTORY_ADJUSTED,
+          targetType: 'variant',
+          targetId: variantId,
+          requestId,
+          metadata: { delta, reasonCode, resultingOnHand: next },
+        },
+        transaction,
+      );
+      return view;
     });
   }
 
@@ -105,7 +180,10 @@ export class InventoryService implements InventoryModuleContract {
       const existing = await manager.getRepository(InventoryReservation).find({
         where: { correlationKey },
       });
-      if (existing.length) return existing.map((reservation) => this.toReservationReference(reservation));
+      if (existing.length)
+        return existing.map((reservation) =>
+          this.toReservationReference(reservation),
+        );
       const expiresAt = new Date(Date.now() + holdMinutes * 60_000);
       const results: InventoryReservationReference[] = [];
       for (const line of normalized) {
@@ -141,15 +219,23 @@ export class InventoryService implements InventoryModuleContract {
     transaction?: DatabaseTransactionContext,
   ): Promise<void> {
     await this.inTransaction(transaction, async (manager) => {
-      const reservations = await manager.getRepository(InventoryReservation).find({
-        where: { id: In([...new Set(reservationIds)]) },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (reservations.length !== new Set(reservationIds).size) throw new Error('Reservation was not found');
-      for (const reservation of reservations.sort((a, b) => a.variantId.localeCompare(b.variantId))) {
+      const reservations = await manager
+        .getRepository(InventoryReservation)
+        .find({
+          where: { id: In([...new Set(reservationIds)]) },
+          lock: { mode: 'pessimistic_write' },
+        });
+      if (reservations.length !== new Set(reservationIds).size)
+        throw new Error('Reservation was not found');
+      for (const reservation of reservations.sort((a, b) =>
+        a.variantId.localeCompare(b.variantId),
+      )) {
         const item = await this.lockItem(manager, reservation.variantId);
         await this.expireStale(manager, item);
-        if (reservation.status !== InventoryReservationStatus.ACTIVE || reservation.expiresAt <= new Date())
+        if (
+          reservation.status !== InventoryReservationStatus.ACTIVE ||
+          reservation.expiresAt <= new Date()
+        )
           throw new Error('Reservation is not active');
         item.onHand -= reservation.quantity;
         item.reservedQuantity -= reservation.quantity;
@@ -179,10 +265,12 @@ export class InventoryService implements InventoryModuleContract {
     transaction?: DatabaseTransactionContext,
   ): Promise<void> {
     await this.inTransaction(transaction, async (manager) => {
-      const reservations = await manager.getRepository(InventoryReservation).find({
-        where: { id: In([...new Set(reservationIds)]) },
-        lock: { mode: 'pessimistic_write' },
-      });
+      const reservations = await manager
+        .getRepository(InventoryReservation)
+        .find({
+          where: { id: In([...new Set(reservationIds)]) },
+          lock: { mode: 'pessimistic_write' },
+        });
       for (const reservation of reservations) {
         if (reservation.status !== InventoryReservationStatus.ACTIVE) continue;
         const item = await this.lockItem(manager, reservation.variantId);
@@ -197,12 +285,64 @@ export class InventoryService implements InventoryModuleContract {
     });
   }
 
+  async expireReservationBatch(batchSize: number): Promise<number> {
+    if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 1_000)
+      throw new Error('Reservation expiry batch size is invalid');
+    return this.dataSource.transaction(async (manager) => {
+      const rows = await manager.query<{ count: number }[]>(
+        `
+          WITH claimed AS (
+            SELECT id
+            FROM inventory_reservations
+            WHERE status = $1
+              AND expires_at <= NOW()
+            ORDER BY expires_at ASC, id ASC
+            FOR UPDATE SKIP LOCKED
+            LIMIT $2
+          ),
+          expired AS (
+            UPDATE inventory_reservations reservation
+            SET status = $3,
+                terminal_at = NOW(),
+                terminal_reason = 'expired'
+            FROM claimed
+            WHERE reservation.id = claimed.id
+              AND reservation.status = $1
+            RETURNING reservation.inventory_item_id, reservation.quantity
+          ),
+          totals AS (
+            SELECT inventory_item_id, SUM(quantity)::integer AS quantity
+            FROM expired
+            GROUP BY inventory_item_id
+          ),
+          updated_items AS (
+            UPDATE inventory_items item
+            SET reserved_quantity = item.reserved_quantity - totals.quantity,
+                version = item.version + 1
+            FROM totals
+            WHERE item.id = totals.inventory_item_id
+            RETURNING item.id
+          )
+          SELECT COUNT(*)::integer AS count
+          FROM expired
+        `,
+        [
+          InventoryReservationStatus.ACTIVE,
+          batchSize,
+          InventoryReservationStatus.EXPIRED,
+        ],
+      );
+      return rows[0]?.count ?? 0;
+    });
+  }
+
   private async lockItem(manager: EntityManager, variantId: string) {
     const item = await manager.getRepository(InventoryItem).findOne({
       where: { variantId },
       lock: { mode: 'pessimistic_write' },
     });
-    if (!item) throw new Error(`Inventory is not configured for Variant ${variantId}`);
+    if (!item)
+      throw new Error(`Inventory is not configured for Variant ${variantId}`);
     return item;
   }
 
@@ -215,9 +355,15 @@ export class InventoryService implements InventoryModuleContract {
       : this.dataSource.transaction(work);
   }
 
-  private async expireStale(manager: EntityManager, item: InventoryItem): Promise<void> {
+  private async expireStale(
+    manager: EntityManager,
+    item: InventoryItem,
+  ): Promise<void> {
     const stale = await manager.getRepository(InventoryReservation).find({
-      where: { inventoryItemId: item.id, status: InventoryReservationStatus.ACTIVE },
+      where: {
+        inventoryItemId: item.id,
+        status: InventoryReservationStatus.ACTIVE,
+      },
       lock: { mode: 'pessimistic_write' },
     });
     const now = new Date();
@@ -234,19 +380,32 @@ export class InventoryService implements InventoryModuleContract {
     }
   }
 
-  private normalizeLines(lines: readonly { variantId: string; quantity: number }[]) {
+  private normalizeLines(
+    lines: readonly { variantId: string; quantity: number }[],
+  ) {
     const quantities = new Map<string, number>();
     for (const line of lines) {
       if (!Number.isSafeInteger(line.quantity) || line.quantity < 1)
         throw new Error('Reservation quantity is invalid');
-      quantities.set(line.variantId, (quantities.get(line.variantId) ?? 0) + line.quantity);
+      quantities.set(
+        line.variantId,
+        (quantities.get(line.variantId) ?? 0) + line.quantity,
+      );
     }
-    return [...quantities].map(([variantId, quantity]) => ({ variantId, quantity }))
+    return [...quantities]
+      .map(([variantId, quantity]) => ({ variantId, quantity }))
       .sort((a, b) => a.variantId.localeCompare(b.variantId));
   }
 
-  private toReservationReference(reservation: InventoryReservation): InventoryReservationReference {
-    return { id: reservation.id, variantId: reservation.variantId, quantity: reservation.quantity, expiresAt: reservation.expiresAt };
+  private toReservationReference(
+    reservation: InventoryReservation,
+  ): InventoryReservationReference {
+    return {
+      id: reservation.id,
+      variantId: reservation.variantId,
+      quantity: reservation.quantity,
+      expiresAt: reservation.expiresAt,
+    };
   }
 
   private toView(item: InventoryItem) {

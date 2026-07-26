@@ -104,14 +104,29 @@ export const PERMISSION_CATALOGUE: readonly PermissionDefinition[] =
       description: 'Change catalog pricing.',
     },
     { key: PermissionKey.PRICING_READ, description: 'View current prices.' },
-    { key: PermissionKey.PRICING_WRITE, description: 'Create new price versions.' },
+    {
+      key: PermissionKey.PRICING_WRITE,
+      description: 'Create new price versions.',
+    },
     { key: PermissionKey.INVENTORY_READ, description: 'View inventory.' },
     { key: PermissionKey.INVENTORY_ADJUST, description: 'Adjust inventory.' },
-    { key: PermissionKey.SHIPPING_READ, description: 'View shipping configuration.' },
-    { key: PermissionKey.SHIPPING_WRITE, description: 'Change shipping configuration.' },
+    {
+      key: PermissionKey.SHIPPING_READ,
+      description: 'View shipping configuration.',
+    },
+    {
+      key: PermissionKey.SHIPPING_WRITE,
+      description: 'Change shipping configuration.',
+    },
     { key: PermissionKey.ORDERS_READ, description: 'View orders.' },
-    { key: PermissionKey.ORDERS_ACCEPT, description: 'Accept submitted orders.' },
-    { key: PermissionKey.ORDERS_REJECT, description: 'Reject submitted orders.' },
+    {
+      key: PermissionKey.ORDERS_ACCEPT,
+      description: 'Accept submitted orders.',
+    },
+    {
+      key: PermissionKey.ORDERS_REJECT,
+      description: 'Reject submitted orders.',
+    },
     {
       key: PermissionKey.ORDERS_NOTES_WRITE,
       description: 'Write order notes.',

@@ -29,7 +29,9 @@
     "db:down": "docker compose down",
     "db:reset": "docker compose down --volumes --remove-orphans && docker compose up -d",
     "db:logs": "docker compose logs -f postgres",
-    "staff:bootstrap-owner": "pnpm --filter @better-commerce/api staff:bootstrap-owner"
+    "staff:bootstrap-owner": "pnpm --filter @better-commerce/api staff:bootstrap-owner",
+    "sdk:generate": "pnpm --filter @better-commerce/sdk generate",
+    "sdk:check": "pnpm --filter @better-commerce/sdk generate:check"
   },
   "devDependencies": {
     "turbo": "2.5.4"

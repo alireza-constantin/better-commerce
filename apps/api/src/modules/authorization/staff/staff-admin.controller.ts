@@ -12,8 +12,10 @@ import {
 } from '@nestjs/common';
 import {
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiServiceUnavailableResponse,
   ApiTags,
@@ -30,7 +32,10 @@ import { PermissionKey } from '../data';
 import {
   CreateStaffDto,
   ReplaceStaffRolesDto,
+  RoleResponseDto,
+  StaffPageResponseDto,
   StaffPaginationDto,
+  StaffProfileResponseDto,
 } from './dto';
 import {
   StaffLifecycleService,
@@ -51,6 +56,7 @@ export class StaffAdminController {
   @Get('me')
   @ApiOperation({ summary: 'Return the current staff authorization profile' })
   @RequirePermissions(PermissionKey.ADMIN_ACCESS)
+  @ApiOkResponse({ type: StaffProfileResponseDto })
   async me(@Req() request: Request): Promise<StaffProfileResponse> {
     return this.staff.me(this.actor(request));
   }
@@ -60,6 +66,7 @@ export class StaffAdminController {
     summary: 'List staff profiles using bounded cursor pagination',
   })
   @RequirePermissions(PermissionKey.STAFF_READ)
+  @ApiOkResponse({ type: StaffPageResponseDto })
   @ApiForbiddenResponse()
   async list(@Query() query: StaffPaginationDto) {
     return this.staff.list(query.cursor, query.limit);
@@ -80,6 +87,7 @@ export class StaffAdminController {
     description: 'The actor cannot assign the requested role.',
   })
   @ApiServiceUnavailableResponse()
+  @ApiCreatedResponse({ type: StaffProfileResponseDto })
   async create(
     @Body() dto: CreateStaffDto,
     @Req() request: Request,
@@ -102,6 +110,7 @@ export class StaffAdminController {
   @ApiForbiddenResponse({
     description: 'The actor cannot assign the requested role.',
   })
+  @ApiOkResponse({ type: StaffProfileResponseDto })
   async replaceRoles(
     @Param('userId', new ParseUUIDPipe({ version: '4' })) userId: string,
     @Body() dto: ReplaceStaffRolesDto,
@@ -119,6 +128,7 @@ export class StaffAdminController {
   @ApiConflictResponse({
     description: 'The last active owner cannot be suspended.',
   })
+  @ApiCreatedResponse({ type: StaffProfileResponseDto })
   async suspend(
     @Param('userId', new ParseUUIDPipe({ version: '4' })) userId: string,
     @Req() request: Request,
@@ -132,6 +142,7 @@ export class StaffAdminController {
   })
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.STAFF_SUSPEND)
+  @ApiCreatedResponse({ type: StaffProfileResponseDto })
   async activate(
     @Param('userId', new ParseUUIDPipe({ version: '4' })) userId: string,
     @Req() request: Request,
@@ -145,6 +156,7 @@ export class StaffAdminController {
   })
   @RequirePermissions(PermissionKey.ROLES_READ)
   @ApiUnauthorizedResponse()
+  @ApiOkResponse({ type: [RoleResponseDto] })
   async roles() {
     return this.staff.listRoles();
   }

@@ -6,10 +6,12 @@ import {
 } from '@nestjs/common';
 import {
   DocumentBuilder,
+  getSchemaPath,
   type OpenAPIObject,
   SwaggerModule,
 } from '@nestjs/swagger';
 import type { RuntimeEnvironment } from '../config';
+import { ProblemDetailsDto, ProblemErrorDto } from './problem-details.dto';
 
 export const API_GLOBAL_PREFIX = 'api';
 export const API_VERSION = '1';
@@ -91,10 +93,12 @@ export function configureOpenApi(
     buildOpenApiConfiguration(),
     {
       deepScanRoutes: true,
+      extraModels: [ProblemDetailsDto, ProblemErrorDto],
       operationIdFactory: (controllerKey, methodKey) =>
         `${controllerKey.replace(/Controller$/, '')}_${methodKey}`,
     },
   );
+  hardenOpenApiDocument(document);
 
   SwaggerModule.setup(OPENAPI_UI_PATH, app, document, {
     jsonDocumentUrl: OPENAPI_JSON_PATH,
@@ -105,6 +109,75 @@ export function configureOpenApi(
   });
 
   return document;
+}
+
+type MutableResponse = {
+  description?: string;
+  content?: Record<string, { schema?: { $ref?: string } }>;
+  headers?: Record<string, unknown>;
+};
+
+type MutableOperation = {
+  responses?: Record<string, MutableResponse | { $ref: string }>;
+};
+
+const HTTP_METHODS = new Set([
+  'get',
+  'put',
+  'post',
+  'delete',
+  'patch',
+  'options',
+  'head',
+  'trace',
+]);
+
+/**
+ * Adds transport guarantees that apply uniformly and are otherwise easy to
+ * omit on individual controllers.
+ */
+export function hardenOpenApiDocument(document: OpenAPIObject): void {
+  const problemSchema = { $ref: getSchemaPath(ProblemDetailsDto) };
+  const requestIdHeader = {
+    description: 'Request correlation identifier.',
+    schema: { type: 'string', format: 'uuid' },
+  };
+  for (const pathItem of Object.values(document.paths)) {
+    if (!pathItem) continue;
+    for (const [method, candidate] of Object.entries(pathItem)) {
+      if (!HTTP_METHODS.has(method) || !candidate) continue;
+      const operation = candidate as MutableOperation;
+      const responses = (operation.responses ??= {});
+      responses.default ??= {
+        description:
+          'Unexpected error represented as RFC 9457 problem details.',
+        content: {
+          'application/problem+json': { schema: problemSchema },
+        },
+      };
+      for (const [status, response] of Object.entries(responses)) {
+        if ('$ref' in response) continue;
+        response.headers ??= {};
+        response.headers['x-request-id'] ??= requestIdHeader;
+        const statusCode = Number(status);
+        if (status === 'default' || statusCode >= 400) {
+          response.content ??= {};
+          const jsonSchema = response.content['application/json']?.schema?.$ref;
+          if (jsonSchema === problemSchema.$ref) {
+            delete response.content['application/json'];
+          }
+          const hasExplicitNonProblemRepresentation = Object.keys(
+            response.content,
+          ).some((mediaType) => mediaType !== 'application/problem+json');
+          if (!hasExplicitNonProblemRepresentation) {
+            response.content['application/problem+json'] ??= {
+              schema: problemSchema,
+            };
+          }
+        }
+      }
+    }
+  }
 }
 
 export { VERSION_NEUTRAL };

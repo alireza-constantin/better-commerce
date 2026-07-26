@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CatalogModule } from '../catalog';
+import { CommerceAuditModule } from '../commerce-audit';
 import { InventoryModule } from '../inventory';
 import { PaymentsModule } from '../payments';
 import { PricingModule } from '../pricing';
@@ -12,6 +13,7 @@ import {
   CustomerOrdersController,
 } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { OrdersPersistence } from './persistence/orders.persistence';
 
 @Module({
   imports: [
@@ -21,9 +23,10 @@ import { OrdersService } from './orders.service';
     InventoryModule,
     ShippingModule,
     PaymentsModule,
+    CommerceAuditModule,
   ],
   controllers: [CustomerOrdersController, AdminOrdersController],
-  providers: [OrdersService],
+  providers: [OrdersService, OrdersPersistence],
   exports: [OrdersService],
 })
 export class OrdersModule {}

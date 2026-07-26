@@ -22,6 +22,7 @@ import { EmailVerificationService } from './email-verification.service';
 import { RequestEmailVerificationDto } from './dto/request-email-verification.dto';
 import { ConfirmEmailVerificationDto } from './dto/confirm-email-verification.dto';
 import { SafeUserResponseDto } from './dto/safe-user-response.dto';
+import { MessageResponseDto } from './dto/message-response.dto';
 import { ApiCsrfProtected } from '../../../platform/openapi';
 
 @Public()
@@ -36,6 +37,7 @@ export class EmailVerificationController {
   @ApiCsrfProtected()
   @ApiAcceptedResponse({
     description: 'Accepted without revealing whether an account exists.',
+    type: MessageResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Email verification is disabled.' })
   @ApiServiceUnavailableResponse({

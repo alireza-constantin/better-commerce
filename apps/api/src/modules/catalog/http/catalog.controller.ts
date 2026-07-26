@@ -18,6 +18,7 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -39,6 +40,11 @@ import {
   ReplaceConfigurationDto,
   ProductTransitionDto,
   AdminProductQueryDto,
+  CreatedProductResponseDto,
+  ProductDetailResponseDto,
+  ProductPageResponseDto,
+  PublicProductPageResponseDto,
+  PublicProductResolutionResponseDto,
   PublicProductQueryDto,
 } from './catalog.dto';
 
@@ -75,7 +81,7 @@ export class CatalogAdminController {
   constructor(private readonly catalog: CatalogApplicationService) {}
   @Post('products')
   @ApiCsrfProtected()
-  @ApiCreatedResponse()
+  @ApiCreatedResponse({ type: CreatedProductResponseDto })
   @ApiOperation({
     summary: 'Create a draft Product and default Variant',
     description: 'Requires admin.access and catalog.products.write.',
@@ -98,6 +104,7 @@ export class CatalogAdminController {
     description: 'Requires admin.access and catalog.products.read.',
   })
   @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_READ)
+  @ApiOkResponse({ type: ProductPageResponseDto })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
   @ApiResponse({ status: 400, description: 'catalog.validation_failed' })
@@ -114,6 +121,7 @@ export class CatalogAdminController {
     description: 'Requires admin.access and catalog.products.read.',
   })
   @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_READ)
+  @ApiOkResponse({ type: ProductDetailResponseDto })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
   @ApiNotFoundResponse()
@@ -133,6 +141,7 @@ export class CatalogAdminController {
     description: 'Requires admin.access and catalog.products.write.',
   })
   @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_WRITE)
+  @ApiOkResponse({ type: ProductDetailResponseDto })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
   @ApiNotFoundResponse()
@@ -156,6 +165,7 @@ export class CatalogAdminController {
       'Requires admin.access and catalog.products.write; catalog.products.archive is also required when restoring or archiving an existing Variant.',
   })
   @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_WRITE)
+  @ApiOkResponse({ type: ProductDetailResponseDto })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
   @ApiNotFoundResponse()
@@ -180,6 +190,7 @@ export class CatalogAdminController {
     description: 'Requires admin.access and catalog.products.publish.',
   })
   @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_PUBLISH)
+  @ApiCreatedResponse({ type: ProductDetailResponseDto })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
   @ApiNotFoundResponse()
@@ -198,6 +209,7 @@ export class CatalogAdminController {
     description: 'Requires admin.access and catalog.products.publish.',
   })
   @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_PUBLISH)
+  @ApiCreatedResponse({ type: ProductDetailResponseDto })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
   @ApiNotFoundResponse()
@@ -215,6 +227,7 @@ export class CatalogAdminController {
     description: 'Requires admin.access and catalog.products.archive.',
   })
   @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_ARCHIVE)
+  @ApiCreatedResponse({ type: ProductDetailResponseDto })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
   @ApiNotFoundResponse()
@@ -232,6 +245,7 @@ export class CatalogAdminController {
     description: 'Requires admin.access and catalog.products.archive.',
   })
   @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_ARCHIVE)
+  @ApiCreatedResponse({ type: ProductDetailResponseDto })
   @ApiUnauthorizedResponse()
   @ApiForbiddenResponse()
   @ApiNotFoundResponse()
@@ -287,6 +301,7 @@ export class CatalogPublicController {
   @ApiOperation({
     summary: 'List published Products with bounded cursor pagination',
   })
+  @ApiOkResponse({ type: PublicProductPageResponseDto })
   @ApiResponse({ status: 400, description: 'catalog.validation_failed' })
   async list(@Query() dto: PublicProductQueryDto) {
     try {
@@ -299,6 +314,7 @@ export class CatalogPublicController {
   @ApiOperation({
     summary: 'Resolve a published Product by canonical or historical slug',
   })
+  @ApiOkResponse({ type: PublicProductResolutionResponseDto })
   @ApiNotFoundResponse({
     description:
       'catalog.not_found; hidden, archived, draft, and unknown Products are indistinguishable.',
