@@ -18,7 +18,7 @@ export function LogoutButton() {
         onClick={() => logoutMutation.mutate()}
         variant="outline"
       >
-        {logoutMutation.isPending ? 'Signing out…' : 'Sign out'}
+        {logoutMutation.isPending ? 'در حال خروج…' : 'خروج'}
       </Button>
       {logoutMutation.isError ? (
         <p
@@ -26,10 +26,15 @@ export function LogoutButton() {
           className="max-w-64 text-end text-xs leading-5 text-destructive"
           role="alert"
         >
-          Sign out could not be confirmed. Try again.
+          خروج از حساب تأیید نشد. دوباره تلاش کنید.
           {problem && 'requestId' in problem && problem.requestId
-            ? ` Request ID: ${problem.requestId}`
-            : ''}
+            ? (
+                <>
+                  {' شناسه درخواست: '}
+                  <bdi dir="ltr">{problem.requestId}</bdi>
+                </>
+              )
+            : null}
         </p>
       ) : null}
     </div>

@@ -35,16 +35,16 @@ export function LoginPage() {
 
   return (
     <main className="grid min-h-dvh bg-background text-foreground lg:grid-cols-[minmax(22rem,0.8fr)_minmax(30rem,1.2fr)]">
-      <section className="flex items-center border-b border-border px-6 py-12 lg:border-b-0 lg:border-r lg:px-12">
+      <section className="flex items-center border-b border-border px-6 py-12 lg:border-b-0 lg:border-e lg:px-12">
         <div className="mx-auto w-full max-w-md">
           <p className="text-sm font-medium text-muted-foreground">
             Better Commerce
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-[-0.025em]">
-            Sign in to Admin
+            ورود به مدیریت فروشگاه
           </h1>
           <p className="mt-4 leading-7 text-muted-foreground">
-            Use the email and password for your authorized staff account.
+            با ایمیل و رمز عبور حساب کاربری مجاز خود وارد شوید.
           </p>
 
           <form
@@ -55,7 +55,7 @@ export function LoginPage() {
           >
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="email">
-                Email
+                ایمیل
               </label>
               <input
                 autoComplete="email"
@@ -66,6 +66,7 @@ export function LoginPage() {
                 name="email"
                 onChange={(event) => setEmail(event.target.value)}
                 required
+                dir="ltr"
                 type="email"
                 value={email}
               />
@@ -73,7 +74,7 @@ export function LoginPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="password">
-                Password
+                رمز عبور
               </label>
               <input
                 autoComplete="current-password"
@@ -83,6 +84,7 @@ export function LoginPage() {
                 name="password"
                 onChange={(event) => setPassword(event.target.value)}
                 required
+                dir="ltr"
                 type="password"
                 value={password}
               />
@@ -94,11 +96,14 @@ export function LoginPage() {
                 className="rounded-lg bg-destructive/8 px-4 py-3 text-sm text-destructive"
                 role="alert"
               >
-                <p className="font-medium">{problem.title}</p>
-                <p className="mt-1 leading-6">{problem.detail}</p>
+                <p className="font-medium">ورود انجام نشد</p>
+                <p className="mt-1 leading-6">
+                  {loginProblemMessage(problem)}
+                </p>
                 {'requestId' in problem && problem.requestId ? (
                   <p className="mt-2 text-xs opacity-80">
-                    Request ID: {problem.requestId}
+                    شناسه درخواست:{' '}
+                    <bdi dir="ltr">{problem.requestId}</bdi>
                   </p>
                 ) : null}
               </div>
@@ -109,7 +114,7 @@ export function LoginPage() {
               disabled={isPending}
               type="submit"
             >
-              {isPending ? 'Signing in…' : 'Sign in'}
+              {isPending ? 'در حال ورود…' : 'ورود'}
             </Button>
           </form>
         </div>
@@ -117,10 +122,26 @@ export function LoginPage() {
 
       <section className="hidden items-end bg-primary p-12 text-primary-foreground lg:flex">
         <p className="max-w-lg text-balance text-3xl font-medium leading-tight tracking-[-0.025em]">
-          Operate products, stock, shipping, orders, and staff from one
-          authoritative workspace.
+          محصولات، موجودی، ارسال، سفارش‌ها و کارکنان را از یک فضای کاری
+          مطمئن مدیریت کنید.
         </p>
       </section>
     </main>
   );
+}
+
+function loginProblemMessage(problem: AdminProblem): string {
+  if (problem.kind === 'api' && problem.status === 401) {
+    return 'ایمیل یا رمز عبور واردشده صحیح نیست.';
+  }
+
+  if (problem.kind === 'api' && problem.status === 429) {
+    return 'تعداد تلاش‌های ورود بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.';
+  }
+
+  if (problem.kind === 'network') {
+    return 'ارتباط با سرور برقرار نشد. اتصال شبکه را بررسی کنید.';
+  }
+
+  return 'پاسخ معتبری از سرویس دریافت نشد. دوباره تلاش کنید.';
 }

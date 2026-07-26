@@ -28,8 +28,10 @@ export async function login(credentials: LoginCredentials): Promise<void> {
       () =>
         adminApiClient.POST('/api/v1/auth/login', {
           body: credentials,
-          headers: {
-            'x-csrf-token': csrfToken,
+          params: {
+            header: {
+              'x-csrf-token': csrfToken,
+            },
           },
         }),
       {
@@ -50,8 +52,10 @@ export async function logout(): Promise<void> {
     await executeWithCsrf((csrfToken) =>
       executeEmptyApiRequest(() =>
         adminApiClient.POST('/api/v1/auth/logout', {
-          headers: {
-            'x-csrf-token': csrfToken,
+          params: {
+            header: {
+              'x-csrf-token': csrfToken,
+            },
           },
         }),
       ),

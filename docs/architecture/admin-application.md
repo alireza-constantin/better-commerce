@@ -22,8 +22,11 @@ apps/admin/
     main.tsx                    Browser composition root
 
     app/
-      admin-root.tsx             Authenticated application boundary
-      router.tsx                TanStack Router composition
+      admin-root.tsx             Session-backed shell composition
+      navigation/               Permission-declared Persian navigation
+      routes/                   Shared route contract and lazy boundaries
+      shell/                    Responsive authenticated RTL frame
+      router.tsx                Protected TanStack Router composition
       query-client.ts           TanStack Query policy
 
     api/
@@ -38,12 +41,17 @@ apps/admin/
       api/                       Admin profile, login, logout, query contract
       admin-bootstrap.tsx        Session state boundary
       login-page.tsx             Password login
+      logout-button.tsx          Session logout action
+      permissions/               Exact permission helpers and route boundary
+      session/                   Authenticated profile context
       access-denied-page.tsx     Authenticated non-staff state
       session-loading-page.tsx   Initial bootstrap state
       session-unavailable-page.tsx Recoverable service failure
 
     features/foundation/
-      foundation-page.tsx       Temporary authenticated route
+      overview-page.tsx          Authenticated workspace overview
+      phase-three-routes.tsx     Permission-bound operational route screens
+      feature-placeholder-page.tsx Honest feature delivery boundary
       not-found-page.tsx        Route-level missing-page state
 
     lib/
@@ -54,12 +62,19 @@ apps/admin/
 ```
 
 The application is a fully client-rendered React and Vite SPA mounted at
-`/admin/`. Phase 2 implements SDK-backed authentication bootstrap, login,
-logout, in-memory CSRF management, problem normalization, and distinct
-unauthenticated, forbidden, and unavailable states.
+`/admin/`. Persian is the default application language and the document and
+authenticated shell are RTL-first. Technical identifiers such as email
+addresses and request IDs retain explicit LTR direction.
 
-The protected operational shell, permission-driven navigation, and commerce
-features are not implemented yet.
+Phases 2 and 3 implement SDK-backed authentication bootstrap, login, logout,
+in-memory CSRF management, problem normalization, distinct unauthenticated,
+forbidden, and unavailable states, the responsive authenticated shell, exact
+permission helpers, permission-filtered navigation, and protected operational
+routes.
+
+Operational feature pages are deliberately delivery placeholders until their
+own phases connect real API data. They do not invent dashboard metrics or imply
+that an unfinished workflow is available.
 
 ## Runtime boundary
 
@@ -79,11 +94,16 @@ reverse-proxy requirement.
 ```text
 main.tsx
   ├── app/router.tsx
+  │     ├── app/admin-root.tsx
+  │     │     ├── app/navigation
+  │     │     ├── app/shell
+  │     │     └── features/auth
   │     └── features/foundation
   ├── app/query-client.ts
   └── styles/globals.css
 
 features/foundation
+  ├── features/auth/permissions
   └── components/ui
 ```
 
@@ -94,6 +114,17 @@ because there is no proven client-only global state requirement.
 The API adapter consumes `@better-commerce/sdk`, captures safe problem details
 and request IDs, and publishes authentication loss without persisting session
 data. CSRF tokens exist only inside the in-memory token manager.
+
+The client uses only the server-returned effective permission keys for
+navigation and route affordances. It never treats a role name as authority.
+Unknown or missing permissions deny access. These client checks improve the
+experience but do not replace the API's default-deny authorization.
+
+Route paths and permission requirements have one typed contract consumed by
+the router, navigation, and route access boundaries. Operational route screens
+are loaded outside the initial application chunk. Navigation transitions move
+keyboard focus into the main content, while Escape closes the mobile menu and
+restores focus to its toggle.
 
 ## Verification
 

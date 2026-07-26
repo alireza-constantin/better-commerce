@@ -68,6 +68,10 @@ microservices, or speculative fleet infrastructure.
 The product name is Better Commerce. No logo, typeface, palette, or durable
 visual identity has been approved yet.
 
+Persian is the default language for commerce and Admin experiences. Interfaces
+are RTL-first while identifiers, email addresses, request IDs, and other
+direction-sensitive technical values preserve their natural direction.
+
 ## Evidence on Hand
 
 Accepted architecture decisions, behavioral contracts, a working API, a

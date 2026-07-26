@@ -6,6 +6,7 @@ import { LoginPage } from './login-page';
 import { SessionLoadingPage } from './session-loading-page';
 import { SessionUnavailablePage } from './session-unavailable-page';
 import { adminSessionQueryOptions } from './api/auth-query';
+import { AdminSessionProvider } from './session/admin-session-provider';
 
 interface AdminBootstrapProps {
   readonly children: ReactNode;
@@ -41,5 +42,9 @@ export function AdminBootstrap({ children }: AdminBootstrapProps) {
     );
   }
 
-  return children;
+  return (
+    <AdminSessionProvider profile={session.data}>
+      {children}
+    </AdminSessionProvider>
+  );
 }
