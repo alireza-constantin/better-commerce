@@ -21,6 +21,7 @@ import {
 import type {
   InventoryModuleContract,
   InventoryReservationReference,
+  PublicVariantAvailabilityProjection,
 } from '../inventory.contract';
 
 @Injectable()
@@ -33,6 +34,32 @@ export class InventoryService implements InventoryModuleContract {
     @Inject(COMMERCE_AUDIT_CONTRACT)
     private readonly audit: CommerceAuditContract,
   ) {}
+
+  async readPublicVariantAvailability(
+    variantIds: readonly string[],
+  ): Promise<readonly PublicVariantAvailabilityProjection[]> {
+    const ids = [...new Set(variantIds)];
+    if (!ids.length) return [];
+    const items = await this.dataSource
+      .getRepository(InventoryItem)
+      .findBy({ variantId: In(ids) });
+    const byVariant = new Map(items.map((item) => [item.variantId, item]));
+
+    return ids.map((variantId) => {
+      const item = byVariant.get(variantId);
+      if (!item) return { variantId, availability: 'unavailable' as const };
+      if (item.trackingMode === InventoryTrackingMode.UNTRACKED) {
+        return { variantId, availability: 'in_stock' as const };
+      }
+      return {
+        variantId,
+        availability:
+          item.onHand - item.reservedQuantity > 0
+            ? ('in_stock' as const)
+            : ('out_of_stock' as const),
+      };
+    });
+  }
 
   async configure(
     variantId: string,

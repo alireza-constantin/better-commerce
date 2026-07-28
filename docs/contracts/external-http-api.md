@@ -109,13 +109,35 @@ request returns a conflict.
 `packages/sdk` contains:
 
 - generated immutable OpenAPI path, operation, and component types;
-- a thin `openapi-fetch` client;
-- explicit package exports.
+- a neutral low-level `openapi-fetch` client factory;
+- a `/browser` client entry point that always includes browser credentials;
+- a `/server` client entry point that requires an absolute API base URL,
+  clones request-scoped headers, and omits browser credential behavior;
+- explicit package exports and browser/server consumer fixtures.
 
 The SDK contains no pricing, inventory, authorization, shipping, payment, or
 order business rules. CSRF lifecycle belongs to the consuming application's
-integration layer, such as the Admin API adapter or future `storefront-core`.
-Checkout orchestration belongs to future `storefront-core`.
+integration layer, such as the Admin API adapter or `storefront-core`.
+Checkout orchestration belongs to the future `storefront-core/browser` entry
+point.
+
+Public Product responses include display-only price ranges, exact decimal Money
+strings, per-Variant prices, and conservative availability states. They never
+expose on-hand or reserved quantities. Missing Price or Inventory configuration
+makes a Variant non-purchasable in the projection. Checkout remains
+authoritative and revalidates Price and Inventory regardless of the displayed
+projection.
+
+The root factory does not guess runtime credential or cookie policy. Browser
+applications use `@better-commerce/sdk/browser`. Server renderers use
+`@better-commerce/sdk/server` and create a client per incoming request whenever
+customer context is forwarded. The SDK never reads an ambient cookie jar,
+retains request headers globally, or imports a UI or meta-framework.
+
+`@better-commerce/storefront-core/server` composes these generated Product
+responses into framework-neutral view models, preserves exact Money strings,
+propagates request cancellation, and exposes cache-key inputs without owning a
+renderer cache.
 
 With the API running locally:
 

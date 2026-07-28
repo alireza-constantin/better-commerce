@@ -1,6 +1,6 @@
-import { createBetterCommerceClient } from '@better-commerce/sdk';
+import { createBrowserBetterCommerceClient } from '@better-commerce/sdk/browser';
 
-export const adminApiClient = createBetterCommerceClient();
+export const adminApiClient = createBrowserBetterCommerceClient();
 
 export {
   AdminApiError,

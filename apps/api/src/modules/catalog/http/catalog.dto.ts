@@ -16,6 +16,11 @@ import {
 const PRODUCT_STATUSES = ['draft', 'published', 'archived'] as const;
 const VARIANT_STATUSES = ['active', 'archived'] as const;
 const FULFILLMENT = ['physical', 'digital', 'service'] as const;
+const PUBLIC_AVAILABILITY = [
+  'in_stock',
+  'out_of_stock',
+  'unavailable',
+] as const;
 
 export class CreateProductDto {
   @ApiProperty({ maxLength: 200, minLength: 1 })
@@ -300,6 +305,28 @@ export class PublicCatalogVariantResponseDto {
   position!: number;
   @ApiProperty({ format: 'uuid', type: [String] })
   selectionValueIds!: string[];
+  @ApiProperty({ nullable: true, type: () => PublicMoneyResponseDto })
+  price!: PublicMoneyResponseDto | null;
+  @ApiProperty({ enum: PUBLIC_AVAILABILITY })
+  availability!: (typeof PUBLIC_AVAILABILITY)[number];
+  @ApiProperty()
+  purchasable!: boolean;
+}
+
+export class PublicMoneyResponseDto {
+  @ApiProperty({ example: '120.00', pattern: '^\\d+(?:\\.\\d+)?$' })
+  amount!: string;
+  @ApiProperty({ example: 'USD', maxLength: 3, minLength: 3 })
+  currency!: string;
+}
+
+export class PublicPriceRangeResponseDto {
+  @ApiProperty({ type: () => PublicMoneyResponseDto })
+  minimum!: PublicMoneyResponseDto;
+  @ApiProperty({ type: () => PublicMoneyResponseDto })
+  maximum!: PublicMoneyResponseDto;
+  @ApiProperty()
+  varies!: boolean;
 }
 
 export class PublicProductResponseDto {
@@ -323,6 +350,10 @@ export class PublicProductResponseDto {
   options!: CatalogOptionResponseDto[];
   @ApiProperty({ type: () => [PublicCatalogVariantResponseDto] })
   variants!: PublicCatalogVariantResponseDto[];
+  @ApiProperty({ nullable: true, type: () => PublicPriceRangeResponseDto })
+  priceRange!: PublicPriceRangeResponseDto | null;
+  @ApiProperty({ enum: PUBLIC_AVAILABILITY })
+  availability!: (typeof PUBLIC_AVAILABILITY)[number];
 }
 
 export class PublicProductPageResponseDto {

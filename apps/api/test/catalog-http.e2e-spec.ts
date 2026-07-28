@@ -210,6 +210,18 @@ describe('Catalog HTTP contracts', () => {
       .set('x-csrf-token', await csrf(manager))
       .send({ expectedVersion: 1 })
       .expect(201);
+    await manager
+      .post(`/api/v1/admin/pricing/variants/${first.variantId}`)
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', await csrf(manager))
+      .send({ amount: '120.00' })
+      .expect(201);
+    await manager
+      .post(`/api/v1/admin/inventory/variants/${first.variantId}/configure`)
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', await csrf(manager))
+      .send({ trackingMode: 'tracked', initialOnHand: 5 })
+      .expect(201);
 
     for (const slug of ['missing', 'trail-pack-does-not-exist']) {
       await request(server)
@@ -226,9 +238,24 @@ describe('Catalog HTTP contracts', () => {
         expect(response.body.canonicalSlug).toBe('updated-trail-pack');
         expect(response.body.requestedSlugIsCanonical).toBe(false);
         expect(response.body.product).not.toHaveProperty('version');
-        expect(JSON.stringify(response.body)).not.toMatch(
-          /price|stock|availability/i,
+        expect(response.body.product).toEqual(
+          expect.objectContaining({
+            priceRange: {
+              minimum: { amount: '120.00', currency: 'USD' },
+              maximum: { amount: '120.00', currency: 'USD' },
+              varies: false,
+            },
+            availability: 'in_stock',
+          }),
         );
+        expect(response.body.product.variants[0]).toEqual(
+          expect.objectContaining({
+            price: { amount: '120.00', currency: 'USD' },
+            availability: 'in_stock',
+            purchasable: true,
+          }),
+        );
+        expect(JSON.stringify(response.body)).not.toMatch(/onHand|reserved/i);
       });
     const page = await request(server)
       .get('/api/v1/catalog/products?limit=1')

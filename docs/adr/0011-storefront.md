@@ -1,7 +1,10 @@
 # ADR-0011 — Storefront Rendering and Integration Architecture
 
-Status: Proposed
+Status: Accepted
 Date: 2026-07-26
+Revised: 2026-07-27
+Accepted: 2026-07-27
+Frozen: 2026-07-27
 
 ## Context
 
@@ -28,14 +31,20 @@ opposite mistake of copying session, CSRF, cart, and checkout protocol code into
 every merchant repository.
 
 This ADR defines the durable rendering capabilities, package boundaries,
-request and cache rules, and storefront ownership model. It does not select the
+request and cache rules, storefront ownership model, and the renderer used by
+the platform-owned reference storefront. It does not select the
 presentation-source installation mechanism; ADR-0012 owns that later decision.
 
 ## Decision drivers
 
 - Permit server-rendered and statically rendered commerce pages.
 - Permit streamed HTML and progressive rendering of independent page regions.
-- Avoid coupling the public SDK to Next.js or another storefront framework.
+- Allow each merchant storefront to select a suitable meta-framework without
+  changing commerce contracts.
+- Avoid coupling the public SDK or correctness-sensitive integration core to
+  Next.js, Astro, TanStack Start, or another storefront framework.
+- Permit reusable React presentation without pretending compiled React Server
+  Components are a framework-neutral artifact.
 - Keep authentication, CSRF, cart, and checkout integration centrally
   maintainable.
 - Give each merchant full ownership of presentation source and static content.
@@ -54,10 +63,11 @@ A Better Commerce storefront is a customer-facing presentation application that
 consumes documented HTTP and package contracts. It may use any rendering
 framework that satisfies the storefront runtime contract in this ADR.
 
-The platform does not mandate Next.js. In particular, `@better-commerce/sdk`
-and `@better-commerce/storefront-core` do not import Next.js modules, expose
-Next.js request objects, use Next.js cache directives, or require Next.js file
-conventions.
+The platform does not mandate Next.js or React for every merchant storefront.
+In particular, `@better-commerce/sdk` and
+`@better-commerce/storefront-core` do not import Next.js, Astro, TanStack
+Start, React Router, or React modules; expose framework request objects; use
+framework cache directives; or require framework file conventions.
 
 The standard storefront runtime must support:
 
@@ -75,23 +85,50 @@ The standard storefront runtime must support:
 React Server Components may be used by a selected renderer when its toolchain
 supports them. They are not themselves the platform contract: React Server
 Components require a compatible bundler, router, serialization protocol, and
-server runtime. Portable public packages therefore expose server-safe data and
-integration functions, not precompiled framework-specific server components.
+server runtime. Portable public runtime packages therefore expose server-safe
+data and integration functions, not precompiled framework-specific server
+components.
 
-### Narrow supersession of ADR-0002
+### Reference renderer selection and scope
 
-ADR-0002 selected Next.js for `apps/reference-storefront`. This ADR supersedes
-only that framework selection.
+ADR-0002 selected Next.js for `apps/reference-storefront`. The bounded
+evaluation required by this ADR confirms **Next.js App Router** for the initial
+reference implementation.
 
 `apps/reference-storefront` remains the official platform-owned reference
 consumer and retains every repository, dependency, source-ownership, and
-verification responsibility assigned by ADR-0002. Its concrete rendering
-framework will be selected through a bounded implementation evaluation against
-this ADR's runtime contract.
+verification responsibility assigned by ADR-0002. It uses Next.js Server
+Components for public, server-owned composition and small Client Components for
+interaction. This choice demonstrates RSC, streaming, static rendering, and
+request-scoped integration in one executable reference.
 
-Selecting one framework for the reference implementation does not turn that
-framework into the public SDK contract. A future framework change must not
-require an API redesign or move commerce rules into merchant source.
+Next.js is an application dependency of the reference storefront, not a
+platform requirement. A merchant storefront may instead use Astro, TanStack
+Start, React Router, or another renderer that satisfies this ADR. Selecting or
+changing a merchant's framework must not require an API redesign, fork
+correctness-sensitive integration, or move commerce rules into merchant source.
+
+### SSR, React rendering, and React Server Components
+
+This ADR distinguishes three capabilities:
+
+1. **Server rendering** produces HTML on a server or at build time. It is a
+   storefront capability and is not specific to React.
+2. **React server rendering** renders ordinary React presentation to HTML. It
+   may be consumed by any renderer with a compatible React integration.
+3. **React Server Components** use a renderer-specific compilation,
+   serialization, routing, and client-reconciliation pipeline.
+
+The platform may distribute framework-neutral React presentation source and
+framework-specific integration recipes. The merchant repository compiles that
+source with its selected renderer. It does not consume one supposedly
+universal precompiled RSC artifact.
+
+For example, Next.js may compile locally owned presentation as Server and
+Client Components. Astro may server-render the same compatible React
+presentation and hydrate selected islands while owning page composition in
+Astro source. TanStack Start may adopt the same core and presentation after its
+required features meet the deployment's maturity standard.
 
 ### Hybrid server and browser composition
 
@@ -153,13 +190,16 @@ Product card. Excessively granular boundaries increase layout movement,
 requests, hydration work, and error complexity without necessarily improving
 perceived speed.
 
-### Three layers with separate ownership
+### Four layers with separate ownership
 
-The storefront integration has three layers:
+The storefront integration has four layers:
 
 ```text
 merchant storefront source
-  ├── locally owned presentation and content
+  ├── routes, content, layout, and framework configuration
+  ├── locally owned presentation source
+  │     ├── portable React presentation where applicable
+  │     └── framework-specific route, RSC, island, and hydration adapters
   ├── @better-commerce/storefront-core
   │     ├── server entry point
   │     └── browser entry point
@@ -168,11 +208,31 @@ merchant storefront source
 ```
 
 The SDK is the low-level transport contract. `storefront-core` supplies
-correctness-sensitive integration mechanisms. The merchant repository owns
-rendering, routes, layout, presentation, and content.
+correctness-sensitive integration mechanisms. Reusable presentation is visible
+source owned by the merchant repository. The merchant repository owns its
+renderer, routes, layout, presentation, and content.
 
 None of these layers becomes a second commerce domain. The API remains
 authoritative.
+
+### Framework and UI-runtime portability
+
+Portability is promised at explicit layers rather than as one universal UI
+artifact:
+
+- any client capable of HTTP can consume the external API;
+- JavaScript and TypeScript storefronts can consume the SDK and
+  `storefront-core`;
+- React-compatible renderers can consume reusable React presentation source;
+- non-React renderers reuse the API and integration behavior but provide their
+  own presentation;
+- framework-specific route files, metadata, caching, cookies, actions,
+  hydration, image components, and RSC boundaries remain local source.
+
+The platform does not build a meta-framework normalization layer. It does not
+wrap Next.js cache directives, Astro prerender flags, TanStack loaders, or
+renderer cookie APIs behind a single imitation API. Shared packages stop at
+portable HTTP, request, session, and commerce-integration behavior.
 
 ### Universal SDK boundary
 
@@ -266,6 +326,12 @@ sections may be installed as visible presentation source and modified locally.
 They are not hidden in a runtime UI dependency. The catalogue, transport,
 provenance, installation, and update behavior for that source belongs to
 ADR-0012.
+
+Reusable presentation may include portable React source plus optional
+framework-specific recipes such as a Next.js RSC route, an Astro page or
+island, or a TanStack Start route. A recipe owns only framework composition and
+presentation. Authentication, CSRF, cart, checkout, idempotency, and API error
+protocols remain calls into versioned runtime packages.
 
 Copied presentation source may call documented `storefront-core` or SDK entry
 points. It must not copy or reimplement session protocols, CSRF rotation,
@@ -424,8 +490,8 @@ streaming removes HTTP semantics.
 `apps/reference-storefront` is a non-production reference and executable
 contract test. It must demonstrate:
 
-- one server-rendered Product-list route;
-- one server-rendered Product-detail route;
+- one Next.js App Router Product-list route composed with Server Components;
+- one Next.js App Router Product-detail route composed with Server Components;
 - at least two independently streamed page regions;
 - static merchant content owned as source;
 - one browser-interactive cart flow;
@@ -440,27 +506,22 @@ It is not a universal runtime-configured theme and does not become the base
 repository copied wholesale for every merchant. It proves integration behavior
 and supplies examples.
 
-### Renderer selection criteria
+### Renderer independence and evaluation
 
-Before implementing the reference storefront, a bounded evaluation selects its
-renderer. Candidates are measured against:
+The completed bounded evaluation selected Next.js App Router for the initial
+reference storefront because it provides mature Server Components, streaming,
+static rendering, TypeScript support, and self-hosted Node and Docker
+deployment.
 
-- compliance with the runtime capabilities in this ADR;
-- production maturity and security maintenance;
-- server and browser module separation;
-- streaming and error-boundary behavior;
-- explicit cache control;
-- Docker deployment simplicity;
-- build output observability;
-- TypeScript support;
-- ecosystem stability;
-- solo-developer maintenance cost;
-- freedom from coupling the SDK and `storefront-core` to framework internals.
+That evaluation does not rank Next.js as universally correct. A content-heavy
+merchant may select Astro for static generation, on-demand rendering, HTML
+streaming, and selective React islands. A later merchant may select TanStack
+Start after its needed features meet the project's stability bar.
 
-The evaluation is a short implementation decision, not a general framework
-benchmark. It may select Next.js, another established renderer, or a focused
-React server stack. No candidate is accepted merely because it uses the phrase
-"server components."
+Every selected framework remains responsible for the same request isolation,
+cache safety, exact serialization, deployment, and browser mutation contract.
+The platform claims a framework integration as proven only after a clean
+consumer builds and verifies the relevant boundary.
 
 ### Compatibility and releases
 
@@ -540,6 +601,8 @@ The platform verifies:
 9. The reference storefront uses only documented external contracts.
 10. A clean external-consumer fixture can install and build against published
     package entry points without platform source aliases.
+11. A minimal non-Next consumer proves the SDK and `storefront-core` do not
+    require Next.js or its request, cache, cookie, or routing APIs.
 
 Each merchant repository additionally verifies its own routes, content,
 presentation, accessibility, build, and deployment.
@@ -549,21 +612,23 @@ presentation, accessibility, build, and deployment.
 This ADR is implemented only after ADR-0010's Admin application foundation is
 delivered. The storefront sequence is:
 
-1. Evaluate and record the reference renderer against this ADR.
+1. Record the completed Next.js reference-renderer evaluation.
 2. Harden the SDK for explicit server and browser consumption without adding
    framework imports.
 3. Create the smallest proven `storefront-core/server` behavior around public
    Catalog reads and request-scoped clients.
 4. Create the smallest proven `storefront-core/browser` behavior around
    session, CSRF, cart, and checkout integration.
-5. Build the reference Product-list and Product-detail routes with server
-   rendering and meaningful HTML streaming.
+5. Build the Next.js App Router reference Product-list and Product-detail
+   routes with Server Components and meaningful HTML streaming.
 6. Add browser cart, authentication, and checkout reference flows.
 7. Prove caching isolation, exact serialization, conditional exports, and a
    clean external-consumer build.
-8. Accept ADR-0012 before implementing reusable presentation-source
+8. Prove the smallest non-Next consumer boundary without creating a second
+   reference storefront product.
+9. Accept ADR-0012 before implementing reusable presentation-source
    installation mechanics.
-9. Create the first independent production merchant storefront and verify its
+10. Create the first independent production merchant storefront and verify its
    deployment boundary.
 
 Package abstractions are extracted from proven reference behavior rather than
@@ -572,7 +637,8 @@ designed ahead of a consumer.
 ## Invariants
 
 1. Storefront rendering supports server output and meaningful HTML streaming.
-2. No public commerce package requires Next.js or another rendering framework.
+2. No SDK or correctness-sensitive storefront-core package requires React,
+   Next.js, Astro, TanStack Start, or another rendering framework.
 3. The SDK remains a low-level, environment-neutral HTTP contract.
 4. `storefront-core/server` and `storefront-core/browser` have explicit,
    enforceable environment boundaries.
@@ -589,6 +655,10 @@ designed ahead of a consumer.
 13. The reference storefront proves the same boundary offered to independent
     merchant repositories.
 14. Framework selection does not leak into the SDK or external HTTP contract.
+15. React Server Component compilation and transport remain owned by the
+    selected renderer, not by a supposedly universal platform artifact.
+16. The Next.js reference implementation does not make Next.js mandatory for a
+    merchant storefront.
 
 ## Consequences
 
@@ -625,10 +695,9 @@ designed ahead of a consumer.
 
 ### Require Next.js for every storefront
 
-Rejected as a platform contract. Next.js may be evaluated for the reference
-renderer, but SDK and integration packages must remain usable by other capable
-server renderers. A single framework choice should not own the commerce
-boundary.
+Rejected as a platform contract. Next.js is selected for the reference
+renderer, but SDK and integration packages remain usable by other capable
+server renderers. A single framework choice does not own the commerce boundary.
 
 ### Client-side SPA storefront
 
@@ -642,6 +711,13 @@ Rejected as the general reuse model. React Server Components depend on renderer
 and bundler protocols that are not a stable framework-neutral package boundary.
 Server-safe data integration stays versioned; customizable component source is
 installed locally.
+
+### Normalize every meta-framework behind one adapter API
+
+Rejected. Framework routing, cache directives, cookie access, metadata,
+actions, islands, image handling, and RSC compilation are materially different.
+An abstraction broad enough to hide those differences would either leak them
+through or become another framework maintained by the platform.
 
 ### Put Product lists and checkout UI in the SDK
 
@@ -690,6 +766,9 @@ This decision does not introduce:
 
 - a mandatory Next.js storefront;
 - a framework-neutral promise for compiled React Server Components;
+- a universal presentation promise for non-React UI runtimes;
+- a generic abstraction over meta-framework routing, caching, cookies, actions,
+  or rendering directives;
 - a CMS, page builder, or database-driven marketing-site model;
 - production merchant storefront source in the platform monorepo;
 - merchant forks of backend or correctness-sensitive integration logic;
@@ -719,14 +798,16 @@ This decision does not introduce:
 
 ## Acceptance and freeze policy
 
-This ADR remains Proposed until the platform owner explicitly accepts it.
-Acceptance freezes the rendering capability contract, framework-neutral SDK,
-server/browser integration separation, same-origin request model, personalized
-cache rules, browser-mutation boundary, and local presentation ownership.
+This ADR is accepted and frozen. The rendering capability contract,
+framework-neutral SDK, server/browser integration separation, same-origin
+request model, personalized cache rules, browser-mutation boundary, local
+presentation ownership, and Next.js App Router as the initial reference
+renderer are authoritative.
 
-The chosen reference renderer, specific cache durations, individual component
-designs, and page composition may change without superseding this ADR when its
-invariants remain true.
+Specific cache durations, individual component designs, and page composition
+may change without superseding this ADR when its invariants remain true. A
+future reference-renderer change requires a recorded evaluation but does not
+change the public contract when these invariants remain intact.
 
 A mandatory rendering framework in public packages, server-side protected
 mutation proxy, shared multi-merchant storefront runtime, database-owned

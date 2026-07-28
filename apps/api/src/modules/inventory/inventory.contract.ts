@@ -9,7 +9,19 @@ export interface InventoryReservationReference {
   readonly expiresAt: Date;
 }
 
+export type PublicVariantAvailability =
+  'in_stock' | 'out_of_stock' | 'unavailable';
+
+export interface PublicVariantAvailabilityProjection {
+  readonly variantId: string;
+  readonly availability: PublicVariantAvailability;
+}
+
 export interface InventoryModuleContract {
+  /** Returns a conservative display state without exposing stock quantities. */
+  readPublicVariantAvailability(
+    variantIds: readonly string[],
+  ): Promise<readonly PublicVariantAvailabilityProjection[]>;
   reserve(
     lines: readonly { variantId: string; quantity: number }[],
     correlationKey: string,

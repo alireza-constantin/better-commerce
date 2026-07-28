@@ -19,6 +19,7 @@ import { PriceVersion } from '../price-version.entity';
 import {
   PRICING_MODULE_CONTRACT,
   type PricingModuleContract,
+  type PublicVariantPriceProjection,
   type VariantPriceQuote,
 } from '../pricing.contract';
 
@@ -123,6 +124,28 @@ export class PricingService implements PricingModuleContract {
         },
       };
     });
+  }
+
+  async readPublicVariantPrices(
+    variantIds: readonly string[],
+  ): Promise<readonly PublicVariantPriceProjection[]> {
+    const ids = [...new Set(variantIds)];
+    if (!ids.length) return [];
+    const prices = await this.dataSource
+      .getRepository(PriceVersion)
+      .createQueryBuilder('price')
+      .where('price.variant_id IN (:...ids)', { ids })
+      .andWhere('price.currency = :currency', { currency: this.currency })
+      .andWhere('price.effective_until IS NULL')
+      .getMany();
+
+    return prices.map((price) => ({
+      variantId: price.variantId,
+      unitPrice: {
+        minorAmount: BigInt(price.minorAmount),
+        currency: price.currency,
+      },
+    }));
   }
 
   async listCurrentPrices(variantIds: readonly string[]) {

@@ -13,7 +13,16 @@ export interface VariantPriceQuote {
   readonly unitPrice: Money;
 }
 
+export interface PublicVariantPriceProjection {
+  readonly variantId: string;
+  readonly unitPrice: Money;
+}
+
 export interface PricingModuleContract {
+  /** Returns configured current prices only; missing prices are not errors. */
+  readPublicVariantPrices(
+    variantIds: readonly string[],
+  ): Promise<readonly PublicVariantPriceProjection[]>;
   quoteVariantPrices(
     variantIds: readonly string[],
     transaction?: DatabaseTransactionContext,

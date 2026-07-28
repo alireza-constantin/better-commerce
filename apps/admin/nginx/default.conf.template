@@ -1,0 +1,56 @@
+server {
+    listen 8080;
+    listen [::]:8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location = / {
+        return 302 /admin/;
+    }
+
+    location = /admin {
+        return 308 /admin/;
+    }
+
+    # This remains available when authentication cannot be established, so
+    # operators can compare the static artifact with the API release.
+    location = /admin/diagnostics {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        return 200 "{\"adminVersion\":\"${ADMIN_BUILD_VERSION}\"}\n";
+    }
+
+    location = /admin/index.html {
+        add_header Cache-Control "no-store" always;
+        add_header Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    location /admin/assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    location /admin/ {
+        add_header Cache-Control "no-store" always;
+        add_header Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri $uri/ /admin/index.html;
+    }
+
+    location /api/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

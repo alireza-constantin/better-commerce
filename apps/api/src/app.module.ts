@@ -16,6 +16,7 @@ import { ShippingModule } from './modules/shipping';
 import { PaymentsModule } from './modules/payments';
 import { OrdersModule } from './modules/orders';
 import { CommerceAuditModule } from './modules/commerce-audit';
+import { PublicCommerceModule } from './modules/public-commerce';
 import { IdentityModule, SessionAuthGuard } from './modules/identity';
 import { configuration, validateEnvironment } from './platform/config';
 import { buildConfiguration } from './platform/config/configuration';
@@ -54,6 +55,7 @@ import { SecurityModule } from './platform/security';
     PaymentsModule,
     OrdersModule,
     CommerceAuditModule,
+    PublicCommerceModule,
     SecurityModule,
     IdentityModule,
     HealthModule,

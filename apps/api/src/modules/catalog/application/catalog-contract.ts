@@ -28,8 +28,52 @@ export interface VariantSnapshotFact {
   readonly fulfillmentClassification: FulfillmentClassification;
 }
 
+export interface PublicCatalogQuery {
+  readonly limit?: number;
+  readonly cursor?: string;
+  readonly q?: string;
+}
+
+export interface PublicCatalogProduct {
+  readonly id: string;
+  readonly title: string;
+  readonly summary: string | null;
+  readonly description: string | null;
+  readonly slug: string;
+  readonly publishedAt: Date;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+  readonly options: readonly {
+    id: string;
+    name: string;
+    position: number;
+    values: readonly { id: string; label: string; position: number }[];
+  }[];
+  readonly variants: readonly {
+    id: string;
+    title: string | null;
+    sku: string | null;
+    fulfillmentClassification: FulfillmentClassification;
+    position: number;
+    selectionValueIds: readonly string[];
+  }[];
+}
+
+export interface PublicCatalogPage {
+  readonly items: readonly PublicCatalogProduct[];
+  readonly nextCursor: string | null;
+}
+
+export interface PublicCatalogResolution {
+  readonly product: PublicCatalogProduct;
+  readonly canonicalSlug: string;
+  readonly requestedSlugIsCanonical: boolean;
+}
+
 /** The only supported in-process dependency surface for other modules. */
 export interface CatalogModuleContract {
+  listPublished(query?: PublicCatalogQuery): Promise<PublicCatalogPage>;
+  resolvePublishedSlug(slug: string): Promise<PublicCatalogResolution>;
   resolvePurchasableVariants(
     variantIds: readonly string[],
   ): Promise<readonly PurchasableVariantResolution[]>;

@@ -4,4 +4,6 @@ export { InventoryTrackingMode } from './inventory-item.entity';
 export type {
   InventoryModuleContract,
   InventoryReservationReference,
+  PublicVariantAvailability,
+  PublicVariantAvailabilityProjection,
 } from './inventory.contract';

@@ -727,8 +727,8 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        /** List published Products with bounded cursor pagination */
-        readonly get: operations["CatalogPublic_list"];
+        /** List published Products with display price and availability */
+        readonly get: operations["PublicCommerce_list"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -744,8 +744,8 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        /** Resolve a published Product by canonical or historical slug */
-        readonly get: operations["CatalogPublic_detail"];
+        /** Resolve a published Product with display commerce projections */
+        readonly get: operations["PublicCommerce_detail"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -1223,13 +1223,28 @@ export interface components {
         };
         readonly PublicCatalogVariantResponseDto: {
             /** @enum {string} */
+            readonly availability: "in_stock" | "out_of_stock" | "unavailable";
+            /** @enum {string} */
             readonly fulfillmentClassification: "physical" | "digital" | "service";
             /** Format: uuid */
             readonly id: string;
             readonly position: number;
+            readonly price: components["schemas"]["PublicMoneyResponseDto"] | null;
+            readonly purchasable: boolean;
             readonly selectionValueIds: readonly string[];
             readonly sku: string | null;
             readonly title: string | null;
+        };
+        readonly PublicMoneyResponseDto: {
+            /** @example 120.00 */
+            readonly amount: string;
+            /** @example USD */
+            readonly currency: string;
+        };
+        readonly PublicPriceRangeResponseDto: {
+            readonly maximum: components["schemas"]["PublicMoneyResponseDto"];
+            readonly minimum: components["schemas"]["PublicMoneyResponseDto"];
+            readonly varies: boolean;
         };
         readonly PublicProductPageResponseDto: {
             readonly items: readonly components["schemas"]["PublicProductResponseDto"][];
@@ -1241,12 +1256,15 @@ export interface components {
             readonly requestedSlugIsCanonical: boolean;
         };
         readonly PublicProductResponseDto: {
+            /** @enum {string} */
+            readonly availability: "in_stock" | "out_of_stock" | "unavailable";
             /** Format: date-time */
             readonly createdAt: string;
             readonly description: string | null;
             /** Format: uuid */
             readonly id: string;
             readonly options: readonly components["schemas"]["CatalogOptionResponseDto"][];
+            readonly priceRange: components["schemas"]["PublicPriceRangeResponseDto"] | null;
             /** Format: date-time */
             readonly publishedAt: string;
             readonly slug: string;
@@ -4589,7 +4607,7 @@ export interface operations {
             };
         };
     };
-    readonly CatalogPublic_list: {
+    readonly PublicCommerce_list: {
         readonly parameters: {
             readonly query?: {
                 readonly cursor?: string;
@@ -4636,7 +4654,7 @@ export interface operations {
             };
         };
     };
-    readonly CatalogPublic_detail: {
+    readonly PublicCommerce_detail: {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;

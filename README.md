@@ -80,6 +80,7 @@ Development OpenAPI is available at `http://localhost:3000/docs`, liveness at
 | `pnpm db:down` | Stop local containers without deleting data |
 | `pnpm db:logs` | Follow PostgreSQL logs |
 | `pnpm db:reset` | Destroy and recreate local PostgreSQL and Redis volumes |
+| `pnpm dev:bootstrap-owner` | Create and promote the local owner configured in `.env` |
 | `pnpm staff:bootstrap-owner -- owner@example.test` | Promote one existing account to the initial owner |
 | `pnpm sdk:generate` | Regenerate SDK types from a running local API |
 | `pnpm sdk:check` | Verify committed SDK types match a running local API |
@@ -153,7 +154,19 @@ into the built-in owner, administrator, catalog manager, order manager, support,
 marketing, and analyst roles. Permission changes increment the affected user's
 authentication version and invalidate every existing session.
 
-Create the first owner only after that person has registered an ordinary account:
+For local development, configure `DEV_OWNER_EMAIL` and `DEV_OWNER_PASSWORD` in
+the ignored root `.env`, then create the account and assign the owner role:
+
+```bash
+pnpm dev:bootstrap-owner
+```
+
+This idempotent command only creates an account when the configured email is
+missing. It never overwrites an existing password and refuses to run unless
+`NODE_ENV=development`.
+
+For deployed environments, create the first owner only after that person has
+registered an ordinary account:
 
 ```bash
 pnpm staff:bootstrap-owner -- owner@example.test

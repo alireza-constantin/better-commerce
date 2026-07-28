@@ -14,18 +14,15 @@ export type BetterCommerceApiSchemas = components['schemas'];
 export type BetterCommerceClient = Client<paths>;
 
 /**
- * Creates the low-level generated-backed API client. Browser callers include
- * the HttpOnly session cookie automatically. Server callers must forward the
- * request cookie explicitly through `headers`.
+ * Creates the environment-neutral, generated-backed API client.
  *
- * CSRF acquisition/rotation and checkout idempotency orchestration belong in
- * storefront-core; this SDK intentionally exposes the exact HTTP contract.
+ * Prefer the explicit `@better-commerce/sdk/browser` and
+ * `@better-commerce/sdk/server` entry points when the runtime is known. This
+ * neutral factory does not guess credential, cookie, origin, or cache policy.
+ * CSRF and checkout orchestration belong in storefront-core.
  */
 export function createBetterCommerceClient(
   options: ClientOptions = {},
 ): BetterCommerceClient {
-  return createClient<paths>({
-    credentials: 'include',
-    ...options,
-  });
+  return createClient<paths>(options);
 }

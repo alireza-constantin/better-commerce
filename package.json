@@ -32,6 +32,7 @@
     "db:reset": "docker compose down --volumes --remove-orphans && docker compose up -d",
     "db:logs": "docker compose logs -f postgres",
     "staff:bootstrap-owner": "pnpm --filter @better-commerce/api staff:bootstrap-owner",
+    "dev:bootstrap-owner": "pnpm --filter @better-commerce/api dev:bootstrap-owner",
     "sdk:generate": "pnpm --filter @better-commerce/sdk generate",
     "sdk:check": "pnpm --filter @better-commerce/sdk generate:check"
   },

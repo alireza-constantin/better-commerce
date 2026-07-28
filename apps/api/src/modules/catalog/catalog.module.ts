@@ -9,7 +9,7 @@ import { normalizeSlug } from './domain';
 import { CatalogApplicationService } from './application/catalog-application.service';
 import { CATALOG_MODULE_CONTRACT } from './application/catalog-contract';
 import { CatalogPersistenceService } from './persistence/catalog-persistence.service';
-import { CatalogAdminController, CatalogPublicController } from './http';
+import { CatalogAdminController } from './http';
 import {
   CatalogOptionValue,
   CatalogProduct,
@@ -56,7 +56,7 @@ function configuredReservedRoutes(config: ConfigService): readonly string[] {
       useExisting: CatalogApplicationService,
     },
   ],
-  controllers: [CatalogAdminController, CatalogPublicController],
+  controllers: [CatalogAdminController],
   exports: [CATALOG_MODULE_CONTRACT],
 })
 export class CatalogModule {}

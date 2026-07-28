@@ -29,7 +29,6 @@ import {
   ApiCsrfProtected,
   ApiSessionAuthenticated,
 } from '../../../platform/openapi';
-import { Public } from '../../../platform/http/authentication';
 import { PermissionKey } from '../../authorization/data';
 import { AdminApi, RequirePermissions } from '../../authorization/enforcement';
 import { CatalogApplicationError } from '../application/catalog-application.error';
@@ -43,9 +42,6 @@ import {
   CreatedProductResponseDto,
   ProductDetailResponseDto,
   ProductPageResponseDto,
-  PublicProductPageResponseDto,
-  PublicProductResolutionResponseDto,
-  PublicProductQueryDto,
 } from './catalog.dto';
 
 const errorStatus: Record<CatalogApplicationError['code'], HttpStatus> = {
@@ -289,41 +285,5 @@ export class CatalogAdminController {
       )
     )
       throw new ForbiddenException();
-  }
-}
-
-@ApiTags('Catalog')
-@Public()
-@Controller('catalog')
-export class CatalogPublicController {
-  constructor(private readonly catalog: CatalogApplicationService) {}
-  @Get('products')
-  @ApiOperation({
-    summary: 'List published Products with bounded cursor pagination',
-  })
-  @ApiOkResponse({ type: PublicProductPageResponseDto })
-  @ApiResponse({ status: 400, description: 'catalog.validation_failed' })
-  async list(@Query() dto: PublicProductQueryDto) {
-    try {
-      return await this.catalog.listPublished(dto);
-    } catch (error) {
-      translateCatalogError(error);
-    }
-  }
-  @Get('products/:slug')
-  @ApiOperation({
-    summary: 'Resolve a published Product by canonical or historical slug',
-  })
-  @ApiOkResponse({ type: PublicProductResolutionResponseDto })
-  @ApiNotFoundResponse({
-    description:
-      'catalog.not_found; hidden, archived, draft, and unknown Products are indistinguishable.',
-  })
-  async detail(@Param('slug') slug: string) {
-    try {
-      return await this.catalog.resolvePublishedSlug(slug);
-    } catch (error) {
-      translateCatalogError(error);
-    }
   }
 }

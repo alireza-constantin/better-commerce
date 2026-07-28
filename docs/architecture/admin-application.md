@@ -124,6 +124,12 @@ browser -> http://localhost:5173/admin/
 browser -> http://localhost:5173/api/* -> Vite proxy -> API :3000
 ```
 
+For production, `apps/admin/Dockerfile` builds an Nginx-served static artifact
+at `/admin/` and proxies its relative `/api/` requests to a private API
+upstream. The resulting public browser boundary remains same-origin. The
+non-sensitive `/admin/diagnostics` response exposes the injected Admin build
+version for release support; it contains no credentials or runtime secrets.
+
 The browser does not use credentialed CORS. The example API configuration trusts
 both local development origins. Production retains ADR-0010's same-origin
 reverse-proxy requirement.
@@ -150,9 +156,10 @@ TanStack Query owns the server-authoritative Admin profile and mutation states.
 TanStack Router owns client routing. Zustand remains intentionally absent
 because there is no proven client-only global state requirement.
 
-The API adapter consumes `@better-commerce/sdk`, captures safe problem details
-and request IDs, and publishes authentication loss without persisting session
-data. CSRF tokens exist only inside the in-memory token manager.
+The API adapter consumes the explicit `@better-commerce/sdk/browser` client,
+captures safe problem details and request IDs, and publishes authentication
+loss without persisting session data. Browser credential inclusion is owned by
+that SDK entry point. CSRF tokens exist only inside the in-memory token manager.
 
 The client uses only the server-returned effective permission keys for
 navigation and route affordances. It never treats a role name as authority.
@@ -191,3 +198,10 @@ retain explicit LTR direction.
 
 The Admin participates in root Turborepo `build`, `typecheck`, and `lint` tasks.
 Its production output is the ignored `apps/admin/dist` directory.
+
+ADR-0010 Phase 7 static delivery was verified through a production container:
+the Nginx configuration, build diagnostics, SPA deep-link fallback, immutable
+asset caching, CSRF acquisition, login, and authenticated session lookup all
+passed against the real API, PostgreSQL, and Redis. Automated browser-controlled
+visual verification was explicitly waived on 2026-07-27 and is not represented
+as passed.

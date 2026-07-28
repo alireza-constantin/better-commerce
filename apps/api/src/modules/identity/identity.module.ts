@@ -6,6 +6,7 @@ import { AuthService } from './auth/auth.service';
 import { EmailVerificationController } from './auth/email-verification.controller';
 import { EmailVerificationService } from './auth/email-verification.service';
 import { PasswordService } from './auth/password.service';
+import { DevelopmentAccountBootstrapService } from './auth/development-account-bootstrap.service';
 import { SessionAuthGuard } from './auth/session-auth.guard';
 import { IDENTITY_ADMINISTRATION } from './identity-administration.contract';
 import { IdentityAdministrationPersistence } from './persistence/identity-administration.persistence';
@@ -30,6 +31,7 @@ import { SecurityModule } from '../../platform/security';
   providers: [
     AuthService,
     PasswordService,
+    DevelopmentAccountBootstrapService,
     SessionAuthGuard,
     EmailVerificationService,
     IdentityAdministrationPersistence,
@@ -38,6 +40,10 @@ import { SecurityModule } from '../../platform/security';
       useExisting: IdentityAdministrationPersistence,
     },
   ],
-  exports: [SessionAuthGuard, IDENTITY_ADMINISTRATION],
+  exports: [
+    SessionAuthGuard,
+    IDENTITY_ADMINISTRATION,
+    DevelopmentAccountBootstrapService,
+  ],
 })
 export class IdentityModule {}

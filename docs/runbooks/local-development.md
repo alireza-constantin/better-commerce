@@ -29,11 +29,18 @@ The service list must be `postgres` and `redis`. `db:reset` runs Compose with
 permanently deletes the local PostgreSQL and Redis volumes, including users,
 authorization audit data, and every session.
 
-There is currently no general seed command. Development/test startup
+There is no general commerce-data seed command. Development/test startup
 idempotently synchronizes the built-in authorization permission and role
-catalogue. Public registration creates ordinary development users. If the reset
-removed the initial owner, register that user again and bootstrap the existing
-account:
+catalogue. After a reset, set `DEV_OWNER_EMAIL` and `DEV_OWNER_PASSWORD` in the
+ignored root `.env`, then create and promote the local owner:
+
+```bash
+pnpm dev:bootstrap-owner
+```
+
+The command refuses to run outside development, does not print credentials,
+and does not replace the password of an account that already exists. The
+separate deployment-oriented command still promotes an existing account:
 
 ```bash
 pnpm staff:bootstrap-owner -- owner@example.test

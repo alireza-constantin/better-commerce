@@ -1,4 +1,1 @@
-export {
-  CatalogAdminController,
-  CatalogPublicController,
-} from './catalog.controller';
+export { CatalogAdminController } from './catalog.controller';

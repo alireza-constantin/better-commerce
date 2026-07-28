@@ -1,7 +1,7 @@
 # Backend Module Map
 
 Status: Living document  
-Last verified: 2026-07-26
+Last verified: 2026-07-28
 
 ## Purpose
 
@@ -36,7 +36,7 @@ apps/api/src/
     catalog/
       application/              Product commands, projections, and contract
       domain/                   Catalog lifecycle and normalization rules
-      http/                     Administrative and public Catalog transport
+      http/                     Administrative Catalog transport and DTOs
       persistence/              Catalog-owned TypeORM mappings and operations
       catalog.module.ts
       index.ts                  Narrow Variant-facts Module Public Contract
@@ -47,6 +47,7 @@ apps/api/src/
     payments/                   Manual-payment state and history
     orders/                     Checkout orchestration, snapshots, Order APIs
     commerce-audit/             Append-only operational commerce history
+    public-commerce/            Public Product read composition; no persistence
 
   platform/
     config/                     Environment parsing and validation
@@ -91,6 +92,7 @@ flowchart TD
     Shipping["Shipping module"]
     Payments["Payments module"]
     Orders["Orders and Checkout module"]
+    PublicCommerce["Public Commerce read module"]
     Platform["Platform facilities"]
     IdentityContract["Identity Module Public Contract"]
     AuthorizationContract["Authorization Module Public Contract"]
@@ -104,6 +106,7 @@ flowchart TD
     Composition --> Shipping
     Composition --> Payments
     Composition --> Orders
+    Composition --> PublicCommerce
     Composition --> Platform
     Authorization --> IdentityContract
     Identity --> Platform
@@ -113,6 +116,9 @@ flowchart TD
     Catalog --> CatalogContract
     Pricing --> CatalogContract
     Inventory --> CatalogContract
+    PublicCommerce --> CatalogContract
+    PublicCommerce --> Pricing
+    PublicCommerce --> Inventory
     Shipping --> Pricing
     Orders --> CatalogContract
     Orders --> Pricing
@@ -125,6 +131,12 @@ The composition root may know all concrete modules. Platform facilities do not
 import business modules. Authorization consumes Identity only through
 Identity's public contract, except for the private persistence-only foreign-key
 metadata described below.
+
+Public Commerce owns no tables and performs no authoritative calculations. It
+composes published Catalog facts with optional Pricing projections and
+quantity-free Inventory availability through those modules' public contracts.
+Missing Price or Inventory configuration produces a non-purchasable public
+projection; Orders still revalidate the authoritative modules during checkout.
 
 ## Cross-module authorization transaction
 

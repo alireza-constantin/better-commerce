@@ -31,6 +31,8 @@ import {
 import { CatalogPersistenceService } from '../persistence/catalog-persistence.service';
 import {
   type CatalogModuleContract,
+  type PublicCatalogProduct,
+  type PublicCatalogResolution,
   type PurchasableVariantResolution,
   type VariantSnapshotFact,
 } from './catalog-contract';
@@ -130,25 +132,8 @@ export interface ProductDetail extends ProductRow {
   }[];
 }
 
-export interface PublicProduct extends Omit<
-  ProductDetail,
-  'version' | 'status' | 'everPublished' | 'archivedAt' | 'variants'
-> {
-  readonly variants: readonly {
-    id: string;
-    title: string | null;
-    sku: string | null;
-    fulfillmentClassification: FulfillmentClassification;
-    position: number;
-    selectionValueIds: readonly string[];
-  }[];
-}
-
-export interface PublicProductResolution {
-  readonly product: PublicProduct;
-  readonly canonicalSlug: string;
-  readonly requestedSlugIsCanonical: boolean;
-}
+export type PublicProduct = PublicCatalogProduct;
+export type PublicProductResolution = PublicCatalogResolution;
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -811,6 +796,12 @@ export class CatalogApplicationService implements CatalogModuleContract {
   }
 
   private toPublic(detail: ProductDetail): PublicProduct {
+    if (!detail.publishedAt) {
+      throw this.error(
+        'catalog.configuration_conflict',
+        'Published Product is missing its publication timestamp',
+      );
+    }
     const product: Omit<PublicProduct, 'variants'> = {
       id: detail.id,
       title: detail.title,
