@@ -25,6 +25,7 @@ amendment or a superseding ADR.
 - [ADR-0011 — Storefront Rendering and Integration Architecture](adr/0011-storefront.md)
 - [ADR-0013 — Shipping Methods, Zones, and Rate Rules](adr/0013-shipping.md)
 - [ADR-0014 — Manual Payments and Admin Order Acceptance](adr/0014-manual-payments.md)
+- [ADR-0015 — Persistent Cart Ownership, Merge, and Concurrency](adr/0015-cart.md)
 
 Proposed decisions under review:
 
@@ -78,6 +79,7 @@ authority.
 - [Cursor Orders design handoff](plans/cursor-orders-handoff.md)
 - [Commerce implementation checkpoint](plans/commerce-implementation-status.md)
 - [ADR-0011 reference renderer evaluation](plans/adr-0011-renderer-evaluation.md)
+- [ADR-0015 Cart implementation plan](plans/adr-0015-cart-implementation.md)
 - [Completed ADR-0005 Catalog implementation plan](plans/adr-0005-implementation.md)
 - [Completed ADR-0003 implementation plan](plans/adr-0003-implementation.md)
 
@@ -96,11 +98,11 @@ conflict through an amendment, superseding decision, or contract revision.
 
 ## Current decision sequence
 
-ADR-0001 through ADR-0008, ADR-0010, ADR-0011, ADR-0013, ADR-0014, and the
-Catalog behavioral contract are accepted. ADR-0005 Catalog implementation is
-complete. The first combined physical-shipping/manual-payment Checkout
-implementation is present and typechecks; its deferred verification work is
-recorded in the commerce implementation checkpoint.
+ADR-0001 through ADR-0008, ADR-0010, ADR-0011, and ADR-0013 through ADR-0015
+are accepted. ADR-0005 Catalog implementation is complete. The first combined
+physical-shipping/manual-payment Checkout implementation is present and
+typechecks. ADR-0015 Cart is accepted and ready for its bounded implementation
+plan.
 
 ## Maintenance rules
 
