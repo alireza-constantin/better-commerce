@@ -98,6 +98,21 @@ describe('External API contract', () => {
         },
       },
     });
+    const ordersParameters =
+      document.paths['/api/v1/orders']?.get?.parameters ?? [];
+    const ordersLimitParameter = ordersParameters.find(
+      (parameter) => 'name' in parameter && parameter.name === 'limit',
+    );
+    expect(ordersLimitParameter).toBeDefined();
+    if (!ordersLimitParameter || !('name' in ordersLimitParameter)) {
+      throw new Error('Orders limit query parameter is missing');
+    }
+    expect(ordersLimitParameter).toMatchObject({
+      in: 'query',
+      schema: {
+        type: 'number',
+      },
+    });
     expect(document.paths['/api/v1/checkout/orders']?.post?.parameters).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

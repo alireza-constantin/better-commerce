@@ -30,6 +30,42 @@ Public Catalog reads accept no inbound header collection. A future
 personalized server facade must define a narrow allowlist rather than forward
 request headers wholesale.
 
-Browser session, CSRF, cart, and checkout integration will be introduced via a
-separate `@better-commerce/storefront-core/browser` entry point after the
-reference flows prove the required protocol behavior.
+Browser session, CSRF, customer Order, and checkout integration are available
+through `@better-commerce/storefront-core/browser`. Persistent Cart behavior is
+deferred until its API contract is accepted.
+
+## Browser session and checkout
+
+The browser entry point owns credentialed session transport, in-memory CSRF
+state, normalized UI-safe errors, customer Order reads, and checkout
+idempotency. It does not import React, a router, or a state library.
+
+```ts
+import { createStorefrontBrowser } from '@better-commerce/storefront-core/browser';
+
+const storefront = createStorefrontBrowser();
+const customer = await storefront.session.login({ email, password });
+
+const submission = storefront.checkout.createSubmission(checkoutInput);
+try {
+  const order = await submission.submit();
+} catch {
+  // If the result is uncertain, retry this same submission object. It retains
+  // the exact request body and Idempotency-Key.
+  const order = await submission.submit();
+}
+```
+
+CSRF tokens exist in memory only. The package retries exactly once only after
+an API `403` with code `security.csrf_invalid`; it never replays generic
+authorization failures. Login, logout, password changes, and session loss
+invalidate CSRF state.
+
+A checkout submission coalesces concurrent calls, preserves its key and body
+across explicit retries, caches a completed response, and rejects reuse after
+the authenticated customer changes. Network failures are not automatically
+retried because their outcome may be uncertain.
+
+Persistent Cart synchronization is intentionally not implemented yet. The API
+has no Cart contract, and ADR-0004 requires the first Cart decision to define
+ownership, anonymous/authenticated merge, expiry, and concurrency semantics.

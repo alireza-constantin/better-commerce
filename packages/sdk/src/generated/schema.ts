@@ -2545,7 +2545,7 @@ export interface operations {
             readonly query?: {
                 /** @description Opaque cursor returned as `nextCursor` by the previous page. */
                 readonly cursor?: string;
-                readonly limit?: components["schemas"]["Object"];
+                readonly limit?: number;
             };
             readonly header?: never;
             readonly path?: never;
@@ -4789,7 +4789,7 @@ export interface operations {
             readonly query?: {
                 /** @description Opaque cursor returned as `nextCursor` by the previous page. */
                 readonly cursor?: string;
-                readonly limit?: components["schemas"]["Object"];
+                readonly limit?: number;
             };
             readonly header?: never;
             readonly path?: never;

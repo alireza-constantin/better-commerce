@@ -139,6 +139,19 @@ responses into framework-neutral view models, preserves exact Money strings,
 propagates request cancellation, and exposes cache-key inputs without owning a
 renderer cache.
 
+`@better-commerce/storefront-core/browser` owns the storefront's shared
+credentialed session, in-memory CSRF lifecycle, customer Order reads, normalized
+browser errors, and checkout-idempotency lifecycle. It retries a mutation only
+after the exact CSRF rejection contract and only once. It does not automatically
+retry uncertain checkout failures; the caller retries the same submission
+object so its body and `Idempotency-Key` remain stable. Submissions are bound to
+the customer-session identity that created them.
+
+Cart integration remains absent until a Cart API and focused Cart ADR define
+anonymous ownership, authenticated merge, expiry, and concurrency. Storefronts
+must not treat locally copied presentation state as the platform's persistent
+Cart contract.
+
 With the API running locally:
 
 ```bash

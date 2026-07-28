@@ -122,7 +122,7 @@ export class OrdersQueryDto {
   @MaxLength(512)
   cursor?: string;
 
-  @ApiPropertyOptional({ default: 25, maximum: 100, minimum: 1 })
+  @ApiPropertyOptional({ default: 25, maximum: 100, minimum: 1, type: Number })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

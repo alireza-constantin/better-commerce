@@ -74,6 +74,11 @@ The external contract toolchain now also contains:
 packages/sdk/
   src/generated/schema.ts      Generated immutable OpenAPI contract types
   src/index.ts                 Thin typed HTTP-client public entry point
+
+packages/storefront-core/
+  src/server.ts                Framework-neutral public Catalog integration
+  src/browser.ts               Session, CSRF, Orders, checkout integration
+  src/index.ts                 Environment-neutral storefront view types
 ```
 
 The SDK depends on the served OpenAPI document. The API has no source or runtime
