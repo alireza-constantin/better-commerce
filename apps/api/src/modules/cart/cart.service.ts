@@ -14,6 +14,11 @@ import {
   INVENTORY_MODULE_CONTRACT,
   type InventoryModuleContract,
 } from '../inventory';
+import {
+  SHIPPING_MODULE_CONTRACT,
+  type DeliveryAddress,
+  type ShippingModuleContract,
+} from '../shipping';
 import type { DatabaseTransactionContext } from '../../platform/database';
 import type { ApplicationConfiguration } from '../../platform/config';
 import { CartClaim } from './cart-claim.entity';
@@ -41,6 +46,8 @@ export class CartService implements CartModuleContract {
     @Inject(INVENTORY_MODULE_CONTRACT)
     private readonly inventory: InventoryModuleContract,
     private readonly persistence: CartPersistence,
+    @Inject(SHIPPING_MODULE_CONTRACT)
+    private readonly shipping: ShippingModuleContract,
   ) {
     this.configuration =
       config.getOrThrow<ApplicationConfiguration['cart']>('cart');
@@ -146,6 +153,85 @@ export class CartService implements CartModuleContract {
         await manager.getRepository(CartLine).delete({ cartId: cart.id });
       },
     );
+  }
+
+  async prepareCheckout(
+    owner: CartOwner,
+    expectedVersion: number,
+    deliveryAddress: DeliveryAddress,
+  ) {
+    const cart = await this.findActive(this.dataSource.manager, owner, false);
+    if (!cart || this.isExpired(cart)) {
+      throw new CartError('cart.not_found', 'سبد خرید فعال پیدا نشد.');
+    }
+    this.assertVersion(cart, expectedVersion);
+    const lines = await this.dataSource.getRepository(CartLine).findBy({
+      cartId: cart.id,
+    });
+    if (!lines.length) {
+      throw new CartError('cart.line_invalid', 'سبد خرید خالی است.');
+    }
+    const variantIds = lines.map((line) => line.variantId);
+    const [variants, prices, availability] = await Promise.all([
+      this.catalog.resolvePurchasableVariants(variantIds),
+      this.pricing.readPublicVariantPrices(variantIds),
+      this.inventory.readPublicVariantAvailability(variantIds),
+    ]);
+    const priceByVariant = new Map(
+      prices.map((price) => [price.variantId, price.unitPrice]),
+    );
+    const availableByVariant = new Map(
+      availability.map((item) => [item.variantId, item.availability]),
+    );
+    if (
+      variants.length !== lines.length ||
+      variants.some((variant) => !variant.eligible) ||
+      lines.some(
+        (line) =>
+          !priceByVariant.has(line.variantId) ||
+          availableByVariant.get(line.variantId) !== 'in_stock',
+      )
+    ) {
+      throw new CartError(
+        'cart.line_invalid',
+        'یک یا چند کالای سبد خرید در حال حاضر قابل سفارش نیست.',
+      );
+    }
+    const currency = prices[0]?.unitPrice.currency;
+    if (
+      !currency ||
+      prices.some((price) => price.unitPrice.currency !== currency)
+    ) {
+      throw new CartError(
+        'cart.line_invalid',
+        'کالاهای سبد خرید باید ارز یکسان داشته باشند.',
+      );
+    }
+    const merchandiseSubtotal = lines.reduce((total, line) => {
+      const price = priceByVariant.get(line.variantId);
+      if (!price) return total;
+      return total + price.minorAmount * BigInt(line.quantity);
+    }, 0n);
+    const shippingMethods = await this.shipping.quote(
+      {
+        ...deliveryAddress,
+        country: deliveryAddress.country.toUpperCase(),
+      },
+      { minorAmount: merchandiseSubtotal, currency },
+    );
+    return {
+      cartId: cart.id,
+      cartVersion: cart.version,
+      merchandiseSubtotal: formatMoney({
+        minorAmount: merchandiseSubtotal,
+        currency,
+      }),
+      shippingMethods: shippingMethods.map((quote) => ({
+        methodId: quote.methodId,
+        methodTitle: quote.methodTitle,
+        charge: formatMoney(quote.charge),
+      })),
+    };
   }
 
   async claim(

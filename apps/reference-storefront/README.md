@@ -7,11 +7,14 @@ presentation remain local source.
 The reference Product list and detail routes show exact public Price and
 availability projections without exposing stock quantities or duplicating
 commerce rules.
+Its interactive Persian RTL Cart uses the framework-neutral browser core.
+Checkout preparation renders eligible Shipping methods and exact charges before
+the customer submits the Order.
 
 ```bash
 pnpm --filter @better-commerce/reference-storefront dev
 ```
 
 Set `BETTER_COMMERCE_API_URL` to the server-readable API origin when it is not
-available on `http://127.0.0.1:3000`. Browser mutation flows, caching policy,
-and copied presentation installation are later phases.
+available on `http://127.0.0.1:3000`. Caching policy and copied presentation
+installation are later phases.

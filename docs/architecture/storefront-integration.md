@@ -63,6 +63,11 @@ version conflict but does not replay the rejected intent. Cart display lines
 compose current Catalog, Pricing, and Inventory projections; persisted lines
 contain only Variant ID and requested quantity.
 
+Checkout preparation composes the current Cart and delivery address with the
+Shipping contract to expose only eligible methods and exact charges. It does
+not persist the address or selection. The reference storefront uses this
+projection for its Shipping selector rather than accepting an opaque UUID.
+
 The Cart remains mutable purchase intent. Adding a line never reserves stock.
 Cart checkout is authenticated and atomically revalidates Product eligibility,
 Price, Inventory, Shipping, and payment method before closing the Cart.
@@ -85,4 +90,5 @@ server and browser consumers, and checks:
 - browser credential inclusion.
 - anonymous Cart creation and authenticated claim;
 - Cart-version conflict refresh without mutation replay;
+- checkout preparation and eligible Shipping-method typing;
 - Cart-based checkout request typing.

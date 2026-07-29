@@ -38,6 +38,10 @@ export type StorefrontOrder = BetterCommerceApiSchemas['OrderResponseDto'];
 export type StorefrontOrdersPage =
   BetterCommerceApiSchemas['OrdersPageResponseDto'];
 export type StorefrontCart = BetterCommerceApiSchemas['CartResponseDto'];
+export type StorefrontCartDeliveryAddress =
+  BetterCommerceApiSchemas['CartDeliveryAddressDto'];
+export type StorefrontCheckoutPreparation =
+  BetterCommerceApiSchemas['CartCheckoutPreparationResponseDto'];
 
 export type StorefrontSessionSnapshot =
   | { readonly status: 'unknown'; readonly customer: null }
@@ -379,6 +383,27 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
         };
       },
       getCurrent: getCurrentCart,
+      async prepareCheckout(
+        deliveryAddress: StorefrontCartDeliveryAddress,
+        signal?: AbortSignal,
+      ): Promise<StorefrontCheckoutPreparation> {
+        try {
+          return await withCsrf((token) =>
+            execute(() =>
+              client.POST('/api/v1/cart/checkout-preparation', {
+                body: {
+                  expectedVersion: cartSnapshot.version,
+                  deliveryAddress,
+                },
+                params: { header: { 'x-csrf-token': token } },
+                signal,
+              }),
+            ),
+          );
+        } catch (error) {
+          return refreshAfterVersionConflict(error);
+        }
+      },
       async setQuantity(
         variantId: string,
         quantity: number,

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   HttpException,
   HttpStatus,
   Param,
@@ -25,7 +26,13 @@ import {
   ApiProblemResponse,
   ApiSessionAuthenticated,
 } from '../../platform/openapi';
-import { CartResponseDto, CartVersionDto, SetCartLineDto } from './cart.dto';
+import {
+  CartCheckoutPreparationResponseDto,
+  CartResponseDto,
+  CartVersionDto,
+  PrepareCartCheckoutDto,
+  SetCartLineDto,
+} from './cart.dto';
 import { CartError } from './cart.error';
 import { CartService } from './cart.service';
 import { CartTokenService } from './cart-token.service';
@@ -126,6 +133,32 @@ export class CartController {
   async clear(@Req() request: Request, @Body() dto: CartVersionDto) {
     try {
       return await this.carts.clear(this.owner(request), dto.expectedVersion);
+    } catch (error) {
+      translateCartError(error);
+    }
+  }
+
+  @Public()
+  @Post('checkout-preparation')
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth('sessionCookie')
+  @ApiCsrfProtected()
+  @ApiOkResponse({ type: CartCheckoutPreparationResponseDto })
+  @ApiProblemResponse(409, 'cart.version_conflict')
+  @ApiProblemResponse(422, 'cart.line_invalid')
+  @ApiOperation({
+    summary: 'Calculate current eligible Shipping methods for the Cart',
+  })
+  async prepareCheckout(
+    @Req() request: Request,
+    @Body() dto: PrepareCartCheckoutDto,
+  ) {
+    try {
+      return await this.carts.prepareCheckout(
+        this.owner(request),
+        dto.expectedVersion,
+        dto.deliveryAddress,
+      );
     } catch (error) {
       translateCartError(error);
     }

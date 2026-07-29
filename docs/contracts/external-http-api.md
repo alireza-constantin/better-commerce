@@ -154,6 +154,11 @@ the observed Cart version. `cart.version_conflict` causes storefront-core to
 refresh the current projection but never replay customer intent automatically.
 The raw anonymous Cart token exists only in an HttpOnly cookie.
 
+`POST /api/v1/cart/checkout-preparation` accepts the observed Cart version and
+a delivery address. It returns the authoritative merchandise subtotal and
+currently eligible Shipping methods with exact charges. The operation does not
+persist the address or a selected method; final checkout revalidates both.
+
 `POST /api/v1/checkout/cart-orders` accepts Cart identity/version plus delivery,
 Shipping, and Payment selections. The API obtains lines from Cart and closes
 the Cart in the same transaction that creates the Order, Payment, and Inventory

@@ -737,6 +737,23 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/v1/cart/checkout-preparation": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Calculate current eligible Shipping methods for the Cart */
+        readonly post: operations["Cart_prepareCheckout"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/v1/cart/claim": {
         readonly parameters: {
             readonly query?: never;
@@ -964,6 +981,27 @@ export interface components {
             readonly targetId: string;
             readonly targetType: string;
         };
+        readonly CartCheckoutPreparationResponseDto: {
+            /** Format: uuid */
+            readonly cartId: string;
+            readonly cartVersion: number;
+            readonly merchandiseSubtotal: {
+                readonly amount?: string;
+                readonly currency?: string;
+            };
+            readonly shippingMethods: readonly components["schemas"]["CartShippingQuoteResponseDto"][];
+        };
+        readonly CartDeliveryAddressDto: {
+            readonly city: string;
+            /** @example IR */
+            readonly country: string;
+            readonly line1: string;
+            readonly line2?: string | null;
+            readonly phone: string;
+            readonly postalCode: string;
+            readonly province?: string | null;
+            readonly recipientName: string;
+        };
         readonly CartLineResponseDto: {
             /** @enum {string} */
             readonly availability: "in_stock" | "out_of_stock" | "unavailable";
@@ -989,6 +1027,15 @@ export interface components {
             /** @enum {string} */
             readonly status: "active";
             readonly version: number;
+        };
+        readonly CartShippingQuoteResponseDto: {
+            readonly charge: {
+                readonly amount?: string;
+                readonly currency?: string;
+            };
+            /** Format: uuid */
+            readonly methodId: string;
+            readonly methodTitle: string;
         };
         readonly CartVersionDto: {
             readonly expectedVersion: number;
@@ -1259,6 +1306,10 @@ export interface components {
         readonly OrdersPageResponseDto: {
             readonly items: readonly components["schemas"]["OrderResponseDto"][];
             readonly nextCursor: string | null;
+        };
+        readonly PrepareCartCheckoutDto: {
+            readonly deliveryAddress: components["schemas"]["CartDeliveryAddressDto"];
+            readonly expectedVersion: number;
         };
         readonly PriceResponseDto: {
             /** @example 120.00 */
@@ -4767,6 +4818,78 @@ export interface operations {
                 };
                 content: {
                     readonly "application/json": components["schemas"]["CartResponseDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly Cart_prepareCheckout: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["PrepareCartCheckoutDto"];
+            };
+        };
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["CartCheckoutPreparationResponseDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description cart.version_conflict */
+            readonly 409: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description cart.line_invalid */
+            readonly 422: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
             /** @description Unexpected error represented as RFC 9457 problem details. */

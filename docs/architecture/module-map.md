@@ -136,6 +136,7 @@ flowchart TD
     Cart --> CatalogContract
     Cart --> Pricing
     Cart --> Inventory
+    Cart --> Shipping
     Orders --> Cart
 ```
 

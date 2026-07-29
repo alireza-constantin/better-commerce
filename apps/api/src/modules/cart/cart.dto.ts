@@ -1,5 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsUUID, Max, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Length,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 
 export class CartVersionDto {
   @ApiProperty({ minimum: 0 })
@@ -68,4 +79,92 @@ export class CartResponseDto {
 
   @ApiProperty({ type: () => [CartLineResponseDto] })
   lines!: CartLineResponseDto[];
+}
+
+export class CartDeliveryAddressDto {
+  @ApiProperty({ maxLength: 160 })
+  @IsString()
+  @Length(1, 160)
+  recipientName!: string;
+
+  @ApiProperty({ maxLength: 40 })
+  @IsString()
+  @Length(3, 40)
+  phone!: string;
+
+  @ApiProperty({ minLength: 2, maxLength: 2, example: 'IR' })
+  @IsString()
+  @Length(2, 2)
+  country!: string;
+
+  @ApiPropertyOptional({ maxLength: 120, nullable: true, type: String })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  province?: string;
+
+  @ApiProperty({ maxLength: 120 })
+  @IsString()
+  @Length(1, 120)
+  city!: string;
+
+  @ApiProperty({ maxLength: 240 })
+  @IsString()
+  @Length(1, 240)
+  line1!: string;
+
+  @ApiPropertyOptional({ maxLength: 240, nullable: true, type: String })
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  line2?: string;
+
+  @ApiProperty({ maxLength: 32 })
+  @IsString()
+  @Length(1, 32)
+  postalCode!: string;
+}
+
+export class PrepareCartCheckoutDto extends CartVersionDto {
+  @ApiProperty({ type: () => CartDeliveryAddressDto })
+  @ValidateNested()
+  @Type(() => CartDeliveryAddressDto)
+  deliveryAddress!: CartDeliveryAddressDto;
+}
+
+export class CartShippingQuoteResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  methodId!: string;
+
+  @ApiProperty()
+  methodTitle!: string;
+
+  @ApiProperty({
+    type: 'object',
+    properties: {
+      amount: { type: 'string' },
+      currency: { type: 'string' },
+    },
+  })
+  charge!: { amount: string; currency: string };
+}
+
+export class CartCheckoutPreparationResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  cartId!: string;
+
+  @ApiProperty({ minimum: 1 })
+  cartVersion!: number;
+
+  @ApiProperty({
+    type: 'object',
+    properties: {
+      amount: { type: 'string' },
+      currency: { type: 'string' },
+    },
+  })
+  merchandiseSubtotal!: { amount: string; currency: string };
+
+  @ApiProperty({ type: () => [CartShippingQuoteResponseDto] })
+  shippingMethods!: CartShippingQuoteResponseDto[];
 }

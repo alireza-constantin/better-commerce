@@ -242,6 +242,30 @@ describe('Commerce transaction integration', () => {
       deliveryAddress: submission(setup).deliveryAddress,
     };
 
+    await customer
+      .post('/api/v1/cart/checkout-preparation')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', token)
+      .send({
+        expectedVersion: cart.version,
+        deliveryAddress: body.deliveryAddress,
+      })
+      .expect(200)
+      .expect(({ body: responseBody }) => {
+        expect(responseBody).toMatchObject({
+          cartId: cart.id,
+          cartVersion: cart.version,
+          merchandiseSubtotal: { amount: '20.00', currency: 'USD' },
+          shippingMethods: [
+            {
+              methodId: setup.methodId,
+              methodTitle: 'Standard',
+              charge: { amount: '1.00', currency: 'USD' },
+            },
+          ],
+        });
+      });
+
     const first = await customer
       .post('/api/v1/checkout/cart-orders')
       .set('Origin', ORIGIN)

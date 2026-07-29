@@ -144,6 +144,20 @@ async function verifyBrowserProtocols() {
           lines: [],
         });
       }
+      if (path === '/api/v1/cart/checkout-preparation') {
+        return Response.json({
+          cartId: '78dbb65f-0d82-4c9f-86f5-182d58734acb',
+          cartVersion: 3,
+          merchandiseSubtotal: { amount: '20.00', currency: 'USD' },
+          shippingMethods: [
+            {
+              methodId: '8181dfd8-0d0a-40e5-926d-2e5a13b65abd',
+              methodTitle: 'Standard',
+              charge: { amount: '1.00', currency: 'USD' },
+            },
+          ],
+        });
+      }
       if (path === '/api/v1/checkout/cart-orders') {
         if (forceCsrfRejection) {
           forceCsrfRejection = false;
@@ -180,6 +194,16 @@ async function verifyBrowserProtocols() {
   });
   assert.equal(browser.session.getSnapshot().status, 'authenticated');
   assert.equal(snapshots.at(-1)?.status, 'authenticated');
+
+  const preparation = await browser.cart.prepareCheckout({
+    recipientName: 'Test customer',
+    phone: '09120000000',
+    country: 'IR',
+    city: 'Tehran',
+    line1: 'Test address',
+    postalCode: '1234567890',
+  });
+  assert.equal(preparation.shippingMethods[0]?.methodTitle, 'Standard');
 
   const checkoutInput = {
     cartId: '78dbb65f-0d82-4c9f-86f5-182d58734acb',

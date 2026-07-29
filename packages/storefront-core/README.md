@@ -49,6 +49,9 @@ const customer = await storefront.session.login({ email, password });
 
 const cart = storefront.cart.getSnapshot();
 if (!cart.id) throw new Error('Cart is empty');
+const preparation = await storefront.cart.prepareCheckout(deliveryAddress);
+const shippingMethodId = preparation.shippingMethods[0]?.methodId;
+if (!shippingMethodId) throw new Error('No eligible Shipping method');
 const submission = storefront.checkout.createSubmission({
   cartId: cart.id,
   cartVersion: cart.version,
@@ -80,3 +83,8 @@ current projection, sends absolute quantities with the observed Cart version,
 and refreshes after `cart.version_conflict` without replaying the rejected
 intent. Login and registration claim the anonymous HttpOnly-cookie Cart through
 the Cart API. The package never stores Cart authority in localStorage.
+
+Checkout preparation derives the current merchandise subtotal and eligible
+Shipping methods from authoritative Cart, Catalog, Pricing, Inventory, and
+Shipping data. It is ephemeral: it does not save the delivery address or
+Shipping selection. Final checkout revalidates every input atomically.

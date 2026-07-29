@@ -21,6 +21,9 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .stack-form { display: grid; gap: .75rem; margin-top: 1.5rem; }
 .stack-form input { width: 100%; border: 1px solid #c7bfb2; border-radius: .5rem; padding: .7rem; }
 .cart-action { display: grid; gap: .35rem; }
+.shipping-methods { display: grid; gap: .65rem; border: 1px solid #ded8cc; border-radius: .65rem; padding: 1rem; }
+.shipping-methods label { display: grid; grid-template-columns: auto 1fr auto; gap: .6rem; align-items: center; }
+.shipping-methods input { width: auto; }
 
 main { width: min(100% - 2rem, 72rem); margin: 0 auto; padding: 4rem 0; }
 

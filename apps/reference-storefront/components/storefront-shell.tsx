@@ -11,6 +11,7 @@ import {
 import type {
   StorefrontBrowser,
   StorefrontCart,
+  StorefrontCheckoutPreparation,
   StorefrontSessionSnapshot,
 } from '@better-commerce/storefront-core/browser';
 import { storefrontBrowser } from '../lib/storefront-browser';
@@ -193,6 +194,28 @@ function CheckoutForm({
   onMessage: (value: string) => void;
 }) {
   const { browser, cart } = useStorefront();
+  const [preparation, setPreparation] =
+    useState<StorefrontCheckoutPreparation | null>(null);
+  const [shippingMethodId, setShippingMethodId] = useState('');
+
+  async function prepare(form: HTMLFormElement) {
+    const data = new FormData(form);
+    try {
+      const result = await browser.cart.prepareCheckout(addressFrom(data));
+      setPreparation(result);
+      setShippingMethodId(result.shippingMethods[0]?.methodId ?? '');
+      if (!result.shippingMethods.length) {
+        onMessage('برای این نشانی روش ارسال فعالی پیدا نشد.');
+      } else {
+        onMessage('روش‌های ارسال به‌روز شد.');
+      }
+    } catch (error) {
+      onMessage(
+        error instanceof Error ? error.message : 'محاسبه ارسال ممکن نشد.',
+      );
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!cart.id) return;
@@ -201,16 +224,9 @@ function CheckoutForm({
       const submission = browser.checkout.createSubmission({
         cartId: cart.id,
         cartVersion: cart.version,
-        shippingMethodId: String(data.get('shippingMethodId')),
+        shippingMethodId,
         paymentMethod: 'cash_on_delivery',
-        deliveryAddress: {
-          recipientName: String(data.get('recipientName')),
-          phone: String(data.get('phone')),
-          country: 'IR',
-          city: String(data.get('city')),
-          line1: String(data.get('line1')),
-          postalCode: String(data.get('postalCode')),
-        },
+        deliveryAddress: addressFrom(data),
       });
       const order = await submission.submit();
       onMessage(`سفارش شماره ${order.orderNumber} ثبت شد.`);
@@ -226,17 +242,54 @@ function CheckoutForm({
       <input name="city" placeholder="شهر" required />
       <input name="line1" placeholder="نشانی" required />
       <input name="postalCode" placeholder="کد پستی" required />
-      <input
-        name="shippingMethodId"
-        placeholder="شناسه روش ارسال"
-        pattern="[0-9a-fA-F-]{36}"
-        required
-      />
-      <button type="submit" disabled={disabled}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={(event) => {
+          const form = event.currentTarget.form;
+          if (form?.reportValidity()) void prepare(form);
+        }}
+      >
+        محاسبه روش‌های ارسال
+      </button>
+      {preparation?.shippingMethods.length ? (
+        <fieldset className="shipping-methods">
+          <legend>روش ارسال</legend>
+          {preparation.shippingMethods.map((method) => (
+            <label key={method.methodId}>
+              <input
+                type="radio"
+                name="shippingMethod"
+                value={method.methodId}
+                checked={shippingMethodId === method.methodId}
+                onChange={() => setShippingMethodId(method.methodId)}
+              />
+              <span>{method.methodTitle}</span>
+              <span>
+                {method.charge.amount === '0.00'
+                  ? 'رایگان'
+                  : `${method.charge.amount} ${method.charge.currency}`}
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      ) : null}
+      <button type="submit" disabled={disabled || !shippingMethodId}>
         ثبت سفارش با پرداخت نقدی
       </button>
     </form>
   );
+}
+
+function addressFrom(data: FormData) {
+  return {
+    recipientName: String(data.get('recipientName')),
+    phone: String(data.get('phone')),
+    country: 'IR',
+    city: String(data.get('city')),
+    line1: String(data.get('line1')),
+    postalCode: String(data.get('postalCode')),
+  };
 }
 
 function useStorefront() {

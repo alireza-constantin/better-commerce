@@ -31,6 +31,14 @@ const submission = storefront.checkout.createSubmission(checkout);
 void submission.idempotencyKey;
 void storefront.session.getCurrentCustomer();
 void storefront.cart.getCurrent();
+void storefront.cart.prepareCheckout({
+  recipientName: 'Test customer',
+  phone: '09120000000',
+  country: 'IR',
+  city: 'Tehran',
+  line1: 'Test address',
+  postalCode: '1234567890',
+});
 void storefront.cart.setQuantity(
   '78dbb65f-0d82-4c9f-86f5-182d58734acb',
   2,
