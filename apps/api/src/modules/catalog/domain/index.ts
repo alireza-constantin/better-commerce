@@ -16,3 +16,10 @@ export {
   type ProductStatus,
   type VariantStatus,
 } from './catalog-rules';
+export {
+  assertCategoryPlacement,
+  assertContiguousPositions,
+  CATALOG_NAVIGATION_LIMITS,
+  CatalogNavigationRuleError,
+  type CategoryPlacementFact,
+} from './catalog-navigation.rules';

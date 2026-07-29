@@ -7,10 +7,16 @@ import {
 } from './catalog.constants';
 import { normalizeSlug } from './domain';
 import { CatalogApplicationService } from './application/catalog-application.service';
+import { CatalogNavigationService } from './application/catalog-navigation.service';
 import { CATALOG_MODULE_CONTRACT } from './application/catalog-contract';
 import { CatalogPersistenceService } from './persistence/catalog-persistence.service';
 import { CatalogAdminController } from './http';
 import {
+  CatalogCategory,
+  CatalogCategorySlug,
+  CatalogCollection,
+  CatalogCollectionProduct,
+  CatalogCollectionSlug,
   CatalogOptionValue,
   CatalogProduct,
   CatalogProductMedia,
@@ -18,7 +24,9 @@ import {
   CatalogProductSlug,
   CatalogVariant,
   CatalogVariantSelection,
+  CatalogProductCategory,
 } from './persistence';
+import { CommerceAuditModule } from '../commerce-audit/commerce-audit.module';
 
 function configuredReservedRoutes(config: ConfigService): readonly string[] {
   const raw = config.get<string>('CATALOG_RESERVED_ROUTES');
@@ -35,7 +43,14 @@ function configuredReservedRoutes(config: ConfigService): readonly string[] {
 
 @Module({
   imports: [
+    CommerceAuditModule,
     TypeOrmModule.forFeature([
+      CatalogCategory,
+      CatalogCategorySlug,
+      CatalogProductCategory,
+      CatalogCollection,
+      CatalogCollectionSlug,
+      CatalogCollectionProduct,
       CatalogProduct,
       CatalogProductMedia,
       CatalogProductSlug,
@@ -52,6 +67,7 @@ function configuredReservedRoutes(config: ConfigService): readonly string[] {
       useFactory: configuredReservedRoutes,
     },
     CatalogPersistenceService,
+    CatalogNavigationService,
     CatalogApplicationService,
     {
       provide: CATALOG_MODULE_CONTRACT,

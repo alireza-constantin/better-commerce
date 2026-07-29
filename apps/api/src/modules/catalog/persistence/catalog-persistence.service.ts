@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
+import type { DatabaseTransactionContext } from '../../../platform/database';
+import { createTypeOrmTransactionContext } from '../../../platform/database/typeorm-transaction-context';
 import { CATALOG_RESERVED_ROUTES } from '../catalog.constants';
 import {
   CATALOG_LIMITS,
@@ -139,8 +141,13 @@ export class CatalogPersistenceService {
   }
 
   async withTransaction<T>(
-    work: (manager: EntityManager) => Promise<T>,
+    work: (
+      manager: EntityManager,
+      transaction: DatabaseTransactionContext,
+    ) => Promise<T>,
   ): Promise<T> {
-    return this.dataSource.transaction(work);
+    return this.dataSource.transaction((manager) =>
+      work(manager, createTypeOrmTransactionContext(manager)),
+    );
   }
 }

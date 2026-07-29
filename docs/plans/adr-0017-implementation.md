@@ -1,6 +1,6 @@
 # ADR-0017 Implementation Plan
 
-Status: In progress — Phase 1 complete  
+Status: In progress — Phase 2 complete
 Decision authority: ADR-0017  
 Created: 2026-07-29
 
@@ -25,7 +25,7 @@ verification.
 ## Progress
 
 - Phase 1 — Contracts and authorization: completed 2026-07-29
-- Phase 2 — Catalog domain and persistence: ready
+- Phase 2 — Catalog domain and persistence: completed 2026-07-29
 - Phase 3 — Administrative workflows: pending
 - Phase 4 — Public SDK and storefront-core integration: pending
 - Phase 5 — Reference storefront and final verification: pending
@@ -35,6 +35,14 @@ Collection permissions and reviewed role assignments, registered allow-listed
 Commerce Audit action contracts, and added transport DTO/error shapes. It
 deliberately added no Category or Collection controller, application service,
 entity, repository, or UI.
+
+Phase 2 added Catalog-owned Category, slug-history, Product membership,
+Collection, slug-history, and ordered membership persistence. It implements
+transactional hierarchy and lifecycle commands, membership replacement,
+optimistic concurrency, same-transaction Commerce Audit writes, and active-only
+module-contract projections. PostgreSQL advisory transaction locks serialize
+the bounded Category hierarchy and Collection creation limits. The disposable
+development database was reset and synchronized; no migration was added.
 
 ## Model strategy
 

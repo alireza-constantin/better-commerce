@@ -79,10 +79,44 @@ export interface PublicCatalogResolution {
   readonly requestedSlugIsCanonical: boolean;
 }
 
+export interface PublicCatalogCategory {
+  readonly id: string;
+  readonly title: string;
+  readonly summary: string | null;
+  readonly description: string | null;
+  readonly slug: string;
+  readonly parentId: string | null;
+  readonly position: number;
+}
+
+export interface PublicCatalogCollection {
+  readonly id: string;
+  readonly title: string;
+  readonly summary: string | null;
+  readonly description: string | null;
+  readonly slug: string;
+}
+
+export interface PublicCategoryResolution {
+  readonly category: PublicCatalogCategory;
+  readonly canonicalSlug: string;
+  readonly requestedSlugIsCanonical: boolean;
+}
+
+export interface PublicCollectionResolution {
+  readonly collection: PublicCatalogCollection;
+  readonly canonicalSlug: string;
+  readonly requestedSlugIsCanonical: boolean;
+}
+
 /** The only supported in-process dependency surface for other modules. */
 export interface CatalogModuleContract {
   listPublished(query?: PublicCatalogQuery): Promise<PublicCatalogPage>;
   resolvePublishedSlug(slug: string): Promise<PublicCatalogResolution>;
+  listCategoryNavigation(): Promise<readonly PublicCatalogCategory[]>;
+  resolveCategorySlug(slug: string): Promise<PublicCategoryResolution>;
+  listCollections(): Promise<readonly PublicCatalogCollection[]>;
+  resolveCollectionSlug(slug: string): Promise<PublicCollectionResolution>;
   resolvePurchasableVariants(
     variantIds: readonly string[],
   ): Promise<readonly PurchasableVariantResolution[]>;

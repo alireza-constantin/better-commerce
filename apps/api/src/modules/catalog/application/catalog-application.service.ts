@@ -43,6 +43,7 @@ import {
   CatalogApplicationError,
   type CatalogApplicationErrorCode,
 } from './catalog-application.error';
+import { CatalogNavigationService } from './catalog-navigation.service';
 
 export interface CreateProductCommand {
   readonly title: string;
@@ -157,9 +158,26 @@ export class CatalogApplicationService implements CatalogModuleContract {
   constructor(
     private readonly persistence: CatalogPersistenceService,
     private readonly objectStorage: ObjectStorageService,
+    private readonly navigation: CatalogNavigationService,
     @Inject(CATALOG_RESERVED_ROUTES)
     private readonly reservedRoutes: readonly string[],
   ) {}
+
+  listCategoryNavigation() {
+    return this.navigation.listPublicCategories();
+  }
+
+  resolveCategorySlug(slug: string) {
+    return this.navigation.resolvePublicCategory(slug);
+  }
+
+  listCollections() {
+    return this.navigation.listPublicCollections();
+  }
+
+  resolveCollectionSlug(slug: string) {
+    return this.navigation.resolvePublicCollection(slug);
+  }
 
   async addMedia(
     productId: string,
