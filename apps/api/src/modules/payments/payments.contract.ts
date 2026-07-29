@@ -16,6 +16,7 @@ export interface ManualPaymentView {
 }
 
 export interface PaymentsModuleContract {
+  listManualPaymentMethods(): readonly ManualPaymentMethod[];
   createManualPayment(
     input: {
       orderId: string;

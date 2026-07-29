@@ -985,10 +985,11 @@ export interface components {
             /** Format: uuid */
             readonly cartId: string;
             readonly cartVersion: number;
-            readonly merchandiseSubtotal: {
-                readonly amount?: string;
-                readonly currency?: string;
+            readonly merchandiseSubtotal?: {
+                readonly amount: string;
+                readonly currency: string;
             };
+            readonly paymentMethods: readonly ("cash_on_delivery" | "cash_on_pickup" | "bank_transfer")[];
             readonly shippingMethods: readonly components["schemas"]["CartShippingQuoteResponseDto"][];
         };
         readonly CartDeliveryAddressDto: {
@@ -1029,9 +1030,13 @@ export interface components {
             readonly version: number;
         };
         readonly CartShippingQuoteResponseDto: {
-            readonly charge: {
-                readonly amount?: string;
-                readonly currency?: string;
+            readonly charge?: {
+                readonly amount: string;
+                readonly currency: string;
+            };
+            readonly grandTotal?: {
+                readonly amount: string;
+                readonly currency: string;
             };
             /** Format: uuid */
             readonly methodId: string;

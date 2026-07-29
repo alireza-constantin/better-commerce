@@ -9,7 +9,8 @@ availability projections without exposing stock quantities or duplicating
 commerce rules.
 Its interactive Persian RTL Cart uses the framework-neutral browser core.
 Checkout preparation renders eligible Shipping methods and exact charges before
-the customer submits the Order.
+the customer submits the Order. Customers can choose a permitted manual payment
+method, receive an Order confirmation, and inspect their own Order history.
 
 ```bash
 pnpm --filter @better-commerce/reference-storefront dev

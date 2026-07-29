@@ -84,7 +84,8 @@ and refreshes after `cart.version_conflict` without replaying the rejected
 intent. Login and registration claim the anonymous HttpOnly-cookie Cart through
 the Cart API. The package never stores Cart authority in localStorage.
 
-Checkout preparation derives the current merchandise subtotal and eligible
-Shipping methods from authoritative Cart, Catalog, Pricing, Inventory, and
-Shipping data. It is ephemeral: it does not save the delivery address or
-Shipping selection. Final checkout revalidates every input atomically.
+Checkout preparation derives the current merchandise subtotal, eligible Shipping
+methods with exact grand totals, and permitted manual payment methods from
+authoritative Cart, Catalog, Pricing, Inventory, Shipping, and Payments data.
+It is ephemeral: it does not save the delivery address or selections. Final
+checkout revalidates every input atomically.

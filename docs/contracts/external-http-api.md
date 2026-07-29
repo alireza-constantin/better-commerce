@@ -155,8 +155,9 @@ refresh the current projection but never replay customer intent automatically.
 The raw anonymous Cart token exists only in an HttpOnly cookie.
 
 `POST /api/v1/cart/checkout-preparation` accepts the observed Cart version and
-a delivery address. It returns the authoritative merchandise subtotal and
-currently eligible Shipping methods with exact charges. The operation does not
+a delivery address. It returns the authoritative merchandise subtotal, currently
+eligible Shipping methods with exact charges and per-method exact grand totals,
+and the permitted code-owned manual payment methods. The operation does not
 persist the address or a selected method; final checkout revalidates both.
 
 `POST /api/v1/checkout/cart-orders` accepts Cart identity/version plus delivery,

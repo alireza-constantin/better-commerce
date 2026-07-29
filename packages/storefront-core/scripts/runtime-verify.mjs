@@ -154,7 +154,13 @@ async function verifyBrowserProtocols() {
               methodId: '8181dfd8-0d0a-40e5-926d-2e5a13b65abd',
               methodTitle: 'Standard',
               charge: { amount: '1.00', currency: 'USD' },
+              grandTotal: { amount: '21.00', currency: 'USD' },
             },
+          ],
+          paymentMethods: [
+            'cash_on_delivery',
+            'cash_on_pickup',
+            'bank_transfer',
           ],
         });
       }
@@ -204,6 +210,7 @@ async function verifyBrowserProtocols() {
     postalCode: '1234567890',
   });
   assert.equal(preparation.shippingMethods[0]?.methodTitle, 'Standard');
+  assert.equal(preparation.paymentMethods[0], 'cash_on_delivery');
 
   const checkoutInput = {
     cartId: '78dbb65f-0d82-4c9f-86f5-182d58734acb',

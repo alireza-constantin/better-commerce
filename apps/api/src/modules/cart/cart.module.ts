@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CatalogModule } from '../catalog';
 import { InventoryModule } from '../inventory';
 import { PricingModule } from '../pricing';
+import { PaymentsModule } from '../payments';
 import { ShippingModule } from '../shipping';
 import { CartClaim } from './cart-claim.entity';
 import { CartLine } from './cart-line.entity';
@@ -20,6 +21,7 @@ import { CartPersistence } from './persistence/cart.persistence';
     PricingModule,
     InventoryModule,
     ShippingModule,
+    PaymentsModule,
   ],
   controllers: [CartController],
   providers: [

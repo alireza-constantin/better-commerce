@@ -11,6 +11,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { ManualPaymentMethod } from '../payments';
 
 export class CartVersionDto {
   @ApiProperty({ minimum: 0 })
@@ -145,8 +146,19 @@ export class CartShippingQuoteResponseDto {
       amount: { type: 'string' },
       currency: { type: 'string' },
     },
+    required: ['amount', 'currency'],
   })
   charge!: { amount: string; currency: string };
+
+  @ApiProperty({
+    type: 'object',
+    properties: {
+      amount: { type: 'string' },
+      currency: { type: 'string' },
+    },
+    required: ['amount', 'currency'],
+  })
+  grandTotal!: { amount: string; currency: string };
 }
 
 export class CartCheckoutPreparationResponseDto {
@@ -162,9 +174,13 @@ export class CartCheckoutPreparationResponseDto {
       amount: { type: 'string' },
       currency: { type: 'string' },
     },
+    required: ['amount', 'currency'],
   })
   merchandiseSubtotal!: { amount: string; currency: string };
 
   @ApiProperty({ type: () => [CartShippingQuoteResponseDto] })
   shippingMethods!: CartShippingQuoteResponseDto[];
+
+  @ApiProperty({ enum: ManualPaymentMethod, isArray: true })
+  paymentMethods!: ManualPaymentMethod[];
 }

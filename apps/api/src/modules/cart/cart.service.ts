@@ -19,6 +19,10 @@ import {
   type DeliveryAddress,
   type ShippingModuleContract,
 } from '../shipping';
+import {
+  PAYMENTS_MODULE_CONTRACT,
+  type PaymentsModuleContract,
+} from '../payments';
 import type { DatabaseTransactionContext } from '../../platform/database';
 import type { ApplicationConfiguration } from '../../platform/config';
 import { CartClaim } from './cart-claim.entity';
@@ -48,6 +52,8 @@ export class CartService implements CartModuleContract {
     private readonly persistence: CartPersistence,
     @Inject(SHIPPING_MODULE_CONTRACT)
     private readonly shipping: ShippingModuleContract,
+    @Inject(PAYMENTS_MODULE_CONTRACT)
+    private readonly payments: PaymentsModuleContract,
   ) {
     this.configuration =
       config.getOrThrow<ApplicationConfiguration['cart']>('cart');
@@ -230,7 +236,12 @@ export class CartService implements CartModuleContract {
         methodId: quote.methodId,
         methodTitle: quote.methodTitle,
         charge: formatMoney(quote.charge),
+        grandTotal: formatMoney({
+          minorAmount: merchandiseSubtotal + quote.charge.minorAmount,
+          currency,
+        }),
       })),
+      paymentMethods: [...this.payments.listManualPaymentMethods()],
     };
   }
 

@@ -261,7 +261,13 @@ describe('Commerce transaction integration', () => {
               methodId: setup.methodId,
               methodTitle: 'Standard',
               charge: { amount: '1.00', currency: 'USD' },
+              grandTotal: { amount: '21.00', currency: 'USD' },
             },
+          ],
+          paymentMethods: [
+            'cash_on_delivery',
+            'cash_on_pickup',
+            'bank_transfer',
           ],
         });
       });

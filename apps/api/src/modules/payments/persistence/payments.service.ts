@@ -28,6 +28,14 @@ export class PaymentsService implements PaymentsModuleContract {
     private readonly audit: CommerceAuditContract,
   ) {}
 
+  listManualPaymentMethods(): readonly ManualPaymentMethod[] {
+    return [
+      ManualPaymentMethod.CASH_ON_DELIVERY,
+      ManualPaymentMethod.CASH_ON_PICKUP,
+      ManualPaymentMethod.BANK_TRANSFER,
+    ];
+  }
+
   async createManualPayment(
     input: {
       orderId: string;

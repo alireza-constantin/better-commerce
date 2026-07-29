@@ -101,8 +101,8 @@ conflict through an amendment, superseding decision, or contract revision.
 ADR-0001 through ADR-0008, ADR-0010, ADR-0011, and ADR-0013 through ADR-0015
 are accepted. ADR-0005 Catalog implementation is complete. The first combined
 physical-shipping/manual-payment Checkout implementation is present and
-typechecks. ADR-0015 Cart is accepted and ready for its bounded implementation
-plan.
+typechecks. ADR-0015 Cart, checkout preparation, selectable manual payments,
+and the reference customer Order-history flow are implemented.
 
 ## Maintenance rules
 

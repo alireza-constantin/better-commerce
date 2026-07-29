@@ -65,8 +65,10 @@ contain only Variant ID and requested quantity.
 
 Checkout preparation composes the current Cart and delivery address with the
 Shipping contract to expose only eligible methods and exact charges. It does
-not persist the address or selection. The reference storefront uses this
-projection for its Shipping selector rather than accepting an opaque UUID.
+not persist the address or selection. It also exposes the code-owned manual
+payment methods. The reference storefront uses this projection for Shipping and
+payment selectors rather than accepting opaque identifiers or calculating Money
+in the browser.
 
 The Cart remains mutable purchase intent. Adding a line never reserves stock.
 Cart checkout is authenticated and atomically revalidates Product eligibility,
@@ -91,4 +93,6 @@ server and browser consumers, and checks:
 - anonymous Cart creation and authenticated claim;
 - Cart-version conflict refresh without mutation replay;
 - checkout preparation and eligible Shipping-method typing;
+- manual payment-method selection and exact checkout-total typing;
+- customer-scoped Order list and detail reads;
 - Cart-based checkout request typing.
