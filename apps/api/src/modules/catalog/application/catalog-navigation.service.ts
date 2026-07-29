@@ -564,6 +564,73 @@ export class CatalogNavigationService {
     };
   }
 
+  async listAdminCategories(
+    input: { status?: CatalogGroupingStatus; q?: string; limit?: number } = {},
+  ) {
+    const limit = Math.min(Math.max(input.limit ?? 25, 1), 100);
+    const rows = await this.persistence.withTransaction((manager) => {
+      const query = manager
+        .getRepository(CatalogCategory)
+        .createQueryBuilder('category')
+        .orderBy('category.updatedAt', 'DESC')
+        .addOrderBy('category.id', 'DESC')
+        .take(limit);
+      if (input.status)
+        query.andWhere('category.status = :status', { status: input.status });
+      if (input.q?.trim())
+        query.andWhere('(category.title ILIKE :q OR category.slug ILIKE :q)', {
+          q: `${input.q.trim()}%`,
+        });
+      return query.getMany();
+    });
+    return {
+      items: await Promise.all(rows.map((row) => this.adminCategory(row))),
+      nextCursor: null,
+    };
+  }
+
+  async getAdminCategory(id: string) {
+    const row = await this.persistence.withTransaction((manager) =>
+      manager.getRepository(CatalogCategory).findOneBy({ id }),
+    );
+    if (!row) throw this.notFound('category');
+    return this.adminCategory(row);
+  }
+
+  async listAdminCollections(
+    input: { status?: CatalogGroupingStatus; q?: string; limit?: number } = {},
+  ) {
+    const limit = Math.min(Math.max(input.limit ?? 25, 1), 100);
+    const rows = await this.persistence.withTransaction((manager) => {
+      const query = manager
+        .getRepository(CatalogCollection)
+        .createQueryBuilder('collection')
+        .orderBy('collection.updatedAt', 'DESC')
+        .addOrderBy('collection.id', 'DESC')
+        .take(limit);
+      if (input.status)
+        query.andWhere('collection.status = :status', { status: input.status });
+      if (input.q?.trim())
+        query.andWhere(
+          '(collection.title ILIKE :q OR collection.slug ILIKE :q)',
+          { q: `${input.q.trim()}%` },
+        );
+      return query.getMany();
+    });
+    return {
+      items: await Promise.all(rows.map((row) => this.adminCollection(row))),
+      nextCursor: null,
+    };
+  }
+
+  async getAdminCollection(id: string) {
+    const row = await this.persistence.withTransaction((manager) =>
+      manager.getRepository(CatalogCollection).findOneBy({ id }),
+    );
+    if (!row) throw this.notFound('collection');
+    return this.adminCollection(row);
+  }
+
   private async categoryTransition(
     id: string,
     expectedVersion: number,
@@ -945,6 +1012,21 @@ export class CatalogNavigationService {
     };
   }
 
+  private async adminCategory(row: CatalogCategory) {
+    const aliases = await this.persistence.withTransaction((manager) =>
+      manager
+        .getRepository(CatalogCategorySlug)
+        .find({ where: { categoryId: row.id }, order: { createdAt: 'ASC' } }),
+    );
+    return {
+      ...this.category(row),
+      aliases: aliases.map((alias) => alias.slug),
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      archivedAt: row.archivedAt?.toISOString() ?? null,
+    };
+  }
+
   private collection(row: CatalogCollection): CollectionProjection {
     return {
       id: row.id,
@@ -955,6 +1037,36 @@ export class CatalogNavigationService {
       description: row.description,
       slug: row.slug,
       archivedAt: row.archivedAt,
+    };
+  }
+
+  private async adminCollection(row: CatalogCollection) {
+    const [aliases, products] = await this.persistence.withTransaction(
+      async (manager) => Promise.all([
+        manager
+          .getRepository(CatalogCollectionSlug)
+          .find({
+            where: { collectionId: row.id },
+            order: { createdAt: 'ASC' },
+          }),
+        manager
+          .getRepository(CatalogCollectionProduct)
+          .find({
+            where: { collectionId: row.id },
+            order: { position: 'ASC' },
+          }),
+      ]),
+    );
+    return {
+      ...this.collection(row),
+      aliases: aliases.map((alias) => alias.slug),
+      products: products.map((item) => ({
+        productId: item.productId,
+        position: item.position,
+      })),
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      archivedAt: row.archivedAt?.toISOString() ?? null,
     };
   }
 

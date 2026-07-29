@@ -10,7 +10,10 @@ import { CatalogApplicationService } from './application/catalog-application.ser
 import { CatalogNavigationService } from './application/catalog-navigation.service';
 import { CATALOG_MODULE_CONTRACT } from './application/catalog-contract';
 import { CatalogPersistenceService } from './persistence/catalog-persistence.service';
-import { CatalogAdminController } from './http';
+import {
+  CatalogAdminController,
+  CatalogNavigationAdminController,
+} from './http';
 import {
   CatalogCategory,
   CatalogCategorySlug,
@@ -74,7 +77,7 @@ function configuredReservedRoutes(config: ConfigService): readonly string[] {
       useExisting: CatalogApplicationService,
     },
   ],
-  controllers: [CatalogAdminController],
+  controllers: [CatalogAdminController, CatalogNavigationAdminController],
   exports: [CATALOG_MODULE_CONTRACT],
 })
 export class CatalogModule {}
