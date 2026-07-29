@@ -6,6 +6,9 @@ import {
   replaceProductConfiguration,
   transitionAdminProduct,
   updateAdminProduct,
+  uploadProductMedia,
+  replaceProductMedia,
+  removeProductMedia,
   type AdminProductsListInput,
 } from './catalog-api';
 
@@ -42,3 +45,9 @@ export const replaceProductConfigurationMutationOptions = () =>
   mutationOptions({ mutationFn: replaceProductConfiguration });
 export const transitionAdminProductMutationOptions = () =>
   mutationOptions({ mutationFn: transitionAdminProduct });
+export const uploadProductMediaMutationOptions = () =>
+  mutationOptions({ mutationFn: uploadProductMedia });
+export const replaceProductMediaMutationOptions = () =>
+  mutationOptions({ mutationFn: replaceProductMedia });
+export const removeProductMediaMutationOptions = () =>
+  mutationOptions({ mutationFn: removeProductMedia });

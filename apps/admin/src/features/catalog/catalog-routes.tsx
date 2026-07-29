@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Archive, ChevronLeft, ChevronRight, FilePenLine, PackagePlus,
-  RefreshCw, RotateCcw, Save, Send, Undo2,
+  Archive, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, FilePenLine,
+  ImagePlus, PackagePlus, RefreshCw, RotateCcw, Save, Send, Trash2, Undo2,
 } from 'lucide-react';
 import { getRouteApi } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -20,6 +20,9 @@ import {
   replaceProductConfigurationMutationOptions,
   transitionAdminProductMutationOptions,
   updateAdminProductMutationOptions,
+  uploadProductMediaMutationOptions,
+  replaceProductMediaMutationOptions,
+  removeProductMediaMutationOptions,
   type AdminProduct,
   type AdminProductSummary,
   type ProductConfigurationInput,
@@ -137,6 +140,7 @@ function CatalogProductContent({ onBack, productId }: { readonly onBack: () => v
   return <article className="mx-auto max-w-5xl space-y-6" dir="rtl"><header className="flex flex-wrap items-start justify-between gap-4"><div><Button onClick={onBack} size="sm" variant="ghost">بازگشت به کالاها</Button><div className="mt-3 flex flex-wrap items-center gap-2"><h1 className="text-2xl font-semibold tracking-[-0.025em]">{product.data.title}</h1><ProductStatus status={product.data.status} /></div><p className="mt-2 text-sm text-muted-foreground">نامک: <bdi dir="ltr">{product.data.slug}</bdi> · نسخه {product.data.version.toLocaleString('fa-IR')}</p></div><LifecycleActions canArchive={canArchive} canPublish={canPublish} isSubmitting={isSubmitting} onTransition={async (action) => { if (!confirmTransition(action, product.data.title)) return; await transition.mutateAsync({ action, expectedVersion: product.data.version, productId }); await refresh(); }} product={product.data} /></header>
     {error ? <CatalogProblem error={error} /> : null}
     {canWrite ? <ProductEditor initial={product.data} isSubmitting={isSubmitting} key={`product-${product.data.version}`} submitLabel="ذخیره تغییرات" onSubmit={async (input) => { await update.mutateAsync({ productId, input: { description: nullableText(input.description), expectedVersion: product.data.version, slug: input.slug, summary: nullableText(input.summary), title: input.title } }); await refresh(); }} /> : <ProductReadOnly product={product.data} />}
+    <ProductMediaEditor canWrite={canWrite} onChanged={refresh} product={product.data} />
     {canWrite ? <ConfigurationEditor isSubmitting={isSubmitting} key={`configuration-${product.data.version}`} onSubmit={async (input) => { await configure.mutateAsync({ productId, input: { ...input, expectedVersion: product.data.version } }); await refresh(); }} product={product.data} /> : <ConfigurationReadOnly product={product.data} />}
   </article>;
 }
@@ -150,6 +154,35 @@ function ProductEditor({ initial, isSubmitting, onSubmit, submitLabel }: { reado
 }
 
 function ProductReadOnly({ product }: { readonly product: AdminProduct }) { return <section className="rounded-lg border border-border bg-card p-5"><h2 className="font-semibold">اطلاعات کالا</h2><dl className="mt-4 grid gap-4 text-sm md:grid-cols-2"><Definition label="نام کالا" value={product.title} /><Definition label="نامک" value={product.slug} ltr /><Definition label="خلاصه" value={product.summary ?? '—'} /><Definition label="آخرین تغییر" value={formatDate(product.updatedAt)} /></dl>{product.description ? <p className="mt-5 whitespace-pre-wrap border-t border-border pt-5 text-sm leading-7 text-muted-foreground">{product.description}</p> : null}</section>; }
+
+function ProductMediaEditor({ canWrite, onChanged, product }: { readonly canWrite: boolean; readonly onChanged: () => Promise<void>; readonly product: AdminProduct }) {
+  const upload = useMutation(uploadProductMediaMutationOptions());
+  const replace = useMutation(replaceProductMediaMutationOptions());
+  const remove = useMutation(removeProductMediaMutationOptions());
+  const [items, setItems] = useState(() => product.media.map((item) => ({ ...item })));
+  const error = upload.error ?? replace.error ?? remove.error;
+  const busy = upload.isPending || replace.isPending || remove.isPending;
+  const move = (index: number, direction: -1 | 1) => setItems((current) => {
+    const target = index + direction;
+    if (target < 0 || target >= current.length) return current;
+    const next = [...current];
+    [next[index], next[target]] = [next[target]!, next[index]!];
+    return next.map((item, position) => ({ ...item, position }));
+  });
+  return <section className="rounded-lg border border-border bg-card p-5">
+    <div><h2 className="font-semibold">تصاویر کالا</h2><p className="mt-1 text-sm text-muted-foreground">تصویر اول، تصویر اصلی کالا است. برای دسترس‌پذیری هر تصویر متن جایگزین بنویسید.</p></div>
+    {error ? <CatalogProblem error={error} /> : null}
+    {items.length ? <ol className="catalog-media-grid">{items.map((item, index) => <li key={item.id}>
+      <img alt={item.altText} height={item.height} loading="lazy" src={item.url} width={item.width} />
+      <div className="space-y-2 p-3"><Field label="متن جایگزین"><input className="catalog-input" disabled={!canWrite || busy} maxLength={300} onChange={(event) => setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, altText: event.target.value } : entry))} value={item.altText} /></Field>
+      {canWrite ? <div className="flex flex-wrap gap-1"><Button aria-label="انتقال تصویر به بالا" disabled={busy || index === 0} onClick={() => move(index, -1)} size="sm" variant="outline"><ArrowUp aria-hidden="true" /></Button><Button aria-label="انتقال تصویر به پایین" disabled={busy || index === items.length - 1} onClick={() => move(index, 1)} size="sm" variant="outline"><ArrowDown aria-hidden="true" /></Button><Button className="text-destructive" disabled={busy} onClick={() => void remove.mutateAsync({ expectedVersion: product.version, mediaId: item.id, productId: product.id }).then(onChanged).catch(() => undefined)} size="sm" variant="outline"><Trash2 aria-hidden="true" /> حذف</Button></div> : null}</div>
+    </li>)}</ol> : <p className="mt-5 rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">هنوز تصویری برای این کالا ثبت نشده است.</p>}
+    {canWrite ? <div className="mt-5 flex flex-wrap items-end justify-between gap-3 border-t border-border pt-5">
+      <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault(); const form = new FormData(event.currentTarget); const file = form.get('file'); const altText = form.get('altText'); if (!(file instanceof File) || file.size === 0) return; void upload.mutateAsync({ altText: typeof altText === 'string' ? altText : '', expectedVersion: product.version, file, productId: product.id }).then(onChanged).catch(() => undefined); }}><Field label="فایل تصویر"><input accept="image/jpeg,image/png,image/webp" className="catalog-input" disabled={busy || items.length >= 20} name="file" required type="file" /></Field><Field label="متن جایگزین"><input className="catalog-input" maxLength={300} name="altText" /></Field><Button disabled={busy || items.length >= 20} type="submit"><ImagePlus aria-hidden="true" /> بارگذاری تصویر</Button></form>
+      {items.length ? <Button disabled={busy} onClick={() => void replace.mutateAsync({ input: { expectedVersion: product.version, items: items.map(({ altText, id, position }) => ({ altText, id, position })) }, productId: product.id }).then(onChanged).catch(() => undefined)} variant="outline"><Save aria-hidden="true" /> ذخیره ترتیب و متن‌ها</Button> : null}
+    </div> : null}
+  </section>;
+}
 
 function ConfigurationEditor({ isSubmitting, onSubmit, product }: { readonly isSubmitting: boolean; readonly onSubmit: (input: ProductConfigurationInput) => Promise<void>; readonly product: AdminProduct }) {
   const initial = JSON.stringify({ options: product.options, variants: product.variants.map(({ fulfillmentClassification, id, position, selectionValueIds, sku, status, title }) => ({ fulfillmentClassification, id, position, selectionValueIds, sku, status, title })) }, null, 2);

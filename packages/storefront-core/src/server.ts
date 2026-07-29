@@ -129,6 +129,7 @@ function toProductListItem(
     variantCount: product.variants.length,
     priceRange: product.priceRange,
     availability: product.availability,
+    media: product.media,
   };
 }
 

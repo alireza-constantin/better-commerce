@@ -26,6 +26,7 @@ import { DatabaseModule } from './platform/database';
 import { HealthModule } from './platform/health/health.module';
 import { ObservabilityModule } from './platform/observability';
 import { SecurityModule } from './platform/security';
+import { ObjectStorageModule } from './platform/object-storage';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { SecurityModule } from './platform/security';
       }),
     }),
     DatabaseModule,
+    ObjectStorageModule,
     ObservabilityModule,
     AuthorizationModule,
     CatalogModule,

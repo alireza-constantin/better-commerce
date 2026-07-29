@@ -13,6 +13,7 @@ import { CatalogAdminController } from './http';
 import {
   CatalogOptionValue,
   CatalogProduct,
+  CatalogProductMedia,
   CatalogProductOption,
   CatalogProductSlug,
   CatalogVariant,
@@ -36,6 +37,7 @@ function configuredReservedRoutes(config: ConfigService): readonly string[] {
   imports: [
     TypeOrmModule.forFeature([
       CatalogProduct,
+      CatalogProductMedia,
       CatalogProductSlug,
       CatalogVariant,
       CatalogProductOption,

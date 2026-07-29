@@ -23,6 +23,17 @@ export interface StorefrontProductListItem {
   readonly variantCount: number;
   readonly priceRange: StorefrontPriceRange | null;
   readonly availability: StorefrontAvailability;
+  readonly media: readonly StorefrontProductMedia[];
+}
+
+export interface StorefrontProductMedia {
+  readonly id: string;
+  readonly url: string;
+  readonly altText: string;
+  readonly position: number;
+  readonly mediaType: string;
+  readonly width: number;
+  readonly height: number;
 }
 
 export type StorefrontAvailability =

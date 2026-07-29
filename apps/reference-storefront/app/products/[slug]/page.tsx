@@ -25,6 +25,22 @@ export default async function ProductPage({
     return (
       <main className="product-page">
         <a href="/">بازگشت به محصولات</a>
+        {detail.product.media.length ? (
+          <div className="product-gallery">
+            {detail.product.media.map((image, index) => (
+              <img
+                alt={image.altText}
+                decoding="async"
+                fetchPriority={index === 0 ? 'high' : 'auto'}
+                height={image.height}
+                key={image.id}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                src={image.url}
+                width={image.width}
+              />
+            ))}
+          </div>
+        ) : null}
         <h1>{detail.product.title}</h1>
         {detail.product.description ? <p>{detail.product.description}</p> : null}
         <p className="product-price">

@@ -11,6 +11,9 @@ metadata; the selected renderer owns concrete cache and revalidation settings.
 Product projections include exact decimal Money strings and conservative
 availability. Do not convert Money amounts to JavaScript `number`; format the
 string for presentation and let Checkout revalidate the authoritative result.
+They also include ordered image URLs, intrinsic dimensions, media type, and
+merchant-authored alt text. The consuming storefront chooses its native or
+framework image component.
 
 ```ts
 import { createStorefrontServer } from '@better-commerce/storefront-core/server';

@@ -43,6 +43,15 @@ export interface PublicCatalogProduct {
   readonly publishedAt: Date;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+  readonly media: readonly {
+    id: string;
+    url: string;
+    altText: string;
+    position: number;
+    mediaType: string;
+    width: number;
+    height: number;
+  }[];
   readonly options: readonly {
     id: string;
     name: string;

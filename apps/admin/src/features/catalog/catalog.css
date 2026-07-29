@@ -23,3 +23,26 @@
   font-weight: 400;
   color: var(--muted-foreground);
 }
+
+.catalog-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog-media-grid > li {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.catalog-media-grid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--muted);
+}

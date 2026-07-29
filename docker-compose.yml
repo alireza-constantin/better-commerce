@@ -40,6 +40,44 @@ services:
       retries: 10
       start_period: 5s
 
+  minio:
+    # Local development only. Do not promote this image or credentials to a
+    # production deployment; use a maintained managed S3-compatible provider.
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: better-commerce-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: better-commerce-dev
+      MINIO_ROOT_PASSWORD: better-commerce-development-only
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        mc alias set local http://minio:9000 better-commerce-dev
+        better-commerce-development-only &&
+        mc mb --ignore-existing local/better-commerce &&
+        mc anonymous set download local/better-commerce
+
 volumes:
   postgres_data:
   redis_data:
+  minio_data:

@@ -26,6 +26,7 @@ amendment or a superseding ADR.
 - [ADR-0013 — Shipping Methods, Zones, and Rate Rules](adr/0013-shipping.md)
 - [ADR-0014 — Manual Payments and Admin Order Acceptance](adr/0014-manual-payments.md)
 - [ADR-0015 — Persistent Cart Ownership, Merge, and Concurrency](adr/0015-cart.md)
+- [ADR-0016 — Product Media and Asset Delivery](adr/0016-product-media.md)
 
 Proposed decisions under review:
 
@@ -98,7 +99,7 @@ conflict through an amendment, superseding decision, or contract revision.
 
 ## Current decision sequence
 
-ADR-0001 through ADR-0008, ADR-0010, ADR-0011, and ADR-0013 through ADR-0015
+ADR-0001 through ADR-0008, ADR-0010, ADR-0011, and ADR-0013 through ADR-0016
 are accepted. ADR-0005 Catalog implementation is complete. The first combined
 physical-shipping/manual-payment Checkout implementation is present and
 typechecks. ADR-0015 Cart, checkout preparation, selectable manual payments,

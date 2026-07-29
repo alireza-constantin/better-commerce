@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import sharp from 'sharp';
 import { In, type EntityManager, QueryFailedError } from 'typeorm';
+import { ObjectStorageService } from '../../../platform/object-storage';
 import { CATALOG_RESERVED_ROUTES } from '../catalog.constants';
 import {
   assertConfigurationConsistency,
@@ -21,6 +23,7 @@ import {
 import {
   CatalogOptionValue,
   CatalogProduct,
+  CatalogProductMedia,
   CatalogProductOption,
   CatalogProductSlug,
   CatalogVariant,
@@ -115,6 +118,16 @@ export interface ProductListResult {
 }
 
 export interface ProductDetail extends ProductRow {
+  readonly media: readonly {
+    id: string;
+    url: string;
+    altText: string;
+    position: number;
+    mediaType: string;
+    width: number;
+    height: number;
+    byteSize: number;
+  }[];
   readonly variants: readonly {
     id: string;
     status: VariantStatus;
@@ -143,9 +156,182 @@ const CONTRACT_VARIANT_LIMIT = 100;
 export class CatalogApplicationService implements CatalogModuleContract {
   constructor(
     private readonly persistence: CatalogPersistenceService,
+    private readonly objectStorage: ObjectStorageService,
     @Inject(CATALOG_RESERVED_ROUTES)
     private readonly reservedRoutes: readonly string[],
   ) {}
+
+  async addMedia(
+    productId: string,
+    expectedVersion: number,
+    file: { readonly buffer: Buffer; readonly size: number },
+    altText = '',
+  ): Promise<ProductDetail> {
+    if (!file?.buffer || file.size < 1 || file.size > 10 * 1024 * 1024)
+      throw this.error('catalog.media_invalid', 'Image must be at most 10 MiB');
+    const safeAlt = this.mediaAltText(altText);
+    let output: Buffer;
+    let info: sharp.OutputInfo;
+    try {
+      const result = await sharp(file.buffer, {
+        failOn: 'warning',
+        limitInputPixels: 40_000_000,
+      })
+        .rotate()
+        .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toBuffer({ resolveWithObject: true });
+      output = result.data;
+      info = result.info;
+    } catch {
+      throw this.error(
+        'catalog.media_invalid',
+        'Image must be a valid JPEG, PNG, or WebP',
+      );
+    }
+    if (
+      !['jpeg', 'png', 'webp'].includes(
+        (await sharp(file.buffer).metadata()).format ?? '',
+      )
+    )
+      throw this.error(
+        'catalog.media_invalid',
+        'Image must be a valid JPEG, PNG, or WebP',
+      );
+    const mediaId = randomUUID();
+    const key = `products/${productId}/${mediaId}.webp`;
+    let url: string;
+    try {
+      url = await this.objectStorage.putImage(key, output);
+    } catch {
+      throw this.error(
+        'catalog.media_storage_failed',
+        'Image storage is unavailable',
+      );
+    }
+    try {
+      return await this.command(
+        productId,
+        expectedVersion,
+        async (manager, product) => {
+          const media = manager.getRepository(CatalogProductMedia);
+          const count = await media.countBy({ productId: product.id });
+          if (count >= 20)
+            throw this.error(
+              'catalog.media_invalid',
+              'A Product can have at most 20 images',
+            );
+          await media.save(
+            media.create({
+              id: mediaId,
+              productId,
+              objectKey: key,
+              url,
+              altText: safeAlt,
+              position: count,
+              mediaType: 'image/webp',
+              width: info.width,
+              height: info.height,
+              byteSize: info.size,
+            }),
+          );
+        },
+      );
+    } catch (error) {
+      await this.objectStorage.remove(key).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  async replaceMedia(
+    productId: string,
+    expectedVersion: number,
+    items: readonly { id: string; altText: string; position: number }[],
+  ): Promise<ProductDetail> {
+    return this.command(productId, expectedVersion, async (manager) => {
+      const repository = manager.getRepository(CatalogProductMedia);
+      const current = await repository.find({
+        where: { productId },
+        order: { position: 'ASC' },
+      });
+      if (
+        items.length !== current.length ||
+        new Set(items.map((item) => item.id)).size !== current.length ||
+        items.some((item) => !current.some((row) => row.id === item.id))
+      )
+        throw this.error(
+          'catalog.media_invalid',
+          'Media replacement must contain every Product image exactly once',
+        );
+      const positions = [...items.map((item) => item.position)].sort(
+        (left, right) => left - right,
+      );
+      if (positions.some((position, index) => position !== index))
+        throw this.error(
+          'catalog.media_invalid',
+          'Media positions must be contiguous from zero',
+        );
+      await repository
+        .createQueryBuilder()
+        .update(CatalogProductMedia)
+        .set({ position: () => 'position + 1000' })
+        .where('product_id = :productId', { productId })
+        .execute();
+      for (const item of items) {
+        await repository.update(
+          { id: item.id, productId },
+          {
+            altText: this.mediaAltText(item.altText),
+            position: item.position,
+          },
+        );
+      }
+    });
+  }
+
+  async removeMedia(
+    productId: string,
+    mediaId: string,
+    expectedVersion: number,
+  ): Promise<ProductDetail> {
+    let objectKey = '';
+    const detail = await this.command(
+      productId,
+      expectedVersion,
+      async (manager) => {
+        const repository = manager.getRepository(CatalogProductMedia);
+        const selected = await repository.findOneBy({
+          id: mediaId,
+          productId,
+        });
+        if (!selected)
+          throw this.error('catalog.not_found', 'Product image was not found');
+        objectKey = selected.objectKey;
+        await repository.delete({ id: mediaId, productId });
+        const remaining = await repository.find({
+          where: { productId },
+          order: { position: 'ASC', id: 'ASC' },
+        });
+        await repository
+          .createQueryBuilder()
+          .update(CatalogProductMedia)
+          .set({ position: () => 'position + 1000' })
+          .where('product_id = :productId', { productId })
+          .execute();
+        for (const [position, item] of remaining.entries())
+          await repository.update({ id: item.id }, { position });
+      },
+    );
+    try {
+      await this.objectStorage.remove(objectKey);
+    } catch {
+      throw this.error(
+        'catalog.media_storage_failed',
+        'Image metadata was removed but object cleanup must be retried',
+      );
+    }
+    return detail;
+  }
 
   async createProduct(input: CreateProductCommand) {
     try {
@@ -690,8 +876,22 @@ export class CatalogApplicationService implements CatalogModuleContract {
           .getRepository(CatalogVariantSelection)
           .findBy({ variantId: In(variants.map((variant) => variant.id)) })
       : [];
+    const media = await manager.getRepository(CatalogProductMedia).find({
+      where: { productId: product.id },
+      order: { position: 'ASC', id: 'ASC' },
+    });
     return {
       ...this.productRow(product),
+      media: media.map((item) => ({
+        id: item.id,
+        url: item.url,
+        altText: item.altText,
+        position: item.position,
+        mediaType: item.mediaType,
+        width: item.width,
+        height: item.height,
+        byteSize: item.byteSize,
+      })),
       options: options.map((option) => ({
         id: option.id,
         name: option.name,
@@ -812,6 +1012,15 @@ export class CatalogApplicationService implements CatalogModuleContract {
       createdAt: detail.createdAt,
       updatedAt: detail.updatedAt,
       options: detail.options,
+      media: detail.media.map((item) => ({
+        id: item.id,
+        url: item.url,
+        altText: item.altText,
+        position: item.position,
+        mediaType: item.mediaType,
+        width: item.width,
+        height: item.height,
+      })),
     };
     return {
       ...product,
@@ -826,6 +1035,18 @@ export class CatalogApplicationService implements CatalogModuleContract {
           selectionValueIds: variant.selectionValueIds,
         })),
     };
+  }
+
+  private mediaAltText(value: string): string {
+    if (typeof value !== 'string')
+      throw this.error('catalog.media_invalid', 'Alt text must be text');
+    const normalized = value.trim();
+    if (normalized.length > 300)
+      throw this.error(
+        'catalog.media_invalid',
+        'Alt text must be at most 300 characters',
+      );
+    return normalized;
   }
 
   private productRow(product: CatalogProduct): ProductRow {

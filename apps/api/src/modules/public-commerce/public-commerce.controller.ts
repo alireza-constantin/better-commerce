@@ -31,6 +31,8 @@ const catalogErrorStatus: Record<CatalogApplicationError['code'], HttpStatus> =
     'catalog.version_conflict': HttpStatus.CONFLICT,
     'catalog.invalid_product_transition': HttpStatus.CONFLICT,
     'catalog.configuration_conflict': HttpStatus.CONFLICT,
+    'catalog.media_invalid': HttpStatus.BAD_REQUEST,
+    'catalog.media_storage_failed': HttpStatus.SERVICE_UNAVAILABLE,
   };
 
 @ApiTags('Catalog')

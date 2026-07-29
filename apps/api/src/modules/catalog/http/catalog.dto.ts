@@ -11,6 +11,7 @@ import {
   Max,
   Min,
   ValidateNested,
+  MaxLength,
 } from 'class-validator';
 
 const PRODUCT_STATUSES = ['draft', 'published', 'archived'] as const;
@@ -161,6 +162,75 @@ export class ProductTransitionDto {
   expectedVersion!: number;
 }
 
+export class UploadProductMediaDto {
+  @ApiProperty({ minimum: 1, type: Number })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  expectedVersion!: number;
+
+  @ApiPropertyOptional({ maxLength: 300, default: '' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  altText?: string;
+
+  @ApiProperty({ format: 'binary', type: 'string' })
+  file!: unknown;
+}
+
+export class ProductMediaItemDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID('4')
+  id!: string;
+
+  @ApiProperty({ maxLength: 300 })
+  @IsString()
+  @MaxLength(300)
+  altText!: string;
+
+  @ApiProperty({ minimum: 0, type: Number })
+  @IsInt()
+  @Min(0)
+  position!: number;
+}
+
+export class ReplaceProductMediaDto {
+  @ApiProperty({ minimum: 1, type: Number })
+  @IsInt()
+  @Min(1)
+  expectedVersion!: number;
+
+  @ApiProperty({ maxItems: 20, type: () => [ProductMediaItemDto] })
+  @IsArray()
+  @ArrayMaxSize(20)
+  @ValidateNested({ each: true })
+  @Type(() => ProductMediaItemDto)
+  items!: ProductMediaItemDto[];
+}
+
+export class ProductMediaResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+  @ApiProperty({ format: 'uri' })
+  url!: string;
+  @ApiProperty()
+  altText!: string;
+  @ApiProperty({ minimum: 0 })
+  position!: number;
+  @ApiProperty({ example: 'image/webp' })
+  mediaType!: string;
+  @ApiProperty({ minimum: 1 })
+  width!: number;
+  @ApiProperty({ minimum: 1 })
+  height!: number;
+}
+
+export class AdminProductMediaResponseDto extends ProductMediaResponseDto {
+  @ApiProperty({ minimum: 1 })
+  byteSize!: number;
+}
+
 export class AdminProductQueryDto {
   @ApiPropertyOptional({ enum: PRODUCT_STATUSES })
   @IsOptional()
@@ -279,6 +349,8 @@ export class CatalogVariantResponseDto {
 }
 
 export class ProductDetailResponseDto extends ProductSummaryResponseDto {
+  @ApiProperty({ type: () => [AdminProductMediaResponseDto] })
+  media!: AdminProductMediaResponseDto[];
   @ApiProperty({ type: () => [CatalogVariantResponseDto] })
   variants!: CatalogVariantResponseDto[];
   @ApiProperty({ type: () => [CatalogOptionResponseDto] })
@@ -346,6 +418,8 @@ export class PublicProductResponseDto {
   createdAt!: string;
   @ApiProperty({ format: 'date-time' })
   updatedAt!: string;
+  @ApiProperty({ type: () => [ProductMediaResponseDto] })
+  media!: ProductMediaResponseDto[];
   @ApiProperty({ type: () => [CatalogOptionResponseDto] })
   options!: CatalogOptionResponseDto[];
   @ApiProperty({ type: () => [PublicCatalogVariantResponseDto] })

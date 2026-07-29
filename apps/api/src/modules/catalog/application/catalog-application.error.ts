@@ -5,7 +5,9 @@ export type CatalogApplicationErrorCode =
   | 'catalog.sku_conflict'
   | 'catalog.version_conflict'
   | 'catalog.invalid_product_transition'
-  | 'catalog.configuration_conflict';
+  | 'catalog.configuration_conflict'
+  | 'catalog.media_invalid'
+  | 'catalog.media_storage_failed';
 
 /** A transport-neutral, stable error surface for Catalog application callers. */
 export class CatalogApplicationError extends Error {

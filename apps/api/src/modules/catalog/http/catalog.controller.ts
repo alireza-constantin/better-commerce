@@ -12,7 +12,10 @@ import {
   Put,
   Query,
   Req,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiConflictResponse,
   ApiCreatedResponse,
@@ -20,6 +23,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiConsumes,
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -42,6 +46,8 @@ import {
   CreatedProductResponseDto,
   ProductDetailResponseDto,
   ProductPageResponseDto,
+  UploadProductMediaDto,
+  ReplaceProductMediaDto,
 } from './catalog.dto';
 
 const errorStatus: Record<CatalogApplicationError['code'], HttpStatus> = {
@@ -52,6 +58,8 @@ const errorStatus: Record<CatalogApplicationError['code'], HttpStatus> = {
   'catalog.version_conflict': HttpStatus.CONFLICT,
   'catalog.invalid_product_transition': HttpStatus.CONFLICT,
   'catalog.configuration_conflict': HttpStatus.CONFLICT,
+  'catalog.media_invalid': HttpStatus.BAD_REQUEST,
+  'catalog.media_storage_failed': HttpStatus.SERVICE_UNAVAILABLE,
 };
 function translateCatalogError(error: unknown): never {
   if (error instanceof CatalogApplicationError) {
@@ -175,6 +183,84 @@ export class CatalogAdminController {
     try {
       await this.requireArchiveForExistingVariantTransitions(id, dto, request);
       return await this.catalog.replaceConfiguration(id, dto);
+    } catch (error) {
+      translateCatalogError(error);
+    }
+  }
+  @Post('products/:productId/media')
+  @ApiCsrfProtected()
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 2 },
+    }),
+  )
+  @ApiOperation({
+    summary: 'Upload and append a normalized Product image',
+    description: 'Requires admin.access and catalog.products.write.',
+  })
+  @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_WRITE)
+  @ApiCreatedResponse({ type: ProductDetailResponseDto })
+  async uploadMedia(
+    @Param('productId', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: UploadProductMediaDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    try {
+      if (!file)
+        throw new CatalogApplicationError(
+          'catalog.media_invalid',
+          'Image file is required',
+        );
+      return await this.catalog.addMedia(
+        id,
+        dto.expectedVersion,
+        file,
+        dto.altText,
+      );
+    } catch (error) {
+      translateCatalogError(error);
+    }
+  }
+
+  @Put('products/:productId/media')
+  @ApiCsrfProtected()
+  @ApiOperation({
+    summary: 'Replace Product image ordering and alt text',
+    description: 'Requires admin.access and catalog.products.write.',
+  })
+  @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_WRITE)
+  @ApiOkResponse({ type: ProductDetailResponseDto })
+  async replaceMedia(
+    @Param('productId', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: ReplaceProductMediaDto,
+  ) {
+    try {
+      return await this.catalog.replaceMedia(
+        id,
+        dto.expectedVersion,
+        dto.items,
+      );
+    } catch (error) {
+      translateCatalogError(error);
+    }
+  }
+
+  @Post('products/:productId/media/:mediaId/remove')
+  @ApiCsrfProtected()
+  @ApiOperation({
+    summary: 'Remove a Product image',
+    description: 'Requires admin.access and catalog.products.write.',
+  })
+  @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_WRITE)
+  @ApiCreatedResponse({ type: ProductDetailResponseDto })
+  async removeMedia(
+    @Param('productId', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('mediaId', new ParseUUIDPipe({ version: '4' })) mediaId: string,
+    @Body() dto: ProductTransitionDto,
+  ) {
+    try {
+      return await this.catalog.removeMedia(id, mediaId, dto.expectedVersion);
     } catch (error) {
       translateCatalogError(error);
     }

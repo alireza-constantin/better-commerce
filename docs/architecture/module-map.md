@@ -1,7 +1,7 @@
 # Backend Module Map
 
 Status: Living document  
-Last verified: 2026-07-28
+Last verified: 2026-07-29
 
 ## Purpose
 
@@ -57,6 +57,7 @@ apps/api/src/
     http/authentication/        Public-route transport metadata
     observability/              Logging, request IDs, problem details
     openapi/                    OpenAPI generation and transport decorators
+    object-storage/             S3-compatible immutable asset delivery
     redis/                      Redis connectivity
     security/                   CSRF, trusted origins, abuse protection
 
@@ -202,6 +203,8 @@ architecture tests enforce this exception and reject additional deep imports.
 - PostgreSQL is authoritative for Identity, Authorization, and commerce state.
 - Redis is authoritative for opaque sessions and distributed abuse-protection
   counters.
+- PostgreSQL is authoritative for Product-media metadata; S3-compatible object
+  storage is authoritative for image bytes.
 - Every merchant deployment has its own PostgreSQL, Redis, secrets, and
   operational lifecycle.
 - There is no tenant resolver or shared cross-store runtime data.

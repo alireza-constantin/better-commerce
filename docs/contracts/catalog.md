@@ -628,13 +628,29 @@ Before production launch:
 - public caching and storefront revalidation behavior are documented by the
   consuming storefront.
 
-## 18. Explicit non-goals
+## 18. Product media
+
+- A Product owns an ordered list of zero to twenty images.
+- Admin upload accepts one JPEG, PNG, or WebP file up to 10 MiB plus Product
+  `expectedVersion` and optional alt text.
+- Successful upload returns the complete Product detail with an incremented
+  version. Invalid bytes return `catalog.media_invalid`; unavailable object
+  storage returns `catalog.media_storage_failed`.
+- Replacing media metadata must contain every current image exactly once, with
+  unique contiguous positions starting at zero.
+- Removing media requires the Product version and returns the updated Product.
+- Admin responses include byte size. Public responses omit storage keys and byte
+  size, and expose URL, alt text, order, media type, width, and height.
+- Product-media commands require `catalog.products.write` and CSRF protection.
+- Product media is part of the Product optimistic-concurrency boundary.
+
+## 19. Explicit non-goals
 
 Version 1 does not include:
 
 - Categories or Collections endpoints;
 - typed/filterable Attributes;
-- Product media upload or binary storage;
+- responsive derived-image sets, video, documents, or direct browser uploads;
 - Pricing or Inventory projections;
 - Cart, Checkout, Orders, Payments, or Fulfillment execution;
 - customer reviews, wishlists, recommendations, or recently viewed Products;

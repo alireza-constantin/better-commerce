@@ -25,6 +25,16 @@ export interface RedisConfiguration {
   connectTimeoutMs: number;
 }
 
+export interface ObjectStorageConfiguration {
+  endpoint?: string;
+  region: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  publicBaseUrl: string;
+  forcePathStyle: boolean;
+}
+
 export interface ApplicationConfiguration {
   environment: RuntimeEnvironment;
   port: number;
@@ -45,6 +55,7 @@ export interface ApplicationConfiguration {
   database: DatabaseConfiguration;
   redis: RedisConfiguration;
   session: SessionConfiguration;
+  objectStorage: ObjectStorageConfiguration;
 }
 
 type EnvironmentSource = Record<string, unknown>;
@@ -297,6 +308,40 @@ export const buildConfiguration = (
       idleTtlMs: idleTtlSeconds * 1_000,
       absoluteTtlMs: absoluteTtlSeconds * 1_000,
       cookieName: '__Host-bc.sid',
+    },
+    objectStorage: {
+      endpoint: readString(source, 'OBJECT_STORAGE_ENDPOINT', {
+        defaultValue:
+          environment === 'production' ? undefined : 'http://localhost:9000',
+      }),
+      region: readString(source, 'OBJECT_STORAGE_REGION', {
+        defaultValue: 'us-east-1',
+      }),
+      bucket: readString(source, 'OBJECT_STORAGE_BUCKET', {
+        defaultValue:
+          environment === 'production' ? undefined : 'better-commerce',
+      }),
+      accessKeyId: readString(source, 'OBJECT_STORAGE_ACCESS_KEY_ID', {
+        defaultValue:
+          environment === 'production' ? undefined : 'better-commerce-dev',
+      }),
+      secretAccessKey: readString(source, 'OBJECT_STORAGE_SECRET_ACCESS_KEY', {
+        defaultValue:
+          environment === 'production'
+            ? undefined
+            : 'better-commerce-development-only',
+      }),
+      publicBaseUrl: readString(source, 'OBJECT_STORAGE_PUBLIC_BASE_URL', {
+        defaultValue:
+          environment === 'production'
+            ? undefined
+            : 'http://localhost:9000/better-commerce',
+      }),
+      forcePathStyle: readBoolean(
+        source,
+        'OBJECT_STORAGE_FORCE_PATH_STYLE',
+        true,
+      ),
     },
   };
 };

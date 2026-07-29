@@ -128,6 +128,50 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/v1/admin/catalog/products/{productId}/media": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        /**
+         * Replace Product image ordering and alt text
+         * @description Requires admin.access and catalog.products.write.
+         */
+        readonly put: operations["CatalogAdmin_replaceMedia"];
+        /**
+         * Upload and append a normalized Product image
+         * @description Requires admin.access and catalog.products.write.
+         */
+        readonly post: operations["CatalogAdmin_uploadMedia"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/catalog/products/{productId}/media/{mediaId}/remove": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /**
+         * Remove a Product image
+         * @description Requires admin.access and catalog.products.write.
+         */
+        readonly post: operations["CatalogAdmin_removeMedia"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/v1/admin/catalog/products/{productId}/publish": {
         readonly parameters: {
             readonly query?: never;
@@ -962,6 +1006,19 @@ export interface components {
             readonly note?: string;
             readonly reasonCode: string;
         };
+        readonly AdminProductMediaResponseDto: {
+            readonly altText: string;
+            readonly byteSize: number;
+            readonly height: number;
+            /** Format: uuid */
+            readonly id: string;
+            /** @example image/webp */
+            readonly mediaType: string;
+            readonly position: number;
+            /** Format: uri */
+            readonly url: string;
+            readonly width: number;
+        };
         readonly AuditEventPageResponseDto: {
             readonly data: readonly components["schemas"]["AuditEventResponseDto"][];
             readonly nextCursor: string | null;
@@ -1364,6 +1421,7 @@ export interface components {
             readonly everPublished: boolean;
             /** Format: uuid */
             readonly id: string;
+            readonly media: readonly components["schemas"]["AdminProductMediaResponseDto"][];
             readonly options: readonly components["schemas"]["CatalogOptionResponseDto"][];
             /** Format: date-time */
             readonly publishedAt: string | null;
@@ -1376,6 +1434,24 @@ export interface components {
             readonly updatedAt: string;
             readonly variants: readonly components["schemas"]["CatalogVariantResponseDto"][];
             readonly version: number;
+        };
+        readonly ProductMediaItemDto: {
+            readonly altText: string;
+            /** Format: uuid */
+            readonly id: string;
+            readonly position: number;
+        };
+        readonly ProductMediaResponseDto: {
+            readonly altText: string;
+            readonly height: number;
+            /** Format: uuid */
+            readonly id: string;
+            /** @example image/webp */
+            readonly mediaType: string;
+            readonly position: number;
+            /** Format: uri */
+            readonly url: string;
+            readonly width: number;
         };
         readonly ProductPageResponseDto: {
             readonly items: readonly components["schemas"]["ProductSummaryResponseDto"][];
@@ -1446,6 +1522,7 @@ export interface components {
             readonly description: string | null;
             /** Format: uuid */
             readonly id: string;
+            readonly media: readonly components["schemas"]["ProductMediaResponseDto"][];
             readonly options: readonly components["schemas"]["CatalogOptionResponseDto"][];
             readonly priceRange: components["schemas"]["PublicPriceRangeResponseDto"] | null;
             /** Format: date-time */
@@ -1491,6 +1568,10 @@ export interface components {
             readonly expectedVersion: number;
             readonly options: readonly components["schemas"]["ConfigurationOptionDto"][];
             readonly variants: readonly components["schemas"]["ConfigurationVariantDto"][];
+        };
+        readonly ReplaceProductMediaDto: {
+            readonly expectedVersion: number;
+            readonly items: readonly components["schemas"]["ProductMediaItemDto"][];
         };
         readonly ReplaceStaffRolesDto: {
             readonly roleKeys: readonly string[];
@@ -1628,6 +1709,13 @@ export interface components {
             readonly name?: string;
             readonly postalPrefix?: string | null;
             readonly province?: string | null;
+        };
+        readonly UploadProductMediaDto: {
+            /** @default  */
+            readonly altText: string;
+            readonly expectedVersion: number;
+            /** Format: binary */
+            readonly file: string;
         };
     };
     responses: never;
@@ -2211,6 +2299,196 @@ export interface operations {
                 };
             };
             readonly 409: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogAdmin_replaceMedia: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly productId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["ReplaceProductMediaDto"];
+            };
+        };
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ProductDetailResponseDto"];
+                };
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogAdmin_uploadMedia: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly productId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "multipart/form-data": components["schemas"]["UploadProductMediaDto"];
+            };
+        };
+        readonly responses: {
+            readonly 201: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ProductDetailResponseDto"];
+                };
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogAdmin_removeMedia: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly mediaId: string;
+                readonly productId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["ProductTransitionDto"];
+            };
+        };
+        readonly responses: {
+            readonly 201: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ProductDetailResponseDto"];
+                };
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
                 headers: {
                     /** @description Request correlation identifier. */
                     readonly "x-request-id"?: string;

@@ -13,6 +13,21 @@ export async function ProductGrid() {
       {page.items.map((product) => (
         <li key={product.id}>
           <article>
+            {product.media[0] ? (
+              <Link href={`/products/${product.slug}`}>
+                <img
+                  alt={product.media[0].altText}
+                  className="product-card-image"
+                  decoding="async"
+                  height={product.media[0].height}
+                  loading="lazy"
+                  src={product.media[0].url}
+                  width={product.media[0].width}
+                />
+              </Link>
+            ) : (
+              <div aria-hidden="true" className="product-image-placeholder" />
+            )}
             <h3>
               <Link href={`/products/${product.slug}`}>{product.title}</Link>
             </h3>

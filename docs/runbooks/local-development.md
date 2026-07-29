@@ -3,8 +3,10 @@
 ## Disposable development database
 
 Run database lifecycle commands from the platform repository root. The root
-`docker-compose.yml` starts only PostgreSQL and Redis; the API continues to run
-through pnpm on the host.
+`docker-compose.yml` starts PostgreSQL, Redis, and a loopback-only MinIO object
+store; the API continues to run through pnpm on the host. MinIO and its
+credentials are disposable local-development dependencies, not a production
+storage choice.
 
 Start or stop dependencies without deleting their volumes:
 
@@ -24,10 +26,11 @@ pnpm db:reset
 pnpm start:dev
 ```
 
-The service list must be `postgres` and `redis`. `db:reset` runs Compose with
-`down --volumes --remove-orphans` and then starts both services again. It
-permanently deletes the local PostgreSQL and Redis volumes, including users,
-authorization audit data, and every session.
+The service list must include `postgres`, `redis`, `minio`, and `minio-init`.
+`db:reset` runs Compose with `down --volumes --remove-orphans` and then starts
+the services again. It permanently deletes the local PostgreSQL, Redis, and
+MinIO volumes, including users, commerce data, images, authorization audit
+data, and every session.
 
 There is no general commerce-data seed command. Development/test startup
 idempotently synchronizes the built-in authorization permission and role
