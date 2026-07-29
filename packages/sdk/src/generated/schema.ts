@@ -40,6 +40,134 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/v1/admin/catalog/categories": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["CatalogNavigationAdmin_categories"];
+        readonly put?: never;
+        readonly post: operations["CatalogNavigationAdmin_createCategory"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/catalog/categories/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["CatalogNavigationAdmin_category"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch: operations["CatalogNavigationAdmin_editCategory"];
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/catalog/categories/{id}/{action}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: operations["CatalogNavigationAdmin_categoryTransition"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/catalog/categories/{id}/move": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: operations["CatalogNavigationAdmin_moveCategory"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/catalog/collections": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["CatalogNavigationAdmin_collections"];
+        readonly put?: never;
+        readonly post: operations["CatalogNavigationAdmin_createCollection"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/catalog/collections/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["CatalogNavigationAdmin_collection"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch: operations["CatalogNavigationAdmin_editCollection"];
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/catalog/collections/{id}/{action}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: operations["CatalogNavigationAdmin_collectionTransition"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/catalog/collections/{id}/products": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: operations["CatalogNavigationAdmin_collectionProducts"];
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/v1/admin/catalog/products": {
         readonly parameters: {
             readonly query?: never;
@@ -58,6 +186,22 @@ export interface paths {
          * @description Requires admin.access and catalog.products.write.
          */
         readonly post: operations["CatalogAdmin_create"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/catalog/products/{id}/categories": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: operations["CatalogNavigationAdmin_productCategories"];
+        readonly post?: never;
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -862,6 +1006,102 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/v1/catalog/categories/{slug}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["PublicCommerce_category"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/catalog/categories/{slug}/products": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["PublicCommerce_categoryProducts"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/catalog/categories/navigation": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["PublicCommerce_categoryNavigation"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/catalog/collections": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["PublicCommerce_collections"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/catalog/collections/{slug}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["PublicCommerce_collection"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/catalog/collections/{slug}/products": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["PublicCommerce_collectionProducts"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/v1/catalog/products": {
         readonly parameters: {
             readonly query?: never;
@@ -1102,6 +1342,9 @@ export interface components {
         readonly CartVersionDto: {
             readonly expectedVersion: number;
         };
+        readonly CatalogGroupingTransitionDto: {
+            readonly expectedVersion: number;
+        };
         readonly CatalogOptionResponseDto: {
             /** Format: uuid */
             readonly id: string;
@@ -1133,9 +1376,14 @@ export interface components {
             /** Format: password */
             readonly newPassword: string;
         };
+        readonly CollectionProductItemDto: {
+            readonly position: number;
+            /** Format: uuid */
+            readonly productId: string;
+        };
         readonly CommerceAuditEventResponseDto: {
             /** @enum {string} */
-            readonly action: "pricing.price_changed" | "inventory.configured" | "inventory.adjusted" | "shipping.zone_created" | "shipping.zone_updated" | "shipping.zone_archived" | "shipping.method_created" | "shipping.method_updated" | "shipping.method_archived" | "shipping.rule_created" | "shipping.rule_updated" | "shipping.rule_archived" | "orders.submitted" | "orders.accepted" | "orders.rejected" | "payments.confirmed";
+            readonly action: "pricing.price_changed" | "inventory.configured" | "inventory.adjusted" | "shipping.zone_created" | "shipping.zone_updated" | "shipping.zone_archived" | "shipping.method_created" | "shipping.method_updated" | "shipping.method_archived" | "shipping.rule_created" | "shipping.rule_updated" | "shipping.rule_archived" | "orders.submitted" | "orders.accepted" | "orders.rejected" | "payments.confirmed" | "catalog.category_created" | "catalog.category_updated" | "catalog.category_moved" | "catalog.category_archived" | "catalog.category_restored" | "catalog.product_categories_replaced" | "catalog.collection_created" | "catalog.collection_updated" | "catalog.collection_archived" | "catalog.collection_restored" | "catalog.collection_products_replaced";
             /** Format: uuid */
             readonly actorUserId: string | null;
             /** Format: date-time */
@@ -1184,6 +1432,21 @@ export interface components {
         readonly ConfirmManualPaymentDto: {
             readonly note?: string;
             readonly reference?: string;
+        };
+        readonly CreateCategoryDto: {
+            readonly description?: Record<string, never> | null;
+            /** Format: uuid */
+            readonly parentId?: Record<string, never> | null;
+            readonly position: number;
+            readonly slug: string;
+            readonly summary?: Record<string, never> | null;
+            readonly title: string;
+        };
+        readonly CreateCollectionDto: {
+            readonly description?: Record<string, never> | null;
+            readonly slug: string;
+            readonly summary?: Record<string, never> | null;
+            readonly title: string;
         };
         readonly CreatedProductResponseDto: {
             /** Format: uuid */
@@ -1253,6 +1516,20 @@ export interface components {
             /** @enum {string} */
             readonly status: "up" | "down";
         };
+        readonly EditCategoryDto: {
+            readonly description?: Record<string, never> | null;
+            readonly expectedVersion: number;
+            readonly slug: string;
+            readonly summary?: Record<string, never> | null;
+            readonly title: string;
+        };
+        readonly EditCollectionDto: {
+            readonly description?: Record<string, never> | null;
+            readonly expectedVersion: number;
+            readonly slug: string;
+            readonly summary?: Record<string, never> | null;
+            readonly title: string;
+        };
         readonly EditProductDto: {
             readonly description?: Record<string, never> | null;
             readonly expectedVersion: number;
@@ -1307,6 +1584,12 @@ export interface components {
         readonly MessageResponseDto: {
             /** @example If the account can be verified, an email will be sent */
             readonly message: string;
+        };
+        readonly MoveCategoryDto: {
+            readonly expectedVersion: number;
+            /** Format: uuid */
+            readonly parentId?: Record<string, never> | null;
+            readonly position: number;
         };
         readonly Object: Record<string, never>;
         readonly OptionValueDto: {
@@ -1494,6 +1777,49 @@ export interface components {
             readonly sku: string | null;
             readonly title: string | null;
         };
+        readonly PublicCategoryNavigationItemDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly parentId: string | null;
+            readonly position: number;
+            readonly slug: string;
+            readonly title: string;
+        };
+        readonly PublicCategoryNavigationResponseDto: {
+            readonly items: readonly components["schemas"]["PublicCategoryNavigationItemDto"][];
+        };
+        readonly PublicCategoryResolutionResponseDto: {
+            readonly canonicalSlug: string;
+            readonly category: components["schemas"]["PublicCategoryResponseDto"];
+            readonly requestedSlugIsCanonical: boolean;
+        };
+        readonly PublicCategoryResponseDto: {
+            readonly breadcrumbs: readonly components["schemas"]["PublicCategoryNavigationItemDto"][];
+            readonly description: string | null;
+            /** Format: uuid */
+            readonly id: string;
+            readonly slug: string;
+            readonly summary: string | null;
+            readonly title: string;
+        };
+        readonly PublicCollectionListResponseDto: {
+            readonly items: readonly components["schemas"]["PublicCollectionResponseDto"][];
+            readonly nextCursor: string | null;
+        };
+        readonly PublicCollectionResolutionResponseDto: {
+            readonly canonicalSlug: string;
+            readonly collection: components["schemas"]["PublicCollectionResponseDto"];
+            readonly requestedSlugIsCanonical: boolean;
+        };
+        readonly PublicCollectionResponseDto: {
+            readonly description: string | null;
+            /** Format: uuid */
+            readonly id: string;
+            readonly slug: string;
+            readonly summary: string | null;
+            readonly title: string;
+        };
         readonly PublicMoneyResponseDto: {
             /** @example 120.00 */
             readonly amount: string;
@@ -1564,10 +1890,18 @@ export interface components {
             /** Format: password */
             readonly password: string;
         };
+        readonly ReplaceCollectionProductsDto: {
+            readonly expectedVersion: number;
+            readonly items: readonly components["schemas"]["CollectionProductItemDto"][];
+        };
         readonly ReplaceConfigurationDto: {
             readonly expectedVersion: number;
             readonly options: readonly components["schemas"]["ConfigurationOptionDto"][];
             readonly variants: readonly components["schemas"]["ConfigurationVariantDto"][];
+        };
+        readonly ReplaceProductCategoriesDto: {
+            readonly categoryIds: readonly string[];
+            readonly expectedVersion: number;
         };
         readonly ReplaceProductMediaDto: {
             readonly expectedVersion: number;
@@ -1587,7 +1921,7 @@ export interface components {
             readonly description: string;
             readonly key: string;
             readonly name: string;
-            readonly permissions: readonly ("admin.access" | "staff.read" | "staff.create" | "staff.assign_roles" | "staff.assign_owner" | "staff.suspend" | "roles.read" | "audit.read" | "catalog.products.read" | "catalog.products.write" | "catalog.products.publish" | "catalog.products.archive" | "catalog.categories.read" | "catalog.categories.write" | "catalog.pricing.write" | "pricing.read" | "pricing.write" | "inventory.read" | "inventory.adjust" | "shipping.read" | "shipping.write" | "orders.read" | "orders.accept" | "orders.reject" | "orders.notes.write" | "orders.fulfill" | "orders.cancel" | "orders.refund" | "payments.read" | "payments.manual_confirm" | "customers.read" | "customers.update" | "promotions.read" | "promotions.write" | "reports.read")[];
+            readonly permissions: readonly ("admin.access" | "staff.read" | "staff.create" | "staff.assign_roles" | "staff.assign_owner" | "staff.suspend" | "roles.read" | "audit.read" | "catalog.products.read" | "catalog.products.write" | "catalog.products.publish" | "catalog.products.archive" | "catalog.categories.read" | "catalog.categories.write" | "catalog.collections.read" | "catalog.collections.write" | "catalog.pricing.write" | "pricing.read" | "pricing.write" | "inventory.read" | "inventory.adjust" | "shipping.read" | "shipping.write" | "orders.read" | "orders.accept" | "orders.reject" | "orders.notes.write" | "orders.fulfill" | "orders.cancel" | "orders.refund" | "payments.read" | "payments.manual_confirm" | "customers.read" | "customers.update" | "promotions.read" | "promotions.write" | "reports.read")[];
         };
         readonly SafeUserResponseDto: {
             /**
@@ -1667,7 +2001,7 @@ export interface components {
         readonly StaffProfileResponseDto: {
             /** Format: email */
             readonly email: string;
-            readonly permissions: readonly ("admin.access" | "staff.read" | "staff.create" | "staff.assign_roles" | "staff.assign_owner" | "staff.suspend" | "roles.read" | "audit.read" | "catalog.products.read" | "catalog.products.write" | "catalog.products.publish" | "catalog.products.archive" | "catalog.categories.read" | "catalog.categories.write" | "catalog.pricing.write" | "pricing.read" | "pricing.write" | "inventory.read" | "inventory.adjust" | "shipping.read" | "shipping.write" | "orders.read" | "orders.accept" | "orders.reject" | "orders.notes.write" | "orders.fulfill" | "orders.cancel" | "orders.refund" | "payments.read" | "payments.manual_confirm" | "customers.read" | "customers.update" | "promotions.read" | "promotions.write" | "reports.read")[];
+            readonly permissions: readonly ("admin.access" | "staff.read" | "staff.create" | "staff.assign_roles" | "staff.assign_owner" | "staff.suspend" | "roles.read" | "audit.read" | "catalog.products.read" | "catalog.products.write" | "catalog.products.publish" | "catalog.products.archive" | "catalog.categories.read" | "catalog.categories.write" | "catalog.collections.read" | "catalog.collections.write" | "catalog.pricing.write" | "pricing.read" | "pricing.write" | "inventory.read" | "inventory.adjust" | "shipping.read" | "shipping.write" | "orders.read" | "orders.accept" | "orders.reject" | "orders.notes.write" | "orders.fulfill" | "orders.cancel" | "orders.refund" | "payments.read" | "payments.manual_confirm" | "customers.read" | "customers.update" | "promotions.read" | "promotions.write" | "reports.read")[];
             readonly roles: readonly string[];
             /** @enum {string} */
             readonly status: "active" | "suspended";
@@ -1839,6 +2173,606 @@ export interface operations {
             };
         };
     };
+    readonly CatalogNavigationAdmin_categories: {
+        readonly parameters: {
+            readonly query?: {
+                readonly cursor?: string;
+                readonly limit?: number;
+                readonly q?: string;
+                readonly status?: "active" | "archived";
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_createCategory: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CreateCategoryDto"];
+            };
+        };
+        readonly responses: {
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_category: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_editCategory: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["EditCategoryDto"];
+            };
+        };
+        readonly responses: {
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_categoryTransition: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly action: string;
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CatalogGroupingTransitionDto"];
+            };
+        };
+        readonly responses: {
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_moveCategory: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["MoveCategoryDto"];
+            };
+        };
+        readonly responses: {
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_collections: {
+        readonly parameters: {
+            readonly query?: {
+                readonly cursor?: string;
+                readonly limit?: number;
+                readonly q?: string;
+                readonly status?: "active" | "archived";
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_createCollection: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CreateCollectionDto"];
+            };
+        };
+        readonly responses: {
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_collection: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_editCollection: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["EditCollectionDto"];
+            };
+        };
+        readonly responses: {
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_collectionTransition: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly action: string;
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CatalogGroupingTransitionDto"];
+            };
+        };
+        readonly responses: {
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_collectionProducts: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["ReplaceCollectionProductsDto"];
+            };
+        };
+        readonly responses: {
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
     readonly CatalogAdmin_list: {
         readonly parameters: {
             readonly query?: {
@@ -1967,6 +2901,59 @@ export interface operations {
                 };
             };
             readonly 409: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly CatalogNavigationAdmin_productCategories: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["ReplaceProductCategoriesDto"];
+            };
+        };
+        readonly responses: {
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
                 headers: {
                     /** @description Request correlation identifier. */
                     readonly "x-request-id"?: string;
@@ -5419,6 +6406,234 @@ export interface operations {
                 };
                 content: {
                     readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly PublicCommerce_category: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly slug: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PublicCategoryResolutionResponseDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly PublicCommerce_categoryProducts: {
+        readonly parameters: {
+            readonly query?: {
+                readonly cursor?: string;
+                readonly limit?: number;
+                readonly q?: string;
+            };
+            readonly header?: never;
+            readonly path: {
+                readonly slug: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PublicProductPageResponseDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly PublicCommerce_categoryNavigation: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PublicCategoryNavigationResponseDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly PublicCommerce_collections: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PublicCollectionListResponseDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly PublicCommerce_collection: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly slug: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PublicCollectionResolutionResponseDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly PublicCommerce_collectionProducts: {
+        readonly parameters: {
+            readonly query?: {
+                readonly cursor?: string;
+                readonly limit?: number;
+                readonly q?: string;
+            };
+            readonly header?: never;
+            readonly path: {
+                readonly slug: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PublicProductPageResponseDto"];
                 };
             };
             /** @description Unexpected error represented as RFC 9457 problem details. */

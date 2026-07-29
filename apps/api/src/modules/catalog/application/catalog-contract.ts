@@ -115,8 +115,16 @@ export interface CatalogModuleContract {
   resolvePublishedSlug(slug: string): Promise<PublicCatalogResolution>;
   listCategoryNavigation(): Promise<readonly PublicCatalogCategory[]>;
   resolveCategorySlug(slug: string): Promise<PublicCategoryResolution>;
+  listCategoryPublishedProducts(
+    slug: string,
+    query?: PublicCatalogQuery,
+  ): Promise<PublicCatalogPage>;
   listCollections(): Promise<readonly PublicCatalogCollection[]>;
   resolveCollectionSlug(slug: string): Promise<PublicCollectionResolution>;
+  listCollectionPublishedProducts(
+    slug: string,
+    query?: PublicCatalogQuery,
+  ): Promise<PublicCatalogPage>;
   resolvePurchasableVariants(
     variantIds: readonly string[],
   ): Promise<readonly PurchasableVariantResolution[]>;

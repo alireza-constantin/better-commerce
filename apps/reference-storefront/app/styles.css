@@ -225,6 +225,19 @@ main {
   border-top: 1px solid #ded8cc;
   padding-top: 2rem;
 }
+.category-navigation { margin-bottom: 1.5rem; overflow-x: auto; }
+.category-navigation ul { display: flex; gap: .55rem; list-style: none; margin: 0; padding: 0; white-space: nowrap; }
+.category-navigation a, .back-link { color: #9a3412; text-decoration: none; }
+.category-navigation a { display: block; border: 1px solid #ded8cc; border-radius: 999px; padding: .45rem .75rem; }
+.page-heading { max-width: 44rem; margin: 1.5rem 0 2rem; }
+.page-heading h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); }
+.page-heading p, .page-description { color: #6b6258; line-height: 1.9; }
+.category-page, .collection-page, .collections-page { width: min(100% - 2rem, 72rem); margin: 0 auto; padding: 3rem 0; }
+.collection-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 1rem; list-style: none; padding: 0; }
+.collection-list a { display: block; height: 100%; border: 1px solid #ded8cc; border-radius: .75rem; background: #fff; color: inherit; padding: 1.25rem; text-decoration: none; }
+.collection-list h2, .collection-list p { margin: 0; }
+.collection-list p { color: #6b6258; margin-top: .7rem; }
+.empty-state { color: #6b6258; }
 .product-grid {
   display: grid;
   gap: 1rem;

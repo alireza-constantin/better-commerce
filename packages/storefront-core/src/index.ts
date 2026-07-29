@@ -80,6 +80,40 @@ export interface StorefrontProductDetail {
   readonly cache: StorefrontCacheMetadata;
 }
 
+export interface StorefrontCategoryNavigationItem {
+  readonly id: string;
+  readonly title: string;
+  readonly slug: string;
+  readonly parentId: string | null;
+  readonly position: number;
+}
+
+export interface StorefrontCategoryDetail {
+  readonly canonicalSlug: string;
+  readonly requestedSlugIsCanonical: boolean;
+  readonly category: {
+    readonly id: string;
+    readonly title: string;
+    readonly slug: string;
+    readonly summary: string | null;
+    readonly description: string | null;
+  };
+  readonly cache: StorefrontCacheMetadata;
+}
+
+export interface StorefrontCollectionDetail {
+  readonly canonicalSlug: string;
+  readonly requestedSlugIsCanonical: boolean;
+  readonly collection: {
+    readonly id: string;
+    readonly title: string;
+    readonly summary: string | null;
+    readonly description: string | null;
+    readonly slug: string;
+  };
+  readonly cache: StorefrontCacheMetadata;
+}
+
 export class StorefrontApiError extends Error {
   readonly status: number;
   readonly code: string | undefined;

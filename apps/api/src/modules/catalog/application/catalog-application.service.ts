@@ -1,7 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import sharp from 'sharp';
-import { In, type EntityManager, QueryFailedError } from 'typeorm';
+import {
+  In,
+  type EntityManager,
+  QueryFailedError,
+  type SelectQueryBuilder,
+} from 'typeorm';
 import { ObjectStorageService } from '../../../platform/object-storage';
 import { CATALOG_RESERVED_ROUTES } from '../catalog.constants';
 import {
@@ -25,15 +30,18 @@ import {
   CatalogProduct,
   CatalogProductMedia,
   CatalogProductOption,
+  CatalogProductCategory,
   CatalogProductSlug,
   CatalogVariant,
   CatalogVariantSelection,
+  CatalogCollectionProduct,
   ProductLifecycleStatus,
   VariantLifecycleStatus,
 } from '../persistence';
 import { CatalogPersistenceService } from '../persistence/catalog-persistence.service';
 import {
   type CatalogModuleContract,
+  type PublicCatalogQuery,
   type PublicCatalogProduct,
   type PublicCatalogResolution,
   type PurchasableVariantResolution,
@@ -177,6 +185,89 @@ export class CatalogApplicationService implements CatalogModuleContract {
 
   resolveCollectionSlug(slug: string) {
     return this.navigation.resolvePublicCollection(slug);
+  }
+
+  async listCategoryPublishedProducts(
+    slug: string,
+    query: PublicCatalogQuery = {},
+  ): Promise<{ items: readonly PublicProduct[]; nextCursor: string | null }> {
+    const category = await this.navigation.resolvePublicCategory(slug);
+    const listed = await this.listScopedPublishedProducts(query, (products) =>
+      products.innerJoin(
+        CatalogProductCategory,
+        'membership',
+        'membership.product_id = product.id AND membership.category_id = :categoryId',
+        { categoryId: category.category.id },
+      ),
+    );
+    return {
+      items: await Promise.all(
+        listed.items.map((row) => this.getPublicByProductId(row.id)),
+      ),
+      nextCursor: listed.nextCursor,
+    };
+  }
+
+  async listCollectionPublishedProducts(
+    slug: string,
+    query: PublicCatalogQuery = {},
+  ): Promise<{ items: readonly PublicProduct[]; nextCursor: string | null }> {
+    const collection = await this.navigation.resolvePublicCollection(slug);
+    const limit = this.pageLimit(query.limit);
+    const cursor = this.decodeCollectionCursor(query.cursor);
+    const rows = await this.persistence.withTransaction(async (manager) => {
+      const products = manager
+        .getRepository(CatalogProduct)
+        .createQueryBuilder('product')
+        .innerJoin(
+          CatalogCollectionProduct,
+          'membership',
+          'membership.product_id = product.id AND membership.collection_id = :collectionId',
+          { collectionId: collection.collection.id },
+        )
+        .andWhere('product.status = :publishedStatus', {
+          publishedStatus: ProductLifecycleStatus.PUBLISHED,
+        })
+        .andWhere(
+          'EXISTS (SELECT 1 FROM catalog_variants active_variant WHERE active_variant.product_id = product.id AND active_variant.status = :activeStatus)',
+          { activeStatus: VariantLifecycleStatus.ACTIVE },
+        )
+        .orderBy('membership.position', 'ASC')
+        .addOrderBy('product.id', 'ASC')
+        .take(limit + 1);
+      if (query.q?.trim())
+        products.andWhere(
+          '(LOWER(product.title) LIKE :prefix OR product.slug LIKE :prefix)',
+          { prefix: `${canonicalComparison(query.q.trim())}%` },
+        );
+      if (cursor)
+        products.andWhere(
+          '(membership.position > :position OR (membership.position = :position AND product.id > :id))',
+          cursor,
+        );
+      return products.getMany();
+    });
+    const page = rows.slice(0, limit);
+    const last = page.at(-1);
+    const membership = last
+      ? await this.persistence.withTransaction((manager) =>
+          manager
+            .getRepository(CatalogCollectionProduct)
+            .findOneBy({
+              collectionId: collection.collection.id,
+              productId: last.id,
+            }),
+        )
+      : null;
+    return {
+      items: await Promise.all(
+        page.map((row) => this.getPublicByProductId(row.id)),
+      ),
+      nextCursor:
+        rows.length > limit && membership && last
+          ? this.encodeCollectionCursor(membership.position, last.id)
+          : null,
+    };
   }
 
   async addMedia(
@@ -1001,6 +1092,48 @@ export class CatalogApplicationService implements CatalogModuleContract {
     };
   }
 
+  private async listScopedPublishedProducts(
+    query: PublicCatalogQuery,
+    scope: (products: SelectQueryBuilder<CatalogProduct>) => unknown,
+  ): Promise<ProductListResult> {
+    const limit = this.pageLimit(query.limit);
+    const cursor = this.decodeCursor(query.cursor);
+    const rows = await this.persistence.withTransaction(async (manager) => {
+      const products = manager
+        .getRepository(CatalogProduct)
+        .createQueryBuilder('product');
+      scope(products);
+      products
+        .andWhere('product.status = :publishedStatus', {
+          publishedStatus: ProductLifecycleStatus.PUBLISHED,
+        })
+        .andWhere(
+          'EXISTS (SELECT 1 FROM catalog_variants active_variant WHERE active_variant.product_id = product.id AND active_variant.status = :activeStatus)',
+          { activeStatus: VariantLifecycleStatus.ACTIVE },
+        )
+        .orderBy('product.published_at', 'DESC')
+        .addOrderBy('product.id', 'DESC')
+        .take(limit + 1);
+      if (query.q?.trim())
+        products.andWhere(
+          '(LOWER(product.title) LIKE :prefix OR product.slug LIKE :prefix)',
+          { prefix: `${canonicalComparison(query.q.trim())}%` },
+        );
+      if (cursor)
+        products.andWhere(
+          '(product.published_at < :timestamp OR (product.published_at = :timestamp AND product.id < :id))',
+          cursor,
+        );
+      return products.getMany();
+    });
+    const page = rows.slice(0, limit);
+    return {
+      items: page.map((row) => this.productRow(row)),
+      nextCursor:
+        rows.length > limit ? this.encodeCursor(page.at(-1)!, true) : null,
+    };
+  }
+
   private async getPublicByProductId(
     productId: string,
   ): Promise<PublicProduct> {
@@ -1150,6 +1283,29 @@ export class CatalogApplicationService implements CatalogModuleContract {
       )
         throw new Error();
       return { timestamp: parsed[0], id: parsed[1] };
+    } catch {
+      throw this.error('catalog.validation_failed', 'cursor is invalid');
+    }
+  }
+  private encodeCollectionCursor(position: number, id: string): string {
+    return Buffer.from(JSON.stringify([position, id])).toString('base64url');
+  }
+  private decodeCollectionCursor(
+    cursor?: string,
+  ): { position: number; id: string } | null {
+    if (!cursor) return null;
+    try {
+      const value: unknown = JSON.parse(
+        Buffer.from(cursor, 'base64url').toString('utf8'),
+      );
+      if (
+        !Array.isArray(value) ||
+        !Number.isSafeInteger(value[0]) ||
+        value[0] < 0 ||
+        typeof value[1] !== 'string'
+      )
+        throw new Error();
+      return { position: value[0], id: value[1] };
     } catch {
       throw this.error('catalog.validation_failed', 'cursor is invalid');
     }

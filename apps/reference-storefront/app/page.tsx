@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { ProductGrid } from '../components/product-grid';
+import { CategoryNavigation } from '../components/category-navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,9 @@ export default function HomePage() {
       </section>
 
       <section className="catalog-section">
+        <Suspense fallback={null}>
+          <CategoryNavigation />
+        </Suspense>
         <h2>محصولات</h2>
         <Suspense fallback={<ProductGridFallback />}>
           <ProductGrid />

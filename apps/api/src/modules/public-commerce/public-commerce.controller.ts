@@ -20,6 +20,12 @@ import {
   PublicProductQueryDto,
   PublicProductResolutionResponseDto,
 } from '../catalog/http/catalog.dto';
+import {
+  PublicCategoryNavigationResponseDto,
+  PublicCategoryResolutionResponseDto,
+  PublicCollectionListResponseDto,
+  PublicCollectionResolutionResponseDto,
+} from '../catalog/http/catalog-navigation.dto';
 import { PublicCommerceService } from './public-commerce.service';
 
 const catalogErrorStatus: Record<CatalogApplicationError['code'], HttpStatus> =
@@ -75,6 +81,66 @@ export class PublicCommerceController {
   async detail(@Param('slug') slug: string) {
     try {
       return await this.commerce.resolveProduct(slug);
+    } catch (error) {
+      translateCatalogError(error);
+    }
+  }
+
+  @Get('categories/navigation')
+  @ApiOkResponse({ type: PublicCategoryNavigationResponseDto })
+  async categoryNavigation() {
+    return { items: await this.commerce.listCategoryNavigation() };
+  }
+
+  @Get('categories/:slug')
+  @ApiOkResponse({ type: PublicCategoryResolutionResponseDto })
+  @ApiNotFoundResponse()
+  async category(@Param('slug') slug: string) {
+    try {
+      return await this.commerce.resolveCategory(slug);
+    } catch (error) {
+      translateCatalogError(error);
+    }
+  }
+
+  @Get('categories/:slug/products')
+  @ApiOkResponse({ type: PublicProductPageResponseDto })
+  async categoryProducts(
+    @Param('slug') slug: string,
+    @Query() dto: PublicProductQueryDto,
+  ) {
+    try {
+      return await this.commerce.listCategoryProducts(slug, dto);
+    } catch (error) {
+      translateCatalogError(error);
+    }
+  }
+
+  @Get('collections')
+  @ApiOkResponse({ type: PublicCollectionListResponseDto })
+  async collections() {
+    return { items: await this.commerce.listCollections(), nextCursor: null };
+  }
+
+  @Get('collections/:slug')
+  @ApiOkResponse({ type: PublicCollectionResolutionResponseDto })
+  @ApiNotFoundResponse()
+  async collection(@Param('slug') slug: string) {
+    try {
+      return await this.commerce.resolveCollection(slug);
+    } catch (error) {
+      translateCatalogError(error);
+    }
+  }
+
+  @Get('collections/:slug/products')
+  @ApiOkResponse({ type: PublicProductPageResponseDto })
+  async collectionProducts(
+    @Param('slug') slug: string,
+    @Query() dto: PublicProductQueryDto,
+  ) {
+    try {
+      return await this.commerce.listCollectionProducts(slug, dto);
     } catch (error) {
       translateCatalogError(error);
     }

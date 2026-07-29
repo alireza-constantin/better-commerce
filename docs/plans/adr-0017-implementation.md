@@ -26,9 +26,9 @@ verification.
 
 - Phase 1 — Contracts and authorization: completed 2026-07-29
 - Phase 2 — Catalog domain and persistence: completed 2026-07-29
-- Phase 3 — Administrative workflows: pending
-- Phase 4 — Public SDK and storefront-core integration: pending
-- Phase 5 — Reference storefront and final verification: pending
+- Phase 3 — Administrative workflows: partially implemented; Admin UI deferred
+- Phase 4 — Public SDK and storefront-core integration: completed 2026-07-29
+- Phase 5 — Reference storefront and final verification: completed 2026-07-29
 
 Phase 1 froze `docs/contracts/catalog-navigation.md`, introduced the distinct
 Collection permissions and reviewed role assignments, registered allow-listed
@@ -43,6 +43,18 @@ optimistic concurrency, same-transaction Commerce Audit writes, and active-only
 module-contract projections. PostgreSQL advisory transaction locks serialize
 the bounded Category hierarchy and Collection creation limits. The disposable
 development database was reset and synchronized; no migration was added.
+
+Phase 4 exposed active Category navigation, Category and Collection slug
+resolution, and scoped published Product reads. Catalog retains membership and
+visibility authority; Public Commerce alone enriches those Products with Price
+and Inventory. The SDK was regenerated from an isolated local OpenAPI instance,
+and storefront-core now exposes framework-neutral server helpers and explicit
+cache-key inputs for Categories and Collections.
+
+Phase 5 added the reference storefront's server-rendered Category navigation,
+Category pages, Collection list/detail pages, canonical redirects, and Persian
+RTL empty and not-found states. Automated live-browser verification remains
+intentionally skipped at the user's earlier request.
 
 ## Model strategy
 

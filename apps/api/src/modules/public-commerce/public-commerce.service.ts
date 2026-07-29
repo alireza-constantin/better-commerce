@@ -44,6 +44,39 @@ export class PublicCommerceService {
     return { ...resolution, product };
   }
 
+  listCategoryNavigation() {
+    return this.catalog.listCategoryNavigation();
+  }
+
+  resolveCategory(slug: string) {
+    return this.catalog.resolveCategorySlug(slug);
+  }
+  async listCategoryProducts(slug: string, query: PublicCatalogQuery = {}) {
+    const page = await this.catalog.listCategoryPublishedProducts(slug, query);
+    return {
+      items: await this.enrichProducts(page.items),
+      nextCursor: page.nextCursor,
+    };
+  }
+
+  listCollections() {
+    return this.catalog.listCollections();
+  }
+
+  resolveCollection(slug: string) {
+    return this.catalog.resolveCollectionSlug(slug);
+  }
+  async listCollectionProducts(slug: string, query: PublicCatalogQuery = {}) {
+    const page = await this.catalog.listCollectionPublishedProducts(
+      slug,
+      query,
+    );
+    return {
+      items: await this.enrichProducts(page.items),
+      nextCursor: page.nextCursor,
+    };
+  }
+
   private async enrichProducts(products: readonly PublicCatalogProduct[]) {
     const variantIds = [
       ...new Set(

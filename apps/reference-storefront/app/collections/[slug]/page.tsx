@@ -1,0 +1,6 @@
+import Link from 'next/link';
+import { notFound, permanentRedirect } from 'next/navigation';
+import { ProductGrid } from '../../../components/product-grid';
+import { getStorefrontServer } from '../../../lib/storefront';
+export const dynamic = 'force-dynamic';
+export default async function CollectionPage({ params }: { readonly params: Promise<{ slug: string }> }) { const { slug } = await params; const storefront = getStorefrontServer(); try { const collection = await storefront.getPublicCollection(slug); if (!collection.requestedSlugIsCanonical) permanentRedirect(`/collections/${collection.canonicalSlug}`); const products = await storefront.listCollectionProducts(collection.canonicalSlug, { limit: 24 }); return <main className="collection-page"><Link className="back-link" href="/collections">بازگشت به مجموعه‌ها</Link><header className="page-heading"><h1>{collection.collection.title}</h1>{collection.collection.summary ? <p>{collection.collection.summary}</p> : null}</header>{collection.collection.description ? <p className="page-description">{collection.collection.description}</p> : null}<ProductGrid page={products} emptyMessage="در این مجموعه کالای قابل نمایشی وجود ندارد." /></main>; } catch (error) { if (error instanceof Error && 'status' in error && error.status === 404) notFound(); throw error; } }
