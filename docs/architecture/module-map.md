@@ -45,6 +45,7 @@ apps/api/src/
     inventory/                  Stock, adjustments, reservations, Admin API
     shipping/                   Zones, methods, rate rules, quotes, Admin API
     payments/                   Manual-payment state and history
+    cart/                       Durable intent, ownership, merge, expiry, versioning
     orders/                     Checkout orchestration, snapshots, Order APIs
     commerce-audit/             Append-only operational commerce history
     public-commerce/            Public Product read composition; no persistence
@@ -77,7 +78,7 @@ packages/sdk/
 
 packages/storefront-core/
   src/server.ts                Framework-neutral public Catalog integration
-  src/browser.ts               Session, CSRF, Orders, checkout integration
+  src/browser.ts               Session, CSRF, Cart, Orders, checkout integration
   src/index.ts                 Environment-neutral storefront view types
 ```
 
@@ -96,6 +97,7 @@ flowchart TD
     Inventory["Inventory module"]
     Shipping["Shipping module"]
     Payments["Payments module"]
+    Cart["Cart module"]
     Orders["Orders and Checkout module"]
     PublicCommerce["Public Commerce read module"]
     Platform["Platform facilities"]
@@ -110,6 +112,7 @@ flowchart TD
     Composition --> Inventory
     Composition --> Shipping
     Composition --> Payments
+    Composition --> Cart
     Composition --> Orders
     Composition --> PublicCommerce
     Composition --> Platform
@@ -130,6 +133,10 @@ flowchart TD
     Orders --> Inventory
     Orders --> Shipping
     Orders --> Payments
+    Cart --> CatalogContract
+    Cart --> Pricing
+    Cart --> Inventory
+    Orders --> Cart
 ```
 
 The composition root may know all concrete modules. Platform facilities do not

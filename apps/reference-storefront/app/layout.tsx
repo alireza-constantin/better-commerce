@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './styles.css';
+import { StorefrontShell } from '../components/storefront-shell';
 
 export const metadata: Metadata = {
   title: 'Better Commerce Reference Storefront',
@@ -11,7 +12,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fa" dir="rtl">
-      <body>{children}</body>
+      <body>
+        <StorefrontShell>{children}</StorefrontShell>
+      </body>
     </html>
   );
 }

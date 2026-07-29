@@ -6,6 +6,7 @@ import { InventoryModule } from '../inventory';
 import { PaymentsModule } from '../payments';
 import { PricingModule } from '../pricing';
 import { ShippingModule } from '../shipping';
+import { CartModule } from '../cart';
 import { CommerceOrderLine } from './commerce-order-line.entity';
 import { CommerceOrder } from './commerce-order.entity';
 import {
@@ -24,6 +25,7 @@ import { OrdersPersistence } from './persistence/orders.persistence';
     ShippingModule,
     PaymentsModule,
     CommerceAuditModule,
+    CartModule,
   ],
   controllers: [CustomerOrdersController, AdminOrdersController],
   providers: [OrdersService, OrdersPersistence],

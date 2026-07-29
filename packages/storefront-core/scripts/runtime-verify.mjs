@@ -135,7 +135,16 @@ async function verifyBrowserProtocols() {
         );
       }
       if (path === '/api/v1/auth/me') return Response.json(customer);
-      if (path === '/api/v1/checkout/orders') {
+      if (path === '/api/v1/cart') {
+        return Response.json({
+          id: null,
+          version: 0,
+          status: 'active',
+          expiresAt: null,
+          lines: [],
+        });
+      }
+      if (path === '/api/v1/checkout/cart-orders') {
         if (forceCsrfRejection) {
           forceCsrfRejection = false;
           return Response.json(
@@ -173,12 +182,8 @@ async function verifyBrowserProtocols() {
   assert.equal(snapshots.at(-1)?.status, 'authenticated');
 
   const checkoutInput = {
-    lines: [
-      {
-        variantId: '78dbb65f-0d82-4c9f-86f5-182d58734acb',
-        quantity: 1,
-      },
-    ],
+    cartId: '78dbb65f-0d82-4c9f-86f5-182d58734acb',
+    cartVersion: 3,
     shippingMethodId: '8181dfd8-0d0a-40e5-926d-2e5a13b65abd',
     paymentMethod: 'cash_on_delivery',
     deliveryAddress: {
@@ -196,7 +201,8 @@ async function verifyBrowserProtocols() {
   assert.equal((await submission.submit()).id, 'order-1');
 
   const checkoutRequests = browserRequests.filter(
-    (request) => new URL(request.url).pathname === '/api/v1/checkout/orders',
+    (request) =>
+      new URL(request.url).pathname === '/api/v1/checkout/cart-orders',
   );
   assert.equal(checkoutRequests.length, 2);
   assert.equal(

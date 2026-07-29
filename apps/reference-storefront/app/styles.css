@@ -8,6 +8,20 @@
 
 body { margin: 0; }
 
+button, input { font: inherit; }
+button { cursor: pointer; border: 0; border-radius: .5rem; background: #9a3412; color: #fff; padding: .6rem .9rem; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+.site-header { position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; padding: 1rem max(1rem, calc((100% - 72rem) / 2)); background: rgba(255, 252, 245, .95); border-bottom: 1px solid #ded8cc; }
+.brand { color: #1c1917; font-weight: 800; text-decoration: none; }
+.cart-panel { position: fixed; inset: 4.4rem 0 auto auto; z-index: 20; width: min(100%, 28rem); max-height: calc(100vh - 4.4rem); overflow: auto; padding: 1.25rem; background: #fff; border: 1px solid #ded8cc; box-shadow: 0 1rem 3rem rgba(28, 25, 23, .18); }
+.cart-panel ul { display: grid; gap: 1rem; list-style: none; padding: 0; }
+.cart-panel li { display: grid; grid-template-columns: 1fr auto; gap: .5rem; padding-bottom: 1rem; border-bottom: 1px solid #ded8cc; }
+.cart-panel label { display: flex; align-items: center; gap: .5rem; }
+.cart-panel input[type="number"] { width: 5rem; }
+.stack-form { display: grid; gap: .75rem; margin-top: 1.5rem; }
+.stack-form input { width: 100%; border: 1px solid #c7bfb2; border-radius: .5rem; padding: .7rem; }
+.cart-action { display: grid; gap: .35rem; }
+
 main { width: min(100% - 2rem, 72rem); margin: 0 auto; padding: 4rem 0; }
 
 .hero { max-width: 44rem; padding-block: 3rem 5rem; }

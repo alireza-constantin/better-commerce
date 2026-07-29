@@ -1,6 +1,6 @@
 # ADR-0015 Cart Implementation Plan
 
-Status: ready
+Status: implemented
 ADR: [ADR-0015](../adr/0015-cart.md)
 
 ## Goal

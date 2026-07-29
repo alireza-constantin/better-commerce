@@ -6,6 +6,7 @@ import {
   displayPriceRange,
 } from '../../../lib/commerce-display';
 import { getStorefrontServer } from '../../../lib/storefront';
+import { AddToCartButton } from '../../../components/storefront-shell';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,10 @@ export default async function ProductPage({
               <span>{variant.title ?? 'مدل اصلی'}</span>
               <span>{variant.price ? displayMoney(variant.price) : 'بدون قیمت'}</span>
               <span>{displayAvailability(variant.availability)}</span>
+              <AddToCartButton
+                variantId={variant.id}
+                disabled={!variant.purchasable}
+              />
             </li>
           ))}
         </ul>

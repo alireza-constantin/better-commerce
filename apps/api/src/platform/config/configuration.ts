@@ -37,6 +37,11 @@ export interface ApplicationConfiguration {
     reservationSweepIntervalSeconds: number;
     reservationSweepBatchSize: number;
   };
+  cart: {
+    anonymousTtlMs: number;
+    customerTtlMs: number;
+    claimReplayTtlMs: number;
+  };
   database: DatabaseConfiguration;
   redis: RedisConfiguration;
   session: SessionConfiguration;
@@ -241,6 +246,23 @@ export const buildConfiguration = (
         100,
         { min: 1, max: 1_000 },
       ),
+    },
+    cart: {
+      anonymousTtlMs:
+        readInteger(source, 'CART_ANONYMOUS_TTL_SECONDS', 30 * 24 * 60 * 60, {
+          min: 24 * 60 * 60,
+          max: 365 * 24 * 60 * 60,
+        }) * 1_000,
+      customerTtlMs:
+        readInteger(source, 'CART_CUSTOMER_TTL_SECONDS', 90 * 24 * 60 * 60, {
+          min: 24 * 60 * 60,
+          max: 365 * 24 * 60 * 60,
+        }) * 1_000,
+      claimReplayTtlMs:
+        readInteger(source, 'CART_CLAIM_REPLAY_TTL_SECONDS', 24 * 60 * 60, {
+          min: 60 * 60,
+          max: 7 * 24 * 60 * 60,
+        }) * 1_000,
     },
     database: {
       host: readString(source, 'DB_HOST'),

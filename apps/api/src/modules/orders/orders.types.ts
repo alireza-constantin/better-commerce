@@ -10,6 +10,14 @@ export interface SubmitOrderInput {
   readonly deliveryAddress: DeliveryAddress;
 }
 
+export interface SubmitCartOrderInput {
+  readonly cartId: string;
+  readonly cartVersion: number;
+  readonly shippingMethodId: string;
+  readonly paymentMethod: ManualPaymentMethod;
+  readonly deliveryAddress: DeliveryAddress;
+}
+
 export interface OrderLineView {
   readonly productId: string;
   readonly variantId: string;

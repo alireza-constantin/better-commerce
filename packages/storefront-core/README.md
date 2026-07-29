@@ -30,9 +30,8 @@ Public Catalog reads accept no inbound header collection. A future
 personalized server facade must define a narrow allowlist rather than forward
 request headers wholesale.
 
-Browser session, CSRF, customer Order, and checkout integration are available
-through `@better-commerce/storefront-core/browser`. Persistent Cart behavior is
-deferred until its API contract is accepted.
+Browser session, CSRF, persistent Cart, customer Order, and checkout integration
+are available through `@better-commerce/storefront-core/browser`.
 
 ## Browser session and checkout
 
@@ -44,9 +43,19 @@ idempotency. It does not import React, a router, or a state library.
 import { createStorefrontBrowser } from '@better-commerce/storefront-core/browser';
 
 const storefront = createStorefrontBrowser();
+await storefront.cart.getCurrent();
+await storefront.cart.setQuantity(variantId, 2);
 const customer = await storefront.session.login({ email, password });
 
-const submission = storefront.checkout.createSubmission(checkoutInput);
+const cart = storefront.cart.getSnapshot();
+if (!cart.id) throw new Error('Cart is empty');
+const submission = storefront.checkout.createSubmission({
+  cartId: cart.id,
+  cartVersion: cart.version,
+  shippingMethodId,
+  paymentMethod: 'cash_on_delivery',
+  deliveryAddress,
+});
 try {
   const order = await submission.submit();
 } catch {
@@ -66,6 +75,8 @@ across explicit retries, caches a completed response, and rejects reuse after
 the authenticated customer changes. Network failures are not automatically
 retried because their outcome may be uncertain.
 
-Persistent Cart synchronization is intentionally not implemented yet. The API
-has no Cart contract, and ADR-0004 requires the first Cart decision to define
-ownership, anonymous/authenticated merge, expiry, and concurrency semantics.
+Cart state is authoritative in PostgreSQL. The browser package keeps only a
+current projection, sends absolute quantities with the observed Cart version,
+and refreshes after `cart.version_conflict` without replaying the rejected
+intent. Login and registration claim the anonymous HttpOnly-cookie Cart through
+the Cart API. The package never stores Cart authority in localStorage.

@@ -5,6 +5,8 @@ import {
   Controller,
   Get,
   Headers,
+  HttpException,
+  HttpStatus,
   NotFoundException,
   Param,
   ParseUUIDPipe,
@@ -37,10 +39,28 @@ import {
   OrdersPageResponseDto,
   OrdersQueryDto,
   SubmitOrderDto,
+  SubmitCartOrderDto,
 } from './orders.dto';
 import { OrdersService } from './orders.service';
+import { CartError } from '../cart';
 
 function orderError(error: unknown): never {
+  if (error instanceof CartError) {
+    throw new HttpException(
+      {
+        message: error.message,
+        code: error.code,
+        ...(error.currentVersion === undefined
+          ? {}
+          : { currentVersion: error.currentVersion }),
+      },
+      error.code === 'cart.not_found'
+        ? HttpStatus.NOT_FOUND
+        : error.code === 'cart.checkout_requires_authentication'
+          ? HttpStatus.UNAUTHORIZED
+          : HttpStatus.CONFLICT,
+    );
+  }
   if (!(error instanceof Error)) throw error;
   if (error.message.includes('not found'))
     throw new NotFoundException(error.message);
@@ -62,6 +82,42 @@ export class CustomerOrdersController {
     private readonly orders: OrdersService,
     private readonly requestContext: RequestContextService,
   ) {}
+
+  @Post('checkout/cart-orders')
+  @ApiCsrfProtected()
+  @ApiCreatedResponse({ type: OrderResponseDto })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    description:
+      'Caller-generated key. Replaying the same key and body returns the original order.',
+    required: true,
+    schema: { type: 'string', maxLength: 120 },
+  })
+  @ApiProblemResponse(400, 'The checkout request is invalid.')
+  @ApiProblemResponse(409, 'The Cart or commerce state changed.')
+  @ApiOperation({ summary: 'Submit an authenticated Cart for manual review' })
+  async submitCart(
+    @Req() request: Request,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Body() dto: SubmitCartOrderDto,
+  ) {
+    const normalizedKey = idempotencyKey?.trim();
+    if (!normalizedKey || normalizedKey.length > 120) {
+      throw new BadRequestException(
+        'A valid Idempotency-Key header is required',
+      );
+    }
+    try {
+      return await this.orders.submitCart(
+        request.authUser!.id,
+        normalizedKey,
+        dto,
+        this.requestContext.getRequestId() ?? null,
+      );
+    } catch (error) {
+      orderError(error);
+    }
+  }
 
   @Post('checkout/orders')
   @ApiCsrfProtected()

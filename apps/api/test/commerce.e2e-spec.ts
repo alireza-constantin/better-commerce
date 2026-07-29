@@ -23,6 +23,7 @@ import {
 import { PaymentsService } from '../src/modules/payments/persistence/payments.service';
 import { PricingService } from '../src/modules/pricing/persistence/pricing.service';
 import { ShippingService } from '../src/modules/shipping/persistence/shipping.service';
+import { Cart, CartService, CartStatus } from '../src/modules/cart';
 import {
   clearFullStackTestData,
   createFullApplication,
@@ -41,6 +42,7 @@ describe('Commerce transaction integration', () => {
   let payments: PaymentsService;
   let orders: OrdersService;
   let ownerBootstrap: OwnerBootstrapService;
+  let carts: CartService;
   let server: App;
 
   beforeAll(async () => {
@@ -53,12 +55,16 @@ describe('Commerce transaction integration', () => {
     payments = app.get(PaymentsService);
     orders = app.get(OrdersService);
     ownerBootstrap = app.get(OwnerBootstrapService);
+    carts = app.get(CartService);
     server = app.getHttpServer() as App;
   });
 
   beforeEach(async () => {
     await dataSource.query(`
       TRUNCATE TABLE
+        cart_claims,
+        cart_lines,
+        carts,
         commerce_audit_events,
         manual_payment_history,
         manual_payments,
@@ -215,6 +221,53 @@ describe('Commerce transaction integration', () => {
         currency: 'USD',
       },
     });
+  });
+
+  it('submits and closes an authenticated Cart atomically with replay-safe checkout', async () => {
+    const customer = request.agent(server);
+    const registration = await register(customer, 'cart-checkout@example.test');
+    const userId = (registration.body as unknown as { id: string }).id;
+    const setup = await CommerceFixture(
+      ManualPaymentMethod.CASH_ON_DELIVERY,
+      userId,
+    );
+    const cart = await carts.setQuantity({ userId }, 0, setup.variantId, 2);
+    if (!cart.id) throw new Error('Expected a persisted Cart');
+    const token = await csrf(customer);
+    const body = {
+      cartId: cart.id,
+      cartVersion: cart.version,
+      shippingMethodId: setup.methodId,
+      paymentMethod: setup.paymentMethod,
+      deliveryAddress: submission(setup).deliveryAddress,
+    };
+
+    const first = await customer
+      .post('/api/v1/checkout/cart-orders')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', token)
+      .set('Idempotency-Key', 'cart-checkout')
+      .send(body)
+      .expect(201);
+    const replay = await customer
+      .post('/api/v1/checkout/cart-orders')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', token)
+      .set('Idempotency-Key', 'cart-checkout')
+      .send(body)
+      .expect(201);
+
+    const firstOrder = first.body as unknown as { id: string };
+    expect(replay.body).toMatchObject({ id: firstOrder.id });
+    await expect(
+      dataSource.getRepository(Cart).findOneByOrFail({ id: cart.id }),
+    ).resolves.toMatchObject({ status: CartStatus.CHECKED_OUT });
+    await expect(
+      dataSource.query<{ count: string }>(
+        'SELECT COUNT(*)::text AS count FROM commerce_orders WHERE user_id = $1',
+        [userId],
+      ),
+    ).resolves.toEqual([{ count: '1' }]);
   });
 
   it('commits stock on acceptance and releases it on rejection', async () => {

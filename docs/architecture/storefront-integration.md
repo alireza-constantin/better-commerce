@@ -20,7 +20,8 @@ merchant or reference storefront
         |     normalized server failures, cache-key metadata
         |
         +-- @better-commerce/storefront-core/browser
-        |     session lifecycle, CSRF, customer Orders, checkout idempotency
+        |     session lifecycle, CSRF, persistent Cart, customer Orders,
+        |     checkout idempotency
         |
         +-- @better-commerce/sdk
               generated HTTP contract and environment-specific clients
@@ -51,23 +52,20 @@ storefront.
 
 ## Cart boundary
 
-There is currently no Cart module or HTTP contract. Storefront-core therefore
-does not claim persistent Cart synchronization and does not store a supposed
-platform Cart in `localStorage`.
+ADR-0015 is implemented through the PostgreSQL Cart module and
+`storefront-core/browser`. Anonymous ownership uses a high-entropy HttpOnly
+cookie whose keyed digest is stored in PostgreSQL. Login and registration
+explicitly claim or merge that Cart. Authenticated customers have one active
+Cart across devices.
 
-Before Cart implementation, a focused ADR must decide:
+Every mutation carries the observed version. Storefront-core refreshes after a
+version conflict but does not replay the rejected intent. Cart display lines
+compose current Catalog, Pricing, and Inventory projections; persisted lines
+contain only Variant ID and requested quantity.
 
-- anonymous ownership and identifier lifetime;
-- authenticated ownership;
-- login and registration merge behavior;
-- expiry and cleanup;
-- optimistic concurrency and conflicting device updates;
-- quantity limits and normalization;
-- whether and how anonymous Cart state survives browser restarts.
-
-The Cart remains mutable purchase intent. Adding a line never reserves stock,
-and checkout always revalidates Product eligibility, Price, Inventory,
-Shipping, and payment method.
+The Cart remains mutable purchase intent. Adding a line never reserves stock.
+Cart checkout is authenticated and atomically revalidates Product eligibility,
+Price, Inventory, Shipping, and payment method before closing the Cart.
 
 ## Verification
 
@@ -85,3 +83,6 @@ server and browser consumers, and checks:
 - completed-call coalescing;
 - customer-session binding;
 - browser credential inclusion.
+- anonymous Cart creation and authenticated claim;
+- Cart-version conflict refresh without mutation replay;
+- Cart-based checkout request typing.

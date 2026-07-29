@@ -140,17 +140,25 @@ propagates request cancellation, and exposes cache-key inputs without owning a
 renderer cache.
 
 `@better-commerce/storefront-core/browser` owns the storefront's shared
-credentialed session, in-memory CSRF lifecycle, customer Order reads, normalized
-browser errors, and checkout-idempotency lifecycle. It retries a mutation only
-after the exact CSRF rejection contract and only once. It does not automatically
-retry uncertain checkout failures; the caller retries the same submission
-object so its body and `Idempotency-Key` remain stable. Submissions are bound to
-the customer-session identity that created them.
+credentialed session, in-memory CSRF lifecycle, persistent Cart coordination,
+customer Order reads, normalized browser errors, and checkout-idempotency
+lifecycle. It retries a mutation only after the exact CSRF rejection contract
+and only once. It does not automatically retry uncertain checkout failures;
+the caller retries the same submission object so its body and
+`Idempotency-Key` remain stable. Submissions are bound to the customer-session
+identity that created them.
 
-Cart integration remains absent until a Cart API and focused Cart ADR define
-anonymous ownership, authenticated merge, expiry, and concurrency. Storefronts
-must not treat locally copied presentation state as the platform's persistent
-Cart contract.
+The Cart HTTP contract exposes current Cart reads, absolute-quantity upsert,
+line removal, clear, and authenticated anonymous-Cart claim. Mutations include
+the observed Cart version. `cart.version_conflict` causes storefront-core to
+refresh the current projection but never replay customer intent automatically.
+The raw anonymous Cart token exists only in an HttpOnly cookie.
+
+`POST /api/v1/checkout/cart-orders` accepts Cart identity/version plus delivery,
+Shipping, and Payment selections. The API obtains lines from Cart and closes
+the Cart in the same transaction that creates the Order, Payment, and Inventory
+reservations. The earlier direct-line checkout endpoint remains pre-1.0
+compatibility surface and is not used by storefront-core.
 
 With the API running locally:
 

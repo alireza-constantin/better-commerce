@@ -96,6 +96,30 @@ export class SubmitOrderDto {
   deliveryAddress!: DeliveryAddressDto;
 }
 
+export class SubmitCartOrderDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID('4')
+  cartId!: string;
+
+  @ApiProperty({ minimum: 1 })
+  @IsInt()
+  @Min(1)
+  cartVersion!: number;
+
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID('4')
+  shippingMethodId!: string;
+
+  @ApiProperty({ enum: ManualPaymentMethod })
+  @IsEnum(ManualPaymentMethod)
+  paymentMethod!: ManualPaymentMethod;
+
+  @ApiProperty({ type: () => DeliveryAddressDto })
+  @ValidateNested()
+  @Type(() => DeliveryAddressDto)
+  deliveryAddress!: DeliveryAddressDto;
+}
+
 export class OrderDecisionDto {
   @ApiPropertyOptional({ maxLength: 500 })
   @IsOptional()

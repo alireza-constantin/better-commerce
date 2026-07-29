@@ -36,11 +36,13 @@ import {
   SHIPPING_MODULE_CONTRACT,
   type ShippingModuleContract,
 } from '../shipping';
+import { CART_MODULE_CONTRACT, type CartModuleContract } from '../cart';
 import { CommerceOrderLine } from './commerce-order-line.entity';
 import { CommerceOrder, CommerceOrderStatus } from './commerce-order.entity';
 import type {
   OrderListView,
   OrderView,
+  SubmitCartOrderInput,
   SubmitOrderInput,
 } from './orders.types';
 import { OrdersPersistence } from './persistence/orders.persistence';
@@ -65,11 +67,215 @@ export class OrdersService {
     private readonly payments: PaymentsModuleContract,
     @Inject(COMMERCE_AUDIT_CONTRACT)
     private readonly audit: CommerceAuditContract,
+    @Inject(CART_MODULE_CONTRACT)
+    private readonly carts: CartModuleContract,
   ) {
     this.holdMinutes =
       config.getOrThrow<ApplicationConfiguration['commerce']>(
         'commerce',
       ).manualReviewHoldMinutes;
+  }
+
+  async submitCart(
+    userId: string,
+    idempotencyKey: string,
+    input: SubmitCartOrderInput,
+    requestId: string | null = null,
+  ): Promise<OrderView> {
+    const cartRequest = {
+      cartId: input.cartId,
+      cartVersion: input.cartVersion,
+      shippingMethodId: input.shippingMethodId,
+      paymentMethod: input.paymentMethod,
+      deliveryAddress: {
+        ...input.deliveryAddress,
+        country: input.deliveryAddress.country.toUpperCase(),
+      },
+    };
+    const fingerprint = createHash('sha256')
+      .update(JSON.stringify(cartRequest))
+      .digest('hex');
+    const existing = await this.findByIdempotency(userId, idempotencyKey);
+    if (existing) return this.assertReplay(existing, fingerprint);
+
+    try {
+      return await this.transactions.run(async (transaction) => {
+        const replay = await this.persistence.findByIdempotency(
+          userId,
+          idempotencyKey,
+          transaction,
+        );
+        if (replay) return this.assertReplay(replay, fingerprint, transaction);
+
+        const checkoutCart = await this.carts.lockForCheckout(
+          userId,
+          cartRequest.cartId,
+          cartRequest.cartVersion,
+          transaction,
+        );
+        const normalized = this.normalizeInput({
+          lines: checkoutCart.lines,
+          shippingMethodId: cartRequest.shippingMethodId,
+          paymentMethod: cartRequest.paymentMethod,
+          deliveryAddress: cartRequest.deliveryAddress,
+        });
+        const variantIds = normalized.lines.map((line) => line.variantId);
+        const [resolutions, snapshotFacts] = await Promise.all([
+          this.catalog.resolvePurchasableVariants(variantIds),
+          this.catalog.getVariantSnapshotFacts(variantIds),
+        ]);
+        if (
+          resolutions.length !== variantIds.length ||
+          resolutions.some((variant) => !variant.eligible)
+        ) {
+          throw new Error('One or more Variants are not purchasable');
+        }
+        const facts = new Map(
+          snapshotFacts.map((fact) => [fact.variantId, fact]),
+        );
+        const quotes = await this.pricing.quoteVariantPrices(
+          variantIds,
+          transaction,
+        );
+        const quoteByVariant = new Map(
+          quotes.map((quote) => [quote.variantId, quote]),
+        );
+        const currency = quotes[0]?.unitPrice.currency;
+        if (
+          !currency ||
+          quotes.some((quote) => quote.unitPrice.currency !== currency)
+        ) {
+          throw new Error('Order lines must use one currency');
+        }
+
+        let merchandiseSubtotal = 0n;
+        const orderId = randomUUID();
+        const lineRows = normalized.lines.map((line) => {
+          const fact = facts.get(line.variantId);
+          const quote = quoteByVariant.get(line.variantId);
+          if (!fact || !quote) {
+            throw new Error('Variant snapshot is unavailable');
+          }
+          const lineMinor = quote.unitPrice.minorAmount * BigInt(line.quantity);
+          merchandiseSubtotal += lineMinor;
+          return {
+            orderId,
+            productId: fact.productId,
+            variantId: fact.variantId,
+            productTitle: fact.productTitle,
+            variantTitle: fact.variantTitle,
+            sku: fact.sku,
+            fulfillmentClassification: fact.fulfillmentClassification,
+            quantity: line.quantity,
+            priceVersionId: quote.priceVersionId,
+            unitMinor: quote.unitPrice.minorAmount.toString(),
+            lineMinor: lineMinor.toString(),
+            currency,
+          };
+        });
+        const shippingQuotes = await this.shipping.quote(
+          normalized.deliveryAddress,
+          { minorAmount: merchandiseSubtotal, currency },
+          transaction,
+        );
+        const shippingQuote = shippingQuotes.find(
+          (quote) => quote.methodId === normalized.shippingMethodId,
+        );
+        if (!shippingQuote) throw new Error('Shipping method is unavailable');
+
+        const reservations = await this.inventory.reserve(
+          normalized.lines,
+          `${userId}:${idempotencyKey}`,
+          this.holdMinutes,
+          transaction,
+        );
+        const grandTotal =
+          merchandiseSubtotal + shippingQuote.charge.minorAmount;
+        const address = normalized.deliveryAddress;
+        const order = await this.persistence.createOrder(
+          {
+            id: orderId,
+            userId,
+            status: CommerceOrderStatus.SUBMITTED,
+            currency,
+            merchandiseSubtotalMinor: merchandiseSubtotal.toString(),
+            shippingMinor: shippingQuote.charge.minorAmount.toString(),
+            grandTotalMinor: grandTotal.toString(),
+            idempotencyKey,
+            requestFingerprint: fingerprint,
+            paymentMethod: normalized.paymentMethod,
+            reservationIds: reservations.map(({ id }) => id),
+            shippingZoneId: shippingQuote.zoneId,
+            shippingMethodId: shippingQuote.methodId,
+            shippingRuleId: shippingQuote.ruleId,
+            shippingMethodTitle: shippingQuote.methodTitle,
+            recipientName: address.recipientName,
+            phone: address.phone,
+            country: address.country,
+            province: address.province ?? null,
+            city: address.city,
+            line1: address.line1,
+            line2: address.line2 ?? null,
+            postalCode: address.postalCode,
+            submittedAt: new Date(),
+            acceptedAt: null,
+            cancelledAt: null,
+            completedAt: null,
+            decisionActorUserId: null,
+            decisionNote: null,
+          },
+          lineRows,
+          transaction,
+        );
+        await this.payments.createManualPayment(
+          {
+            orderId,
+            method: normalized.paymentMethod,
+            expectedAmount: { minorAmount: grandTotal, currency },
+          },
+          transaction,
+        );
+        await this.audit.record(
+          {
+            actorUserId: userId,
+            action: CommerceAuditAction.ORDER_SUBMITTED,
+            targetType: 'order',
+            targetId: order.id,
+            requestId,
+            metadata: {
+              orderNumber: order.orderNumber,
+              paymentMethod: order.paymentMethod,
+              grandTotal: formatMoney({
+                minorAmount: grandTotal,
+                currency,
+              }).amount,
+              currency,
+            },
+          },
+          transaction,
+        );
+        await this.carts.completeCheckout(
+          checkoutCart.cartId,
+          checkoutCart.version,
+          transaction,
+        );
+        return this.toView(
+          order,
+          lineRows,
+          this.initialPaymentStatus(order.paymentMethod),
+        );
+      });
+    } catch (error) {
+      const driverError =
+        error instanceof QueryFailedError
+          ? (error.driverError as { code?: string })
+          : undefined;
+      if (driverError?.code === '23505') {
+        const replay = await this.findByIdempotency(userId, idempotencyKey);
+        if (replay) return this.assertReplay(replay, fingerprint);
+      }
+      throw error;
+    }
   }
 
   async submit(

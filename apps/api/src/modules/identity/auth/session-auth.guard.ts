@@ -28,11 +28,10 @@ export class SessionAuthGuard implements CanActivate {
       IS_PUBLIC_ROUTE,
       [context.getHandler(), context.getClass()],
     );
-    if (isPublic) return true;
-
     const request = context.switchToHttp().getRequest<Request>();
     const session = request.session;
     if (!session?.userId || session.authVersion === undefined) {
+      if (isPublic) return true;
       throw new UnauthorizedException();
     }
 
@@ -41,6 +40,7 @@ export class SessionAuthGuard implements CanActivate {
       session.absoluteExpiresAt! <= Date.now()
     ) {
       await this.invalidate(request);
+      if (isPublic) return true;
       throw new UnauthorizedException('Session expired');
     }
 
@@ -53,6 +53,7 @@ export class SessionAuthGuard implements CanActivate {
         user.emailVerifiedAt === null)
     ) {
       await this.invalidate(request);
+      if (isPublic) return true;
       throw new UnauthorizedException();
     }
 

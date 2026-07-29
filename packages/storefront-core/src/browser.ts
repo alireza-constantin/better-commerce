@@ -33,10 +33,11 @@ export type StorefrontRegistrationInput = BetterCommerceApiSchemas['RegisterDto'
 export type StorefrontPasswordChangeInput =
   BetterCommerceApiSchemas['ChangePasswordDto'];
 export type StorefrontCheckoutInput =
-  BetterCommerceApiSchemas['SubmitOrderDto'];
+  BetterCommerceApiSchemas['SubmitCartOrderDto'];
 export type StorefrontOrder = BetterCommerceApiSchemas['OrderResponseDto'];
 export type StorefrontOrdersPage =
   BetterCommerceApiSchemas['OrdersPageResponseDto'];
+export type StorefrontCart = BetterCommerceApiSchemas['CartResponseDto'];
 
 export type StorefrontSessionSnapshot =
   | { readonly status: 'unknown'; readonly customer: null }
@@ -46,6 +47,7 @@ export type StorefrontSessionSnapshot =
 export type StorefrontSessionListener = (
   snapshot: StorefrontSessionSnapshot,
 ) => void;
+export type StorefrontCartListener = (cart: StorefrontCart) => void;
 
 export interface StorefrontBrowserOptions
   extends BetterCommerceBrowserClientOptions {
@@ -76,11 +78,13 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
     options;
   const client = createBrowserBetterCommerceClient(clientOptions);
   const listeners = new Set<StorefrontSessionListener>();
+  const cartListeners = new Set<StorefrontCartListener>();
   let sessionSnapshot: StorefrontSessionSnapshot = {
     status: 'unknown',
     customer: null,
   };
   let sessionEpoch = 0;
+  let cartSnapshot: StorefrontCart = emptyCart();
 
   const publishSession = (snapshot: StorefrontSessionSnapshot) => {
     if (sessionIdentity(sessionSnapshot) !== sessionIdentity(snapshot)) {
@@ -163,6 +167,55 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
   const withCsrf = <T>(request: (token: string) => Promise<T>) =>
     executeStorefrontCsrfRequest(csrf, request);
 
+  const publishCart = (cart: StorefrontCart) => {
+    cartSnapshot = cart;
+    for (const listener of cartListeners) {
+      try {
+        listener(cart);
+      } catch {
+        // UI subscribers cannot interrupt the Cart protocol.
+      }
+    }
+  };
+
+  const getCurrentCart = async (signal?: AbortSignal) => {
+    const cart = await execute(() => client.GET('/api/v1/cart', { signal }), {
+      publishUnauthorized: false,
+    });
+    publishCart(cart);
+    return cart;
+  };
+
+  const refreshAfterVersionConflict = async (error: unknown): Promise<never> => {
+    if (
+      isStorefrontBrowserError(error) &&
+      error.problem.kind === 'api' &&
+      error.problem.code === 'cart.version_conflict'
+    ) {
+      await getCurrentCart();
+    }
+    throw error;
+  };
+
+  const claimAnonymousCart = async (
+    expectedVersion: number,
+  ): Promise<StorefrontCart> => {
+    try {
+      const cart = await withCsrf((token) =>
+        execute(() =>
+          client.POST('/api/v1/cart/claim', {
+            body: { expectedVersion },
+            params: { header: { 'x-csrf-token': token } },
+          }),
+        ),
+      );
+      publishCart(cart);
+      return cart;
+    } catch (error) {
+      return refreshAfterVersionConflict(error);
+    }
+  };
+
   const getCurrentCustomer = async (
     signal?: AbortSignal,
   ): Promise<StorefrontCustomer | null> => {
@@ -223,7 +276,7 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
         const body = JSON.parse(serializedInput) as StorefrontCheckoutInput;
         const request = withCsrf((token) =>
           execute(() =>
-            client.POST('/api/v1/checkout/orders', {
+            client.POST('/api/v1/checkout/cart-orders', {
               body,
               params: {
                 header: {
@@ -237,6 +290,7 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
         )
           .then((order) => {
             completed = order;
+            publishCart(emptyCart());
             return order;
           })
           .finally(() => {
@@ -259,6 +313,7 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
       },
       getCurrentCustomer,
       async login(input: StorefrontLoginInput): Promise<StorefrontCustomer> {
+        const anonymousCart = await getCurrentCart();
         const customer = await withCsrf((token) =>
           execute(
             () =>
@@ -271,11 +326,17 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
         );
         csrf.invalidate();
         publishSession({ status: 'authenticated', customer });
+        if (anonymousCart.id) {
+          await claimAnonymousCart(anonymousCart.version);
+        } else {
+          await getCurrentCart();
+        }
         return customer;
       },
       async register(
         input: StorefrontRegistrationInput,
       ): Promise<StorefrontCustomer> {
+        const anonymousCart = await getCurrentCart();
         const customer = await withCsrf((token) =>
           execute(
             () =>
@@ -288,6 +349,11 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
         );
         csrf.invalidate();
         await getCurrentCustomer();
+        if (anonymousCart.id && sessionSnapshot.status === 'authenticated') {
+          await claimAnonymousCart(anonymousCart.version);
+        } else {
+          await getCurrentCart();
+        }
         return customer;
       },
       logout: () => endSession('logout'),
@@ -303,6 +369,75 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
         );
         csrf.invalidate();
       },
+    },
+    cart: {
+      getSnapshot: () => cartSnapshot,
+      subscribe(listener: StorefrontCartListener) {
+        cartListeners.add(listener);
+        return () => {
+          cartListeners.delete(listener);
+        };
+      },
+      getCurrent: getCurrentCart,
+      async setQuantity(
+        variantId: string,
+        quantity: number,
+      ): Promise<StorefrontCart> {
+        try {
+          const cart = await withCsrf((token) =>
+            execute(() =>
+              client.PUT('/api/v1/cart/lines', {
+                body: {
+                  expectedVersion: cartSnapshot.version,
+                  variantId,
+                  quantity,
+                },
+                params: { header: { 'x-csrf-token': token } },
+              }),
+            ),
+          );
+          publishCart(cart);
+          return cart;
+        } catch (error) {
+          return refreshAfterVersionConflict(error);
+        }
+      },
+      async remove(lineId: string): Promise<StorefrontCart> {
+        try {
+          const cart = await withCsrf((token) =>
+            execute(() =>
+              client.POST('/api/v1/cart/lines/{lineId}/remove', {
+                body: { expectedVersion: cartSnapshot.version },
+                params: {
+                  path: { lineId },
+                  header: { 'x-csrf-token': token },
+                },
+              }),
+            ),
+          );
+          publishCart(cart);
+          return cart;
+        } catch (error) {
+          return refreshAfterVersionConflict(error);
+        }
+      },
+      async clear(): Promise<StorefrontCart> {
+        try {
+          const cart = await withCsrf((token) =>
+            execute(() =>
+              client.POST('/api/v1/cart/clear', {
+                body: { expectedVersion: cartSnapshot.version },
+                params: { header: { 'x-csrf-token': token } },
+              }),
+            ),
+          );
+          publishCart(cart);
+          return cart;
+        } catch (error) {
+          return refreshAfterVersionConflict(error);
+        }
+      },
+      claim: claimAnonymousCart,
     },
     orders: {
       list(
@@ -364,4 +499,14 @@ function serializeCheckoutInput(input: StorefrontCheckoutInput): string {
   const serialized = JSON.stringify(input);
   if (!serialized) throw new TypeError('Checkout input must be JSON serializable');
   return serialized;
+}
+
+function emptyCart(): StorefrontCart {
+  return {
+    id: null,
+    version: 0,
+    status: 'active',
+    expiresAt: null,
+    lines: [],
+  };
 }
