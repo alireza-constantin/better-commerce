@@ -127,6 +127,12 @@ export interface ProductListResult {
 }
 
 export interface ProductDetail extends ProductRow {
+  /**
+   * Category membership is returned with the editable product projection so an
+   * Admin update can replace the complete set without discarding memberships
+   * the page did not know about.
+   */
+  readonly categoryIds: readonly string[];
   readonly media: readonly {
     id: string;
     url: string;
@@ -251,12 +257,10 @@ export class CatalogApplicationService implements CatalogModuleContract {
     const last = page.at(-1);
     const membership = last
       ? await this.persistence.withTransaction((manager) =>
-          manager
-            .getRepository(CatalogCollectionProduct)
-            .findOneBy({
-              collectionId: collection.collection.id,
-              productId: last.id,
-            }),
+          manager.getRepository(CatalogCollectionProduct).findOneBy({
+            collectionId: collection.collection.id,
+            productId: last.id,
+          }),
         )
       : null;
     return {
@@ -989,8 +993,15 @@ export class CatalogApplicationService implements CatalogModuleContract {
       where: { productId: product.id },
       order: { position: 'ASC', id: 'ASC' },
     });
+    const categories = await manager
+      .getRepository(CatalogProductCategory)
+      .find({
+        where: { productId: product.id },
+        order: { categoryId: 'ASC' },
+      });
     return {
       ...this.productRow(product),
+      categoryIds: categories.map((membership) => membership.categoryId),
       media: media.map((item) => ({
         id: item.id,
         url: item.url,

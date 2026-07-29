@@ -349,6 +349,8 @@ export class CatalogVariantResponseDto {
 }
 
 export class ProductDetailResponseDto extends ProductSummaryResponseDto {
+  @ApiProperty({ format: 'uuid', type: [String] })
+  categoryIds!: string[];
   @ApiProperty({ type: () => [AdminProductMediaResponseDto] })
   media!: AdminProductMediaResponseDto[];
   @ApiProperty({ type: () => [CatalogVariantResponseDto] })

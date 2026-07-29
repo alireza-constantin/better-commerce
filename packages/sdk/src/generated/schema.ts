@@ -1370,16 +1370,69 @@ export interface components {
             readonly status: "active" | "archived";
             readonly title: string | null;
         };
+        readonly CategoryListResponseDto: {
+            readonly items: readonly components["schemas"]["CategoryResponseDto"][];
+            readonly nextCursor: string | null;
+        };
+        readonly CategoryResponseDto: {
+            readonly aliases: readonly string[];
+            /** Format: date-time */
+            readonly archivedAt: string | null;
+            /** Format: date-time */
+            readonly createdAt: string;
+            readonly description: string | null;
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly parentId: string | null;
+            readonly position: number;
+            readonly slug: string;
+            /** @enum {string} */
+            readonly status: "active" | "archived";
+            readonly summary: string | null;
+            readonly title: string;
+            /** Format: date-time */
+            readonly updatedAt: string;
+            readonly version: number;
+        };
         readonly ChangePasswordDto: {
             /** Format: password */
             readonly currentPassword: string;
             /** Format: password */
             readonly newPassword: string;
         };
+        readonly CollectionListResponseDto: {
+            readonly items: readonly components["schemas"]["CollectionResponseDto"][];
+            readonly nextCursor: string | null;
+        };
         readonly CollectionProductItemDto: {
             readonly position: number;
             /** Format: uuid */
             readonly productId: string;
+        };
+        readonly CollectionProductMembershipResponseDto: {
+            readonly position: number;
+            /** Format: uuid */
+            readonly productId: string;
+        };
+        readonly CollectionResponseDto: {
+            readonly aliases: readonly string[];
+            /** Format: date-time */
+            readonly archivedAt: string | null;
+            /** Format: date-time */
+            readonly createdAt: string;
+            readonly description: string | null;
+            /** Format: uuid */
+            readonly id: string;
+            readonly products: readonly components["schemas"]["CollectionProductMembershipResponseDto"][];
+            readonly slug: string;
+            /** @enum {string} */
+            readonly status: "active" | "archived";
+            readonly summary: string | null;
+            readonly title: string;
+            /** Format: date-time */
+            readonly updatedAt: string;
+            readonly version: number;
         };
         readonly CommerceAuditEventResponseDto: {
             /** @enum {string} */
@@ -1434,18 +1487,18 @@ export interface components {
             readonly reference?: string;
         };
         readonly CreateCategoryDto: {
-            readonly description?: Record<string, never> | null;
+            readonly description?: string | null;
             /** Format: uuid */
-            readonly parentId?: Record<string, never> | null;
+            readonly parentId?: string | null;
             readonly position: number;
             readonly slug: string;
-            readonly summary?: Record<string, never> | null;
+            readonly summary?: string | null;
             readonly title: string;
         };
         readonly CreateCollectionDto: {
-            readonly description?: Record<string, never> | null;
+            readonly description?: string | null;
             readonly slug: string;
-            readonly summary?: Record<string, never> | null;
+            readonly summary?: string | null;
             readonly title: string;
         };
         readonly CreatedProductResponseDto: {
@@ -1517,17 +1570,17 @@ export interface components {
             readonly status: "up" | "down";
         };
         readonly EditCategoryDto: {
-            readonly description?: Record<string, never> | null;
+            readonly description?: string | null;
             readonly expectedVersion: number;
             readonly slug: string;
-            readonly summary?: Record<string, never> | null;
+            readonly summary?: string | null;
             readonly title: string;
         };
         readonly EditCollectionDto: {
-            readonly description?: Record<string, never> | null;
+            readonly description?: string | null;
             readonly expectedVersion: number;
             readonly slug: string;
-            readonly summary?: Record<string, never> | null;
+            readonly summary?: string | null;
             readonly title: string;
         };
         readonly EditProductDto: {
@@ -1588,7 +1641,7 @@ export interface components {
         readonly MoveCategoryDto: {
             readonly expectedVersion: number;
             /** Format: uuid */
-            readonly parentId?: Record<string, never> | null;
+            readonly parentId?: string | null;
             readonly position: number;
         };
         readonly Object: Record<string, never>;
@@ -1695,9 +1748,15 @@ export interface components {
             /** @example email must be an email */
             readonly detail: string;
         };
+        readonly ProductCategoryMembershipResponseDto: {
+            /** Format: uuid */
+            readonly productId: string;
+            readonly version: number;
+        };
         readonly ProductDetailResponseDto: {
             /** Format: date-time */
             readonly archivedAt: string | null;
+            readonly categoryIds: readonly string[];
             /** Format: date-time */
             readonly createdAt: string;
             readonly description: string | null;
@@ -2193,7 +2252,9 @@ export interface operations {
                     readonly "x-request-id"?: string;
                     readonly [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    readonly "application/json": components["schemas"]["CategoryListResponseDto"];
+                };
             };
             /** @description A valid server-side session is required. */
             readonly 401: {
@@ -2235,6 +2296,16 @@ export interface operations {
             };
         };
         readonly responses: {
+            readonly 201: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["CategoryResponseDto"];
+                };
+            };
             /** @description A valid server-side session is required. */
             readonly 401: {
                 headers: {
@@ -2287,7 +2358,9 @@ export interface operations {
                     readonly "x-request-id"?: string;
                     readonly [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    readonly "application/json": components["schemas"]["CategoryResponseDto"];
+                };
             };
             /** @description A valid server-side session is required. */
             readonly 401: {
@@ -2331,6 +2404,16 @@ export interface operations {
             };
         };
         readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["CategoryResponseDto"];
+                };
+            };
             /** @description A valid server-side session is required. */
             readonly 401: {
                 headers: {
@@ -2385,6 +2468,16 @@ export interface operations {
             };
         };
         readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["CategoryResponseDto"];
+                };
+            };
             /** @description A valid server-side session is required. */
             readonly 401: {
                 headers: {
@@ -2438,6 +2531,16 @@ export interface operations {
             };
         };
         readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["CategoryResponseDto"];
+                };
+            };
             /** @description A valid server-side session is required. */
             readonly 401: {
                 headers: {
@@ -2493,7 +2596,9 @@ export interface operations {
                     readonly "x-request-id"?: string;
                     readonly [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    readonly "application/json": components["schemas"]["CollectionListResponseDto"];
+                };
             };
             /** @description A valid server-side session is required. */
             readonly 401: {
@@ -2535,6 +2640,16 @@ export interface operations {
             };
         };
         readonly responses: {
+            readonly 201: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["CollectionResponseDto"];
+                };
+            };
             /** @description A valid server-side session is required. */
             readonly 401: {
                 headers: {
@@ -2587,7 +2702,9 @@ export interface operations {
                     readonly "x-request-id"?: string;
                     readonly [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    readonly "application/json": components["schemas"]["CollectionResponseDto"];
+                };
             };
             /** @description A valid server-side session is required. */
             readonly 401: {
@@ -2631,6 +2748,16 @@ export interface operations {
             };
         };
         readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["CollectionResponseDto"];
+                };
+            };
             /** @description A valid server-side session is required. */
             readonly 401: {
                 headers: {
@@ -2685,6 +2812,16 @@ export interface operations {
             };
         };
         readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["CollectionResponseDto"];
+                };
+            };
             /** @description A valid server-side session is required. */
             readonly 401: {
                 headers: {
@@ -2738,6 +2875,16 @@ export interface operations {
             };
         };
         readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["CollectionResponseDto"];
+                };
+            };
             /** @description A valid server-side session is required. */
             readonly 401: {
                 headers: {
@@ -2941,6 +3088,16 @@ export interface operations {
             };
         };
         readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ProductCategoryMembershipResponseDto"];
+                };
+            };
             /** @description A valid server-side session is required. */
             readonly 401: {
                 headers: {

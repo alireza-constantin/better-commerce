@@ -54,19 +54,19 @@ export class CreateCategoryDto {
   @MaxLength(160)
   slug!: string;
 
-  @ApiPropertyOptional({ maxLength: 500, nullable: true })
+  @ApiPropertyOptional({ maxLength: 500, nullable: true, type: String })
   @IsOptional()
   @IsString()
   @MaxLength(500)
   summary?: string | null;
 
-  @ApiPropertyOptional({ maxLength: 10_000, nullable: true })
+  @ApiPropertyOptional({ maxLength: 10_000, nullable: true, type: String })
   @IsOptional()
   @IsString()
   @MaxLength(10_000)
   description?: string | null;
 
-  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  @ApiPropertyOptional({ format: 'uuid', nullable: true, type: String })
   @IsOptional()
   @IsUUID('4')
   parentId?: string | null;
@@ -94,13 +94,13 @@ export class EditCategoryDto {
   @MaxLength(160)
   slug!: string;
 
-  @ApiPropertyOptional({ maxLength: 500, nullable: true })
+  @ApiPropertyOptional({ maxLength: 500, nullable: true, type: String })
   @IsOptional()
   @IsString()
   @MaxLength(500)
   summary?: string | null;
 
-  @ApiPropertyOptional({ maxLength: 10_000, nullable: true })
+  @ApiPropertyOptional({ maxLength: 10_000, nullable: true, type: String })
   @IsOptional()
   @IsString()
   @MaxLength(10_000)
@@ -113,7 +113,7 @@ export class MoveCategoryDto {
   @Min(1)
   expectedVersion!: number;
 
-  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  @ApiPropertyOptional({ format: 'uuid', nullable: true, type: String })
   @IsOptional()
   @IsUUID('4')
   parentId!: string | null;
@@ -139,6 +139,14 @@ export class ReplaceProductCategoriesDto {
   categoryIds!: string[];
 }
 
+export class ProductCategoryMembershipResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  productId!: string;
+
+  @ApiProperty({ minimum: 1 })
+  version!: number;
+}
+
 export class CreateCollectionDto {
   @ApiProperty({ maxLength: 160, minLength: 1 })
   @IsString()
@@ -150,13 +158,13 @@ export class CreateCollectionDto {
   @MaxLength(160)
   slug!: string;
 
-  @ApiPropertyOptional({ maxLength: 500, nullable: true })
+  @ApiPropertyOptional({ maxLength: 500, nullable: true, type: String })
   @IsOptional()
   @IsString()
   @MaxLength(500)
   summary?: string | null;
 
-  @ApiPropertyOptional({ maxLength: 10_000, nullable: true })
+  @ApiPropertyOptional({ maxLength: 10_000, nullable: true, type: String })
   @IsOptional()
   @IsString()
   @MaxLength(10_000)

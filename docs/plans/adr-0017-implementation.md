@@ -1,6 +1,6 @@
 # ADR-0017 Implementation Plan
 
-Status: In progress — Phase 2 complete
+Status: Complete — all five phases implemented
 Decision authority: ADR-0017  
 Created: 2026-07-29
 
@@ -26,7 +26,7 @@ verification.
 
 - Phase 1 — Contracts and authorization: completed 2026-07-29
 - Phase 2 — Catalog domain and persistence: completed 2026-07-29
-- Phase 3 — Administrative workflows: partially implemented; Admin UI deferred
+- Phase 3 — Administrative workflows: completed 2026-07-29
 - Phase 4 — Public SDK and storefront-core integration: completed 2026-07-29
 - Phase 5 — Reference storefront and final verification: completed 2026-07-29
 
@@ -43,6 +43,15 @@ optimistic concurrency, same-transaction Commerce Audit writes, and active-only
 module-contract projections. PostgreSQL advisory transaction locks serialize
 the bounded Category hierarchy and Collection creation limits. The disposable
 development database was reset and synchronized; no migration was added.
+
+Phase 3 added Persian RTL Admin routes and navigation for Categories and
+Collections, permission-aware readers and writers, bounded Product lookup for
+Collection membership, keyboard-accessible ordering controls, category parent
+selection that excludes descendants, and archive/restore flows. The Product
+editor now receives its complete Category membership projection before issuing
+the replace command, so a membership update cannot discard unseen Categories.
+The Admin uses TanStack Query invalidation after each accepted mutation and
+disables mutation controls while a request is pending.
 
 Phase 4 exposed active Category navigation, Category and Collection slug
 resolution, and scoped published Product reads. Catalog retains membership and

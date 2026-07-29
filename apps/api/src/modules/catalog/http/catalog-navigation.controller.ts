@@ -12,6 +12,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import {
   ApiCsrfProtected,
@@ -30,6 +31,11 @@ import {
   EditCategoryDto,
   EditCollectionDto,
   MoveCategoryDto,
+  CategoryListResponseDto,
+  CategoryResponseDto,
+  CollectionListResponseDto,
+  CollectionResponseDto,
+  ProductCategoryMembershipResponseDto,
   ReplaceCollectionProductsDto,
   ReplaceProductCategoriesDto,
 } from './catalog-navigation.dto';
@@ -60,11 +66,13 @@ function translate(error: unknown): never {
 }
 
 @AdminApi()
+@ApiTags('Catalog navigation administration')
 @ApiSessionAuthenticated()
 @Controller('admin/catalog')
 export class CatalogNavigationAdminController {
   constructor(private readonly navigation: CatalogNavigationService) {}
   @Get('categories')
+  @ApiOkResponse({ type: CategoryListResponseDto })
   @RequirePermissions(PermissionKey.CATALOG_CATEGORIES_READ)
   async categories(@Query() query: CatalogGroupingListQueryDto) {
     return this.call(() =>
@@ -75,6 +83,7 @@ export class CatalogNavigationAdminController {
     );
   }
   @Post('categories')
+  @ApiCreatedResponse({ type: CategoryResponseDto })
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.CATALOG_CATEGORIES_WRITE)
   async createCategory(
@@ -84,11 +93,13 @@ export class CatalogNavigationAdminController {
     return this.call(() => this.navigation.createCategory(dto, audit(request)));
   }
   @Get('categories/:id')
+  @ApiOkResponse({ type: CategoryResponseDto })
   @RequirePermissions(PermissionKey.CATALOG_CATEGORIES_READ)
   async category(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.call(() => this.navigation.getAdminCategory(id));
   }
   @Patch('categories/:id')
+  @ApiOkResponse({ type: CategoryResponseDto })
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.CATALOG_CATEGORIES_WRITE)
   async editCategory(
@@ -101,6 +112,7 @@ export class CatalogNavigationAdminController {
     );
   }
   @Post('categories/:id/move')
+  @ApiOkResponse({ type: CategoryResponseDto })
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.CATALOG_CATEGORIES_WRITE)
   async moveCategory(
@@ -113,6 +125,7 @@ export class CatalogNavigationAdminController {
     );
   }
   @Post('categories/:id/:action')
+  @ApiOkResponse({ type: CategoryResponseDto })
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.CATALOG_CATEGORIES_WRITE)
   async categoryTransition(
@@ -138,6 +151,7 @@ export class CatalogNavigationAdminController {
     );
   }
   @Put('products/:id/categories')
+  @ApiOkResponse({ type: ProductCategoryMembershipResponseDto })
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.CATALOG_PRODUCTS_WRITE)
   async productCategories(
@@ -154,6 +168,7 @@ export class CatalogNavigationAdminController {
     );
   }
   @Get('collections')
+  @ApiOkResponse({ type: CollectionListResponseDto })
   @RequirePermissions(PermissionKey.CATALOG_COLLECTIONS_READ)
   async collections(@Query() query: CatalogGroupingListQueryDto) {
     return this.call(() =>
@@ -164,6 +179,7 @@ export class CatalogNavigationAdminController {
     );
   }
   @Post('collections')
+  @ApiCreatedResponse({ type: CollectionResponseDto })
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.CATALOG_COLLECTIONS_WRITE)
   async createCollection(
@@ -175,6 +191,7 @@ export class CatalogNavigationAdminController {
     );
   }
   @Get('collections/:id')
+  @ApiOkResponse({ type: CollectionResponseDto })
   @RequirePermissions(PermissionKey.CATALOG_COLLECTIONS_READ)
   async collection(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
@@ -182,6 +199,7 @@ export class CatalogNavigationAdminController {
     return this.call(() => this.navigation.getAdminCollection(id));
   }
   @Patch('collections/:id')
+  @ApiOkResponse({ type: CollectionResponseDto })
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.CATALOG_COLLECTIONS_WRITE)
   async editCollection(
@@ -194,6 +212,7 @@ export class CatalogNavigationAdminController {
     );
   }
   @Put('collections/:id/products')
+  @ApiOkResponse({ type: CollectionResponseDto })
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.CATALOG_COLLECTIONS_WRITE)
   async collectionProducts(
@@ -211,6 +230,7 @@ export class CatalogNavigationAdminController {
     );
   }
   @Post('collections/:id/:action')
+  @ApiOkResponse({ type: CollectionResponseDto })
   @ApiCsrfProtected()
   @RequirePermissions(PermissionKey.CATALOG_COLLECTIONS_WRITE)
   async collectionTransition(

@@ -5,10 +5,15 @@ import {
 } from '@tanstack/react-router';
 import { NotFoundPage } from '@/features/foundation/not-found-page';
 import { AdminRoot } from './admin-root';
-import { adminRoutes, type AdminRoutePath } from './routes/admin-route-contract';
+import {
+  adminRoutes,
+  type AdminRoutePath,
+} from './routes/admin-route-contract';
 import {
   AuthorizationAuditRoute,
   CatalogRoute,
+  CategoriesRoute,
+  CollectionsRoute,
   CommerceAuditRoute,
   InventoryRoute,
   OrderDetailRoute,
@@ -105,6 +110,8 @@ const routeTree = rootRoute.addChildren([
     component: CatalogRoute,
     validateSearch: adminNavigationSearch,
   }),
+  protectedRoute(adminRoutes.categories.path, CategoriesRoute),
+  protectedRoute(adminRoutes.collections.path, CollectionsRoute),
   protectedRoute(adminRoutes.pricing.path, PricingRoute),
   protectedRoute(adminRoutes.inventory.path, InventoryRoute),
   protectedRoute(adminRoutes.shipping.path, ShippingRoute),

@@ -1,6 +1,7 @@
 import {
   BadgeDollarSign,
   Boxes,
+  FolderTree,
   LayoutDashboard,
   PackageSearch,
   ScrollText,
@@ -58,6 +59,16 @@ export const adminNavigation: readonly AdminNavigationGroup[] = [
         label: 'کاتالوگ',
         ...adminRoutes.catalog,
         icon: PackageSearch,
+      },
+      {
+        label: 'دسته‌بندی‌ها',
+        ...adminRoutes.categories,
+        icon: FolderTree,
+      },
+      {
+        label: 'مجموعه‌ها',
+        ...adminRoutes.collections,
+        icon: FolderTree,
       },
       {
         label: 'قیمت‌گذاری',

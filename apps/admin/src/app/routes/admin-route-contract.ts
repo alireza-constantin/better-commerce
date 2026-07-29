@@ -26,6 +26,14 @@ export const adminRoutes = {
     path: '/catalog',
     permissions: ['catalog.products.read'],
   },
+  categories: {
+    path: '/catalog/categories',
+    permissions: ['catalog.categories.read'],
+  },
+  collections: {
+    path: '/catalog/collections',
+    permissions: ['catalog.collections.read'],
+  },
   pricing: {
     path: '/pricing',
     permissions: ['pricing.read'],
