@@ -19,6 +19,17 @@ export const CommerceAuditAction = {
   ORDER_ACCEPTED: 'orders.accepted',
   ORDER_REJECTED: 'orders.rejected',
   PAYMENT_CONFIRMED: 'payments.confirmed',
+  CATEGORY_CREATED: 'catalog.category_created',
+  CATEGORY_UPDATED: 'catalog.category_updated',
+  CATEGORY_MOVED: 'catalog.category_moved',
+  CATEGORY_ARCHIVED: 'catalog.category_archived',
+  CATEGORY_RESTORED: 'catalog.category_restored',
+  PRODUCT_CATEGORIES_REPLACED: 'catalog.product_categories_replaced',
+  COLLECTION_CREATED: 'catalog.collection_created',
+  COLLECTION_UPDATED: 'catalog.collection_updated',
+  COLLECTION_ARCHIVED: 'catalog.collection_archived',
+  COLLECTION_RESTORED: 'catalog.collection_restored',
+  COLLECTION_PRODUCTS_REPLACED: 'catalog.collection_products_replaced',
 } as const;
 
 export type CommerceAuditAction =

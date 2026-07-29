@@ -14,10 +14,12 @@ the first Catalog slice. It defines Product and Variant fields, commands,
 permissions, HTTP behavior, concurrency, limits, internal module operations,
 errors, and required verification.
 
-This contract does not authorize Pricing, Inventory, Orders, Categories,
-Collections, media upload, typed Attributes, or customer-specific storefront
-code. Those are separate increments even where ADR-0005 already defines their
-architectural boundaries.
+This initial contract does not itself authorize Pricing, Inventory, Orders,
+Categories, Collections, media upload, typed Attributes, or customer-specific
+storefront code. Accepted follow-up contracts may add those increments without
+rewriting this Product/Variant baseline. Categories and Collections are governed
+by `catalog-navigation.md`; Product media is governed by ADR-0016 and section
+18 of this document.
 
 ## 2. Initial scope
 

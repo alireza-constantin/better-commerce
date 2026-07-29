@@ -33,6 +33,14 @@ const catalogErrorStatus: Record<CatalogApplicationError['code'], HttpStatus> =
     'catalog.configuration_conflict': HttpStatus.CONFLICT,
     'catalog.media_invalid': HttpStatus.BAD_REQUEST,
     'catalog.media_storage_failed': HttpStatus.SERVICE_UNAVAILABLE,
+    'catalog.category_not_found': HttpStatus.NOT_FOUND,
+    'catalog.collection_not_found': HttpStatus.NOT_FOUND,
+    'catalog.category_slug_conflict': HttpStatus.CONFLICT,
+    'catalog.collection_slug_conflict': HttpStatus.CONFLICT,
+    'catalog.category_hierarchy_conflict': HttpStatus.CONFLICT,
+    'catalog.category_transition_conflict': HttpStatus.CONFLICT,
+    'catalog.collection_transition_conflict': HttpStatus.CONFLICT,
+    'catalog.membership_conflict': HttpStatus.CONFLICT,
   };
 
 @ApiTags('Catalog')

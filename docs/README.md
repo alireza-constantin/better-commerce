@@ -27,6 +27,7 @@ amendment or a superseding ADR.
 - [ADR-0014 — Manual Payments and Admin Order Acceptance](adr/0014-manual-payments.md)
 - [ADR-0015 — Persistent Cart Ownership, Merge, and Concurrency](adr/0015-cart.md)
 - [ADR-0016 — Product Media and Asset Delivery](adr/0016-product-media.md)
+- [ADR-0017 — Categories, Collections, and Catalog Navigation](adr/0017-categories-collections-navigation.md)
 
 Proposed decisions under review:
 
@@ -49,6 +50,7 @@ external consumers exist, a compatibility/versioning decision.
 
 - [Authorization contract](contracts/authorization.md)
 - [Catalog contract](contracts/catalog.md)
+- [Catalog navigation contract](contracts/catalog-navigation.md)
 - [Commerce operations and audit](contracts/commerce-operations.md)
 - [External HTTP API and SDK](contracts/external-http-api.md)
 
@@ -81,6 +83,7 @@ authority.
 - [Commerce implementation checkpoint](plans/commerce-implementation-status.md)
 - [ADR-0011 reference renderer evaluation](plans/adr-0011-renderer-evaluation.md)
 - [ADR-0015 Cart implementation plan](plans/adr-0015-cart-implementation.md)
+- [ADR-0017 Categories and Collections implementation plan](plans/adr-0017-implementation.md)
 - [Completed ADR-0005 Catalog implementation plan](plans/adr-0005-implementation.md)
 - [Completed ADR-0003 implementation plan](plans/adr-0003-implementation.md)
 
@@ -99,7 +102,7 @@ conflict through an amendment, superseding decision, or contract revision.
 
 ## Current decision sequence
 
-ADR-0001 through ADR-0008, ADR-0010, ADR-0011, and ADR-0013 through ADR-0016
+ADR-0001 through ADR-0008, ADR-0010, ADR-0011, and ADR-0013 through ADR-0017
 are accepted. ADR-0005 Catalog implementation is complete. The first combined
 physical-shipping/manual-payment Checkout implementation is present and
 typechecks. ADR-0015 Cart, checkout preparation, selectable manual payments,

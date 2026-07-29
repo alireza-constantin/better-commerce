@@ -31,6 +31,21 @@ const ALLOWED_METADATA: Readonly<
   [CommerceAuditAction.ORDER_ACCEPTED]: ['previousStatus'],
   [CommerceAuditAction.ORDER_REJECTED]: ['previousStatus'],
   [CommerceAuditAction.PAYMENT_CONFIRMED]: ['method', 'safeReference'],
+  [CommerceAuditAction.CATEGORY_CREATED]: ['parentId', 'position'],
+  [CommerceAuditAction.CATEGORY_UPDATED]: [],
+  [CommerceAuditAction.CATEGORY_MOVED]: [
+    'previousParentId',
+    'parentId',
+    'position',
+  ],
+  [CommerceAuditAction.CATEGORY_ARCHIVED]: [],
+  [CommerceAuditAction.CATEGORY_RESTORED]: [],
+  [CommerceAuditAction.PRODUCT_CATEGORIES_REPLACED]: ['categoryCount'],
+  [CommerceAuditAction.COLLECTION_CREATED]: [],
+  [CommerceAuditAction.COLLECTION_UPDATED]: [],
+  [CommerceAuditAction.COLLECTION_ARCHIVED]: [],
+  [CommerceAuditAction.COLLECTION_RESTORED]: [],
+  [CommerceAuditAction.COLLECTION_PRODUCTS_REPLACED]: ['productCount'],
 });
 
 export function assertCommerceAuditMetadata(

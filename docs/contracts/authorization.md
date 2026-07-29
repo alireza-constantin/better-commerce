@@ -149,6 +149,8 @@ Permission keys are constants and follow `<domain>.<resource>.<action>` where pr
 - `catalog.products.archive`
 - `catalog.categories.read`
 - `catalog.categories.write`
+- `catalog.collections.read`
+- `catalog.collections.write`
 - `catalog.pricing.write`
 - `pricing.read`
 - `pricing.write`
@@ -190,8 +192,8 @@ Every role assignment below is seeded explicitly. There is no runtime wildcard.
 | `catalog_manager` | `admin.access`, every catalog permission, `inventory.read`, `inventory.adjust` |
 | `order_manager` | `admin.access`, every order and payment permission, `shipping.read`, `customers.read`, `inventory.read` |
 | `support_agent` | `admin.access`, `orders.read`, `orders.notes.write`, `payments.read`, `customers.read` |
-| `marketing_manager` | `admin.access`, `promotions.read`, `promotions.write`, `catalog.products.read`, `catalog.categories.read`, `reports.read` |
-| `analyst` | `admin.access`, `catalog.products.read`, `catalog.categories.read`, `inventory.read`, `orders.read`, `customers.read`, `promotions.read`, `reports.read` |
+| `marketing_manager` | `admin.access`, `promotions.read`, `promotions.write`, `catalog.products.read`, `catalog.categories.read`, `catalog.collections.read`, `catalog.collections.write`, `reports.read` |
+| `analyst` | `admin.access`, `catalog.products.read`, `catalog.categories.read`, `catalog.collections.read`, `inventory.read`, `orders.read`, `customers.read`, `promotions.read`, `reports.read` |
 
 `staff.assign_owner` is owner-only in version 1. Administrators may create staff and assign, replace, or remove any non-owner role, subject to the anti-escalation rules in this contract. Assigning or removing the `owner` role requires `staff.assign_owner` regardless of future role configuration.
 

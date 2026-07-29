@@ -64,6 +64,29 @@ describe('authorization catalogue', () => {
     expect(archived).toEqual(granted);
   });
 
+  it('grants Collection merchandising only to approved roles', () => {
+    const readers = BUILT_IN_ROLE_CATALOGUE.filter((role) =>
+      role.permissionKeys.includes(PermissionKey.CATALOG_COLLECTIONS_READ),
+    ).map((role) => role.key);
+    const writers = BUILT_IN_ROLE_CATALOGUE.filter((role) =>
+      role.permissionKeys.includes(PermissionKey.CATALOG_COLLECTIONS_WRITE),
+    ).map((role) => role.key);
+
+    expect(readers).toEqual([
+      RoleKey.OWNER,
+      RoleKey.ADMINISTRATOR,
+      RoleKey.CATALOG_MANAGER,
+      RoleKey.MARKETING_MANAGER,
+      RoleKey.ANALYST,
+    ]);
+    expect(writers).toEqual([
+      RoleKey.OWNER,
+      RoleKey.ADMINISTRATOR,
+      RoleKey.CATALOG_MANAGER,
+      RoleKey.MARKETING_MANAGER,
+    ]);
+  });
+
   it('grants commerce decision permissions only to operational roles', () => {
     const acceptors = BUILT_IN_ROLE_CATALOGUE.filter((role) =>
       role.permissionKeys.includes(PermissionKey.ORDERS_ACCEPT),
