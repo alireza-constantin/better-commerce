@@ -157,9 +157,9 @@ provenance in `better-commerce.source.json`; it is not a runtime UI package.
 From this platform repository, inspect and exercise the bundled catalogue with:
 
 ```bash
-pnpm --filter @better-commerce/storefront-source catalogue -- list --version 1.0.1
-pnpm --filter @better-commerce/storefront-source catalogue -- add product-grid --version 1.0.1 --root ../merchant-store
-pnpm --filter @better-commerce/storefront-source catalogue -- diff product-grid --to 1.0.1 --root ../merchant-store
+pnpm --filter @better-commerce/storefront-source catalogue list --version 1.0.2
+pnpm --filter @better-commerce/storefront-source catalogue add product-grid --version 1.0.2 --root ../merchant-store
+pnpm --filter @better-commerce/storefront-source catalogue diff product-grid --to 1.0.2 --root ../merchant-store
 ```
 
 The installer refuses overwrites, does not modify the merchant's dependency

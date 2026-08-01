@@ -4,7 +4,7 @@ import { getCatalogueRoot, loadCatalogue } from '../src/catalogue.mjs';
 import { compareEntryUpdate } from '../src/updates.mjs';
 
 const [command, ...arguments_] = process.argv.slice(2);
-const entryId = command === 'add' ? arguments_.shift() : undefined;
+const entryId = ['add', 'diff'].includes(command) ? arguments_.shift() : undefined;
 const options = parseOptions(arguments_);
 const root = options.root ?? process.cwd();
 

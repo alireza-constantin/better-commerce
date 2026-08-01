@@ -8,12 +8,12 @@ storefront repository and records their provenance in
 During platform development, run it from the monorepo root:
 
 ```bash
-pnpm --filter @better-commerce/storefront-source catalogue -- list
-pnpm --filter @better-commerce/storefront-source catalogue -- add product-grid --version 1.0.0 --root ../merchant-store
-pnpm --filter @better-commerce/storefront-source catalogue -- status --root ../merchant-store
-pnpm --filter @better-commerce/storefront-source catalogue -- diff product-grid --to 1.0.1 --root ../merchant-store
-pnpm --filter @better-commerce/storefront-source catalogue -- add product-grid --version 1.0.1 --root ../merchant-store
-pnpm --filter @better-commerce/storefront-source catalogue -- add next-product-grid-page --version 1.0.1 --root ../merchant-store
+pnpm --filter @better-commerce/storefront-source catalogue list
+pnpm --filter @better-commerce/storefront-source catalogue add product-grid --version 1.0.0 --root ../merchant-store
+pnpm --filter @better-commerce/storefront-source catalogue status --root ../merchant-store
+pnpm --filter @better-commerce/storefront-source catalogue diff product-grid --to 1.0.2 --root ../merchant-store
+pnpm --filter @better-commerce/storefront-source catalogue add product-grid --version 1.0.2 --root ../merchant-store
+pnpm --filter @better-commerce/storefront-source catalogue add next-product-grid-page --version 1.0.2 --root ../merchant-store
 ```
 
 The initial release installs a portable React Product grid. It does not modify

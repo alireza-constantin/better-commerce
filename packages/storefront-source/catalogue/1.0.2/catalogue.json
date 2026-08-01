@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "version": "1.0.2",
+  "entries": [
+    {
+      "id": "product-grid",
+      "title": "Portable React product grid",
+      "kind": "portable-react-block",
+      "renderers": ["react"],
+      "runtimeDependencies": {
+        "@better-commerce/storefront-core": "^0.1.0"
+      },
+      "files": [
+        {
+          "source": "blocks/product-grid/ProductGrid.tsx",
+          "target": "components/better-commerce/product-grid/ProductGrid.tsx",
+          "sha256": "2495723169dbbcfd47b2c5c75374150627adc3889922f2e0fd26ae5d16a1e0ac"
+        },
+        {
+          "source": "blocks/product-grid/product-grid.css",
+          "target": "components/better-commerce/product-grid/product-grid.css",
+          "sha256": "6bba8069258eb1448c831deb8f3f4615edb62dbe68528d3e39277bcfd29aae7e"
+        }
+      ],
+      "notes": [
+        "Import the copied CSS from the merchant's own stylesheet entry point.",
+        "Pass a merchant-owned link renderer when framework-specific navigation is required."
+      ]
+    },
+    {
+      "id": "next-product-grid-page",
+      "title": "Next.js App Router product grid page",
+      "kind": "framework-recipe",
+      "renderers": ["next-app-router"],
+      "entryDependencies": ["product-grid"],
+      "runtimeDependencies": {
+        "@better-commerce/storefront-core": "^0.1.0"
+      },
+      "files": [
+        {
+          "source": "recipes/next-product-grid-page/page.tsx",
+          "target": "app/products/page.tsx",
+          "sha256": "bfd7bc5e61142246cc343a5a64455d11b487a7fbe68a706c4949be56afc84644"
+        }
+      ],
+      "notes": [
+        "Install product-grid before this recipe.",
+        "For a Next.js repository without a src directory, pass --target . so the route is written to app/products/page.tsx.",
+        "The merchant owns cache policy, metadata, route structure, and presentation changes after installation."
+      ]
+    }
+  ]
+}

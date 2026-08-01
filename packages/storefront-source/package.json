@@ -1,6 +1,6 @@
 {
   "name": "@better-commerce/storefront-source",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Versioned Better Commerce storefront presentation-source catalogue and installer",
   "license": "MIT",
   "repository": {

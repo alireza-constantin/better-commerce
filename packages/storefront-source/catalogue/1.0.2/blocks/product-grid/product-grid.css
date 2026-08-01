@@ -1,0 +1,31 @@
+.bc-product-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bc-product-card {
+  border: 1px solid #e5e5e5;
+  border-radius: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+  overflow: hidden;
+  padding: 1rem;
+}
+
+.bc-product-card__image,
+.bc-product-card__placeholder {
+  aspect-ratio: 1;
+  background: #f1f1f1;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.bc-product-card__title,
+.bc-product-card__price {
+  margin: 0;
+}

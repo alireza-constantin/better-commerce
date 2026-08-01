@@ -66,8 +66,8 @@ repository and build it before treating `0.1.0` as ready for merchants.
 3. Run the full verification commands from the first-release section.
 4. Merge the release commit, then create and push an annotated tag such as
    `packages-v0.1.1` on that exact commit.
-5. GitHub Actions validates every workspace and stages each package in
-   dependency order. It stages the pnpm-created tarballs so workspace
+5. GitHub Actions validates every workspace and stages each unpublished package
+   version in dependency order. It stages pnpm-created tarballs so workspace
    dependencies are resolved to real package versions before npm receives them.
 6. On npm, open the **Staged Packages** tab, inspect each artifact, and approve
    SDK, storefront core, then storefront source with 2FA.
