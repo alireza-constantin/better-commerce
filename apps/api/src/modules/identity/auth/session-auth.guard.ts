@@ -39,7 +39,7 @@ export class SessionAuthGuard implements CanActivate {
       !Number.isFinite(session.absoluteExpiresAt) ||
       session.absoluteExpiresAt! <= Date.now()
     ) {
-      await this.invalidate(request);
+      await this.invalidate(request, isPublic);
       if (isPublic) return true;
       throw new UnauthorizedException('Session expired');
     }
@@ -52,7 +52,7 @@ export class SessionAuthGuard implements CanActivate {
       (this.config.get<boolean>('requireEmailVerification') === true &&
         user.emailVerifiedAt === null)
     ) {
-      await this.invalidate(request);
+      await this.invalidate(request, isPublic);
       if (isPublic) return true;
       throw new UnauthorizedException();
     }
@@ -65,8 +65,16 @@ export class SessionAuthGuard implements CanActivate {
     return true;
   }
 
-  private async invalidate(request: Request): Promise<void> {
+  private async invalidate(
+    request: Request,
+    continueAsAnonymous = false,
+  ): Promise<void> {
     try {
+      if (continueAsAnonymous) {
+        await this.sessions.renewAnonymousSession(request.session);
+        return;
+      }
+
       await this.sessions.destroy(request.session);
     } catch {
       // Authentication must still fail closed if Redis is unavailable while an

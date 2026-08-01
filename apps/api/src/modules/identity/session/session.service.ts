@@ -65,6 +65,15 @@ export class SessionService {
     await save(session);
   }
 
+  /**
+   * Replaces a session that can no longer authenticate with a fresh anonymous
+   * session. Public routes such as CSRF issuance and login can then continue
+   * safely without retaining the stale session identifier.
+   */
+  async renewAnonymousSession(session: Session): Promise<void> {
+    await regenerate(session);
+  }
+
   async destroy(session: Session): Promise<void> {
     await destroy(session);
   }

@@ -238,6 +238,9 @@ export class CatalogApplicationService implements CatalogModuleContract {
           'EXISTS (SELECT 1 FROM catalog_variants active_variant WHERE active_variant.product_id = product.id AND active_variant.status = :activeStatus)',
           { activeStatus: VariantLifecycleStatus.ACTIVE },
         )
+        // TypeORM paginates joined entity reads through a DISTINCT subquery.
+        // PostgreSQL requires this joined ordering expression to be selected.
+        .addSelect('membership.position', 'membership_position')
         .orderBy('membership.position', 'ASC')
         .addOrderBy('product.id', 'ASC')
         .take(limit + 1);

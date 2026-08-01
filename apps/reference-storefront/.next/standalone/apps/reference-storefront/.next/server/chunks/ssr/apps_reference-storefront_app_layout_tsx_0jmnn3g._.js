@@ -1,3 +1,0 @@
-module.exports=[47283,a=>{"use strict";var b=a.i(78344);a.s(["default",0,function({children:a}){return(0,b.jsx)("html",{lang:"fa",dir:"rtl",children:(0,b.jsx)("body",{children:a})})},"metadata",0,{title:"Better Commerce Reference Storefront",description:"Executable reference for Better Commerce storefront integration."}])},79473,a=>{a.n(a.i(47283))}];
-
-//# sourceMappingURL=apps_reference-storefront_app_layout_tsx_0jmnn3g._.js.map

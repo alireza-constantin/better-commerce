@@ -74,8 +74,8 @@ Development OpenAPI is available at `http://localhost:3000/docs`, liveness at
 | `pnpm build` | Build every applicable workspace package |
 | `pnpm typecheck` | Type-check every applicable workspace package |
 | `pnpm lint` | Run the non-mutating lint gate |
-| `pnpm test -- --runInBand` | Run unit tests |
-| `pnpm test:e2e -- --runInBand` | Run end-to-end tests; PostgreSQL and Redis must be running |
+| `pnpm test -- -- --runInBand` | Run unit tests |
+| `pnpm test:e2e -- -- --runInBand` | Run end-to-end tests; PostgreSQL and Redis must be running |
 | `pnpm db:up` | Start local PostgreSQL and Redis |
 | `pnpm db:down` | Stop local containers without deleting data |
 | `pnpm db:logs` | Follow PostgreSQL logs |
@@ -190,5 +190,7 @@ See [the local-development runbook](docs/runbooks/local-development.md) for the
 development reset workflow, session-secret rotation, Redis incidents, and
 forced logout. See the
 [release security checklist](docs/runbooks/release-security-checklist.md)
-before enabling production registration. The complete documentation map is in
-[docs/README.md](docs/README.md).
+before enabling production registration, and the
+[single-merchant deployment baseline](docs/runbooks/single-merchant-deployment.md)
+for the required launch gates and recovery drill. The complete documentation
+map is in [docs/README.md](docs/README.md).

@@ -1,5 +1,7 @@
 # compiled output
 **/dist
+**/.next
+**/*.tsbuildinfo
 **/node_modules
 **/.pnpm-store
 /build

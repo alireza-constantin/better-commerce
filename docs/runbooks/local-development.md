@@ -57,7 +57,7 @@ Stateful end-to-end tests require the local dependencies:
 
 ```bash
 pnpm db:up
-pnpm test:e2e -- --runInBand
+pnpm test:e2e -- -- --runInBand
 ```
 
 Those suites create/use the dedicated `better_commerce_test` database and
