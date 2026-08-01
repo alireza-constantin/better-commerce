@@ -287,6 +287,8 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/storefront-source: {}
+
 packages:
 
   '@angular-devkit/core@19.2.24':

@@ -1,0 +1,29 @@
+{
+  "name": "@better-commerce/storefront-source",
+  "version": "0.1.0",
+  "description": "Versioned Better Commerce storefront presentation-source catalogue and installer",
+  "private": true,
+  "type": "module",
+  "files": [
+    "bin",
+    "catalogue",
+    "src",
+    "README.md"
+  ],
+  "bin": {
+    "better-commerce-storefront": "./bin/better-commerce-storefront.mjs"
+  },
+  "scripts": {
+    "build": "node scripts/verify.mjs",
+    "catalogue": "node bin/better-commerce-storefront.mjs",
+    "typecheck": "node scripts/verify.mjs",
+    "lint": "node scripts/verify.mjs",
+    "test": "node scripts/test.mjs"
+  },
+  "engines": {
+    "node": ">=22.17.0"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}

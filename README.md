@@ -13,6 +13,8 @@ apps/
   admin/                React + Vite merchant Admin SPA
 packages/
   sdk/                  Generated-backed external API client and types
+  storefront-core/      Framework-neutral storefront integration primitives
+  storefront-source/    Versioned copied-source catalogue and installer
 docs/                   Architecture, contracts, and runbooks
 docker-compose.yml      Local PostgreSQL and Redis
 package.json            Root orchestration commands
@@ -145,6 +147,27 @@ The OpenAPI document generates `@better-commerce/sdk`. Start the API, then run
 `pnpm sdk:generate`; CI-compatible freshness verification uses
 `pnpm sdk:check`. The external transport rules are defined in the
 [HTTP API contract](docs/contracts/external-http-api.md).
+
+## Storefront source catalogue
+
+`@better-commerce/storefront-source` implements the initial ADR-0012 workflow.
+It copies presentation source into a merchant storefront repository and records
+provenance in `better-commerce.source.json`; it is not a runtime UI package.
+
+From this platform repository, inspect and exercise the bundled catalogue with:
+
+```bash
+pnpm --filter @better-commerce/storefront-source catalogue -- list --version 1.0.1
+pnpm --filter @better-commerce/storefront-source catalogue -- add product-grid --version 1.0.1 --root ../merchant-store
+pnpm --filter @better-commerce/storefront-source catalogue -- diff product-grid --to 1.0.1 --root ../merchant-store
+```
+
+The installer refuses overwrites, does not modify the merchant's dependency
+files, and records original checksums. `diff` reports whether an upstream file
+is a clean update or needs a manual merge; it never writes over merchant
+source. The initial optional Next.js recipe depends on the portable Product
+grid. Future publication to the private registry will distribute the same
+catalogue and CLI contract.
 
 ## Staff authorization
 

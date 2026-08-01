@@ -23,6 +23,7 @@ amendment or a superseding ADR.
 - [ADR-0008 — Inventory and Reservations](adr/0008-inventory.md)
 - [ADR-0010 — Admin Application Architecture](adr/0010-admin.md)
 - [ADR-0011 — Storefront Rendering and Integration Architecture](adr/0011-storefront.md)
+- [ADR-0012 — Storefront Source Distribution and Upgrade Workflow](adr/0012-storefront-source-distribution.md)
 - [ADR-0013 — Shipping Methods, Zones, and Rate Rules](adr/0013-shipping.md)
 - [ADR-0014 — Manual Payments and Admin Order Acceptance](adr/0014-manual-payments.md)
 - [ADR-0015 — Persistent Cart Ownership, Merge, and Concurrency](adr/0015-cart.md)
@@ -103,7 +104,7 @@ conflict through an amendment, superseding decision, or contract revision.
 
 ## Current decision sequence
 
-ADR-0001 through ADR-0008, ADR-0010, ADR-0011, and ADR-0013 through ADR-0017
+ADR-0001 through ADR-0008 and ADR-0010 through ADR-0017
 are accepted. ADR-0005 Catalog implementation is complete. The first combined
 physical-shipping/manual-payment Checkout implementation is present and
 typechecks. ADR-0015 Cart, checkout preparation, selectable manual payments,

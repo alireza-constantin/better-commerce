@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "product-grid",
+      "title": "Portable React product grid",
+      "kind": "portable-react-block",
+      "renderers": ["react"],
+      "runtimeDependencies": {
+        "@better-commerce/storefront-core": "^0.0.1"
+      },
+      "files": [
+        {
+          "source": "blocks/product-grid/ProductGrid.tsx",
+          "target": "components/better-commerce/product-grid/ProductGrid.tsx",
+          "sha256": "2495723169dbbcfd47b2c5c75374150627adc3889922f2e0fd26ae5d16a1e0ac"
+        },
+        {
+          "source": "blocks/product-grid/product-grid.css",
+          "target": "components/better-commerce/product-grid/product-grid.css",
+          "sha256": "89fe54a14d25d9bf3b4f482f16dd30fc56149d2914983a0ba794b339dfcbf54b"
+        }
+      ],
+      "notes": [
+        "Import the copied CSS from the merchant's own stylesheet entry point.",
+        "Pass a merchant-owned link renderer when framework-specific navigation is required."
+      ]
+    }
+  ]
+}
