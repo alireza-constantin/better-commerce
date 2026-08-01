@@ -76,7 +76,7 @@ Development OpenAPI is available at `http://localhost:3000/docs`, liveness at
 | `pnpm build` | Build every applicable workspace package |
 | `pnpm typecheck` | Type-check every applicable workspace package |
 | `pnpm lint` | Run the non-mutating lint gate |
-| `pnpm test -- -- --runInBand` | Run unit tests |
+| `pnpm test` | Run unit tests |
 | `pnpm test:e2e -- -- --runInBand` | Run end-to-end tests; PostgreSQL and Redis must be running |
 | `pnpm db:up` | Start local PostgreSQL and Redis |
 | `pnpm db:down` | Stop local containers without deleting data |
@@ -168,6 +168,16 @@ is a clean update or needs a manual merge; it never writes over merchant
 source. The initial optional Next.js recipe depends on the portable Product
 grid. Future publication to the private registry will distribute the same
 catalogue and CLI contract.
+
+## Public package releases
+
+The reusable SDK, storefront integration, and copied-source installer are
+released as public MIT-licensed `@better-commerce/*` packages through npm.
+Merchant storefront source, configuration, secrets, and deployment data remain
+outside these packages. The one-time initial release is published manually with
+2FA. Later GitHub tag workflows stage immutable versions for npm 2FA approval.
+
+Follow [the public package release runbook](docs/runbooks/public-package-release.md).
 
 ## Staff authorization
 

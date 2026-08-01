@@ -1,0 +1,64 @@
+name: Stage public packages
+
+on:
+  push:
+    tags:
+      - 'packages-v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-package-staging
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    name: Verify and stage public packages
+    runs-on: ubuntu-latest
+    environment: npm-package-staging
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_STAGE_TOKEN }}
+
+    steps:
+      - name: Check out the release tag
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          registry-url: https://registry.npmjs.org/
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install npm with staged-publishing support
+        run: npm install --global npm@11.18.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify the release
+        run: |
+          pnpm build
+          pnpm typecheck
+          pnpm lint
+          pnpm test
+          pnpm release:check
+
+      - name: Pack publishable workspace packages
+        run: |
+          mkdir .artifacts
+          pnpm --filter @better-commerce/sdk pack --pack-destination .artifacts
+          pnpm --filter @better-commerce/storefront-core pack --pack-destination .artifacts
+          pnpm --filter @better-commerce/storefront-source pack --pack-destination .artifacts
+
+      - name: Stage the SDK
+        run: npm stage publish .artifacts/better-commerce-sdk-*.tgz --access public
+
+      - name: Stage storefront core
+        run: npm stage publish .artifacts/better-commerce-storefront-core-*.tgz --access public
+
+      - name: Stage the storefront source catalogue
+        run: npm stage publish .artifacts/better-commerce-storefront-source-*.tgz --access public

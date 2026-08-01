@@ -1,7 +1,17 @@
 {
   "name": "@better-commerce/storefront-core",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Framework-neutral Better Commerce storefront integration primitives",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alireza-constantin/better-commerce.git",
+    "directory": "packages/storefront-core"
+  },
+  "bugs": {
+    "url": "https://github.com/alireza-constantin/better-commerce/issues"
+  },
+  "homepage": "https://github.com/alireza-constantin/better-commerce#readme",
   "type": "module",
   "sideEffects": false,
   "files": [
@@ -23,6 +33,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "tsc --noEmit -p tsconfig.json",
     "test": "node scripts/verify.mjs"
@@ -37,6 +48,7 @@
     "node": ">=22.17.0"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

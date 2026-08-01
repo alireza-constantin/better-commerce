@@ -40,7 +40,7 @@ application-level customer IDs in this deployment model.
 Do not accept production traffic until all of these are true:
 
 1. API, Admin, and storefront images are built from one reviewed commit and
-   have passed `pnpm typecheck`, `pnpm test -- -- --runInBand`, and
+   have passed `pnpm typecheck`, `pnpm test`, and
    `pnpm test:e2e -- -- --runInBand`.
 2. Production schema migrations and their rollback procedure exist. TypeORM
    synchronization must remain disabled in production.

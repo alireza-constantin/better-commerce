@@ -2,7 +2,16 @@
   "name": "@better-commerce/storefront-source",
   "version": "0.1.0",
   "description": "Versioned Better Commerce storefront presentation-source catalogue and installer",
-  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alireza-constantin/better-commerce.git",
+    "directory": "packages/storefront-source"
+  },
+  "bugs": {
+    "url": "https://github.com/alireza-constantin/better-commerce/issues"
+  },
+  "homepage": "https://github.com/alireza-constantin/better-commerce#readme",
   "type": "module",
   "files": [
     "bin",
@@ -15,6 +24,7 @@
   },
   "scripts": {
     "build": "node scripts/verify.mjs",
+    "prepack": "pnpm run build",
     "catalogue": "node bin/better-commerce-storefront.mjs",
     "typecheck": "node scripts/verify.mjs",
     "lint": "node scripts/verify.mjs",
@@ -24,6 +34,7 @@
     "node": ">=22.17.0"
   },
   "publishConfig": {
-    "access": "restricted"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

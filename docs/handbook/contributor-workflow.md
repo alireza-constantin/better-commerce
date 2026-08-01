@@ -45,7 +45,7 @@ The normal root gates are:
 pnpm build
 pnpm typecheck
 pnpm lint
-pnpm test -- -- --runInBand
+pnpm test
 docker compose config --quiet
 pnpm test:e2e -- -- --runInBand
 ```

@@ -73,6 +73,7 @@ environment requirements change.
 - [Admin static delivery](runbooks/admin-static-delivery.md)
 - [Production registration security gate](runbooks/release-security-checklist.md)
 - [Single-merchant deployment and recovery baseline](runbooks/single-merchant-deployment.md)
+- [Public package release](runbooks/public-package-release.md)
 
 ### Plans and handoffs
 
