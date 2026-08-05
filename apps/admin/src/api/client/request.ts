@@ -22,7 +22,20 @@ export class AdminApiError extends Error {
 }
 
 export function isAdminApiError(error: unknown): error is AdminApiError {
-  return error instanceof AdminApiError;
+  if (error instanceof AdminApiError) return true;
+
+  // `instanceof` is normally enough, but development module reloads can leave
+  // React Query holding an error created by a previous module instance. Keep
+  // the UI's error boundary stable by recognizing our deliberately small,
+  // serializable error contract as well.
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    error.name === 'AdminApiError' &&
+    'problem' in error &&
+    isAdminProblem(error.problem)
+  );
 }
 
 export async function executeApiRequest<T>(
@@ -78,4 +91,17 @@ async function performRequest<T>(
   }
 
   return result;
+}
+
+function isAdminProblem(value: unknown): value is AdminProblem {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'kind' in value &&
+    typeof value.kind === 'string' &&
+    'title' in value &&
+    typeof value.title === 'string' &&
+    'detail' in value &&
+    typeof value.detail === 'string'
+  );
 }

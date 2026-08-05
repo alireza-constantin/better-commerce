@@ -9,7 +9,8 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig(({ mode }) => {
   const environment = loadEnv(mode, currentDirectory, '');
   const apiProxyTarget =
-    environment.VITE_API_PROXY_TARGET ?? 'http://localhost:3000';
+    environment.VITE_API_PROXY_TARGET ??
+    'http://127.0.0.1:3000';
 
   return {
     base: '/admin/',
