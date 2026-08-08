@@ -39,6 +39,11 @@ import {
   type AdminProductSummary,
   type ProductConfigurationInput,
 } from './api';
+import { listCurrentPrices } from '@/features/pricing/api/pricing-api';
+import {
+  listCurrentInventory,
+  type CurrentInventory,
+} from '@/features/inventory/api/inventory-api';
 import {
   categoriesQuery,
   productCategoriesMutation,
@@ -515,6 +520,16 @@ function CatalogProductContent({
       />
       {canWrite ? (
         <VisualConfigurationEditor
+          canReadInventory={hasPermission(
+            profile.permissions,
+            'inventory.read',
+          )}
+          canReadPricing={hasPermission(profile.permissions, 'pricing.read')}
+          canWriteInventory={hasPermission(
+            profile.permissions,
+            'inventory.adjust',
+          )}
+          canWritePricing={hasPermission(profile.permissions, 'pricing.write')}
           isSubmitting={isSubmitting}
           key={`configuration-${product.data.version}`}
           onSubmit={async (input) => {
@@ -959,16 +974,72 @@ type ConfigurationDraft = {
 };
 
 function VisualConfigurationEditor({
+  canReadInventory,
+  canReadPricing,
+  canWriteInventory,
+  canWritePricing,
   isSubmitting,
   onSubmit,
   product,
 }: {
+  readonly canReadInventory: boolean;
+  readonly canReadPricing: boolean;
+  readonly canWriteInventory: boolean;
+  readonly canWritePricing: boolean;
   readonly isSubmitting: boolean;
   readonly onSubmit: (input: ProductConfigurationInput) => Promise<void>;
   readonly product: AdminProduct;
 }) {
   const [draft, setDraft] = useState(() => configurationDraft(product));
   const [validation, setValidation] = useState<string>();
+  const [priceDraft, setPriceDraft] = useState<Record<string, string>>({});
+  const [inventoryDraft, setInventoryDraft] = useState<
+    Record<
+      string,
+      {
+        mode: 'not_configured' | 'tracked' | 'untracked';
+        onHand: string;
+        reason: string;
+      }
+    >
+  >({});
+  const variantIds = product.variants.map((variant) => variant.id);
+  const prices = useQuery({
+    enabled: canReadPricing && variantIds.length > 0,
+    queryKey: ['catalog', 'variant-prices', product.id, product.version],
+    queryFn: () => listCurrentPrices(variantIds),
+  });
+  const inventory = useQuery({
+    enabled: canReadInventory && variantIds.length > 0,
+    queryKey: ['catalog', 'variant-inventory', product.id, product.version],
+    queryFn: () => listCurrentInventory(variantIds),
+  });
+  useEffect(() => {
+    if (prices.data)
+      setPriceDraft(
+        Object.fromEntries(
+          prices.data.map((price) => [
+            price.variantId,
+            price.state === 'priced' ? (price.amount ?? '') : '',
+          ]),
+        ),
+      );
+  }, [prices.data]);
+  useEffect(() => {
+    if (inventory.data)
+      setInventoryDraft(
+        Object.fromEntries(
+          inventory.data.map((item: CurrentInventory) => [
+            item.variantId,
+            {
+              mode: item.state,
+              onHand: item.onHand === null ? '' : String(item.onHand),
+              reason: '',
+            },
+          ]),
+        ),
+      );
+  }, [inventory.data]);
   const savedVariantIds = new Set(
     product.variants.map((variant) => variant.id),
   );
@@ -1032,9 +1103,44 @@ function VisualConfigurationEditor({
           return;
         }
         setValidation(undefined);
+        const operationalChanges =
+          (canWritePricing && Object.keys(priceDraft).length > 0) ||
+          (canWriteInventory && Object.keys(inventoryDraft).length > 0);
+        if (
+          operationalChanges &&
+          !window.confirm(
+            'تغییرات قیمت و موجودی ثبت و در تاریخچه ذخیره می‌شوند. ادامه می‌دهید؟',
+          )
+        )
+          return;
         void onSubmit({
           ...draft,
           expectedVersion: product.version,
+          ...(canWritePricing
+            ? {
+                prices: Object.entries(priceDraft).map(
+                  ([variantId, amount]) => ({
+                    variantId,
+                    amount: amount.trim() || null,
+                  }),
+                ),
+              }
+            : {}),
+          ...(canWriteInventory
+            ? {
+                inventory: Object.entries(inventoryDraft).map(
+                  ([variantId, value]) => ({
+                    variantId,
+                    trackingMode: value.mode,
+                    currentOnHand:
+                      value.mode === 'tracked' && value.onHand.trim()
+                        ? Number(value.onHand)
+                        : null,
+                    reasonCode: value.reason.trim() || null,
+                  }),
+                ),
+              }
+            : {}),
         } as ProductConfigurationInput).catch(() => undefined);
       }}
     >
@@ -1163,6 +1269,8 @@ function VisualConfigurationEditor({
               <th className="pb-2">عنوان</th>
               <th className="pb-2">کد کالا</th>
               <th className="pb-2">وضعیت</th>
+              <th className="pb-2">قیمت</th>
+              <th className="pb-2">موجودی</th>
               <th className="pb-2">تصاویر</th>
               <th className="pb-2">
                 <span className="sr-only">حذف</span>
@@ -1185,6 +1293,96 @@ function VisualConfigurationEditor({
                     }
                     value={variant.title ?? ''}
                   />
+                </td>
+                <td className="py-3 pe-2">
+                  {canReadPricing ? (
+                    canWritePricing ? (
+                      <input
+                        className="catalog-input"
+                        dir="ltr"
+                        inputMode="decimal"
+                        onChange={(event) =>
+                          setPriceDraft((current) => ({
+                            ...current,
+                            [variant.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="قیمت درخواستی"
+                        value={priceDraft[variant.id] ?? ''}
+                      />
+                    ) : (
+                      <span dir="ltr">
+                        {priceDraft[variant.id] || 'درخواست قیمت'}
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      بدون دسترسی
+                    </span>
+                  )}
+                </td>
+                <td className="py-3 pe-2">
+                  {canReadInventory ? (
+                    canWriteInventory ? (
+                      <div className="space-y-1">
+                        <select
+                          className="catalog-input"
+                          onChange={(event) =>
+                            setInventoryDraft((current) => ({
+                              ...current,
+                              [variant.id]: {
+                                ...(current[variant.id] ?? {
+                                  onHand: '',
+                                  reason: '',
+                                }),
+                                mode: event.target.value as
+                                  'not_configured' | 'tracked' | 'untracked',
+                              },
+                            }))
+                          }
+                          value={
+                            inventoryDraft[variant.id]?.mode ?? 'not_configured'
+                          }
+                        >
+                          <option value="not_configured">تنظیم نشده</option>
+                          <option value="untracked">نامحدود</option>
+                          <option value="tracked">ردیابی‌شده</option>
+                        </select>
+                        {inventoryDraft[variant.id]?.mode === 'tracked' ? (
+                          <input
+                            className="catalog-input"
+                            inputMode="numeric"
+                            onChange={(event) =>
+                              setInventoryDraft((current) => ({
+                                ...current,
+                                [variant.id]: {
+                                  ...(current[variant.id] ?? {
+                                    mode: 'tracked',
+                                    reason: '',
+                                  }),
+                                  onHand: event.target.value,
+                                },
+                              }))
+                            }
+                            placeholder="موجودی"
+                            value={inventoryDraft[variant.id]?.onHand ?? ''}
+                          />
+                        ) : null}
+                      </div>
+                    ) : (
+                      <span>
+                        {inventoryDraft[variant.id]?.mode === 'untracked'
+                          ? 'نامحدود'
+                          : inventoryDraft[variant.id]?.mode === 'tracked'
+                            ? inventoryDraft[variant.id]?.onHand
+                            : 'تنظیم نشده'}
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      بدون دسترسی
+                    </span>
+                  )}
                 </td>
                 <td className="py-3 pe-2">
                   <input
