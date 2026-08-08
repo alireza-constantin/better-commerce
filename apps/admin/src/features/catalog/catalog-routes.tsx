@@ -951,6 +951,7 @@ type ConfigurationDraft = {
     id: string;
     position: number;
     selectionValueIds: string[];
+    mediaIds: string[];
     sku: string | null;
     status: 'active' | 'archived';
     title: string | null;
@@ -995,6 +996,7 @@ function VisualConfigurationEditor({
               current.variants[0]?.fulfillmentClassification ?? 'physical',
             position,
             selectionValueIds,
+            mediaIds: [],
             sku: null,
             status: 'active' as const,
             title: null,
@@ -1161,6 +1163,7 @@ function VisualConfigurationEditor({
               <th className="pb-2">عنوان</th>
               <th className="pb-2">کد کالا</th>
               <th className="pb-2">وضعیت</th>
+              <th className="pb-2">تصاویر</th>
               <th className="pb-2">
                 <span className="sr-only">حذف</span>
               </th>
@@ -1206,6 +1209,48 @@ function VisualConfigurationEditor({
                     <option value="active">فعال</option>
                     <option value="archived">بایگانی‌شده</option>
                   </select>
+                </td>
+                <td className="py-3 pe-2">
+                  <div className="flex flex-wrap gap-2">
+                    {product.media.length ? (
+                      product.media.map((media) => (
+                        <label
+                          className="flex items-center gap-1 text-xs"
+                          key={media.id}
+                        >
+                          <input
+                            checked={variant.mediaIds.includes(media.id)}
+                            onChange={() =>
+                              setDraft((current) => ({
+                                ...current,
+                                variants: current.variants.map(
+                                  (item, itemIndex) =>
+                                    itemIndex !== index
+                                      ? item
+                                      : {
+                                          ...item,
+                                          mediaIds: item.mediaIds.includes(
+                                            media.id,
+                                          )
+                                            ? item.mediaIds.filter(
+                                                (id) => id !== media.id,
+                                              )
+                                            : [...item.mediaIds, media.id],
+                                        },
+                                ),
+                              }))
+                            }
+                            type="checkbox"
+                          />
+                          {media.position + 1}
+                        </label>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        بدون تصویر
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="py-3 text-end">
                   <Button
@@ -1646,6 +1691,16 @@ function configurationDraft(product: AdminProduct): ConfigurationDraft {
       id: variant.id,
       position,
       selectionValueIds: [...variant.selectionValueIds],
+      mediaIds: (variant as typeof variant & { mediaIds?: readonly string[] })
+        .mediaIds
+        ? [
+            ...(
+              variant as typeof variant & {
+                mediaIds?: readonly string[];
+              }
+            ).mediaIds!,
+          ]
+        : [],
       sku: variant.sku,
       status: variant.status,
       title: variant.title,
