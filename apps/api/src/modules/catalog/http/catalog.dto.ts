@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  Allow,
   ArrayMaxSize,
   IsArray,
   IsIn,
@@ -134,6 +135,12 @@ export class ConfigurationVariantDto {
   @ArrayMaxSize(5)
   @IsUUID('4', { each: true })
   selectionValueIds!: string[];
+  @ApiPropertyOptional({ format: 'uuid', type: [String], maxItems: 20 })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsUUID('4', { each: true })
+  mediaIds?: string[];
 }
 
 export class ReplaceConfigurationDto {
@@ -176,6 +183,7 @@ export class UploadProductMediaDto {
   altText?: string;
 
   @ApiProperty({ format: 'binary', type: 'string' })
+  @Allow()
   file!: unknown;
 }
 
@@ -346,6 +354,8 @@ export class CatalogVariantResponseDto {
   position!: number;
   @ApiProperty({ format: 'uuid', type: [String] })
   selectionValueIds!: string[];
+  @ApiProperty({ format: 'uuid', type: [String] })
+  mediaIds!: string[];
 }
 
 export class ProductDetailResponseDto extends ProductSummaryResponseDto {
@@ -379,6 +389,8 @@ export class PublicCatalogVariantResponseDto {
   position!: number;
   @ApiProperty({ format: 'uuid', type: [String] })
   selectionValueIds!: string[];
+  @ApiProperty({ format: 'uuid', type: [String] })
+  mediaIds!: string[];
   @ApiProperty({ nullable: true, type: () => PublicMoneyResponseDto })
   price!: PublicMoneyResponseDto | null;
   @ApiProperty({ enum: PUBLIC_AVAILABILITY })

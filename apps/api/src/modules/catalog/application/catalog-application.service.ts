@@ -34,6 +34,7 @@ import {
   CatalogProductSlug,
   CatalogVariant,
   CatalogVariantSelection,
+  CatalogVariantMedia,
   CatalogCollectionProduct,
   ProductLifecycleStatus,
   VariantLifecycleStatus,
@@ -90,6 +91,7 @@ export interface ConfigurationVariantInput {
   readonly position: number;
   readonly fulfillmentClassification: FulfillmentClassification;
   readonly selectionValueIds: readonly string[];
+  readonly mediaIds?: readonly string[];
 }
 
 export interface ReplaceConfigurationCommand {
@@ -151,6 +153,7 @@ export interface ProductDetail extends ProductRow {
     fulfillmentClassification: FulfillmentClassification;
     position: number;
     selectionValueIds: readonly string[];
+    mediaIds: readonly string[];
   }[];
   readonly options: readonly {
     id: string;
@@ -864,14 +867,33 @@ export class CatalogApplicationService implements CatalogModuleContract {
     desired: ReturnType<CatalogApplicationService['materializeConfiguration']>,
   ): Promise<void> {
     const selections = manager.getRepository(CatalogVariantSelection);
+    const variantMedia = manager.getRepository(CatalogVariantMedia);
     const variants = manager.getRepository(CatalogVariant);
     const values = manager.getRepository(CatalogOptionValue);
     const options = manager.getRepository(CatalogProductOption);
     const existingVariants = await variants.findBy({ productId });
-    if (existingVariants.length)
+    if (existingVariants.length) {
       await selections.delete({
         variantId: In(existingVariants.map((variant) => variant.id)),
       });
+      await variantMedia.delete({
+        variantId: In(existingVariants.map((variant) => variant.id)),
+      });
+    }
+    const requestedMediaIds = [
+      ...new Set(desired.variants.flatMap((variant) => variant.mediaIds ?? [])),
+    ];
+    const availableMedia = requestedMediaIds.length
+      ? await manager.getRepository(CatalogProductMedia).findBy({
+          productId,
+          id: In(requestedMediaIds),
+        })
+      : [];
+    if (availableMedia.length !== requestedMediaIds.length)
+      throw this.error(
+        'catalog.media_invalid',
+        'Variant media must belong to the Product',
+      );
     await variants.delete({ productId });
     const existingOptions = await options.findBy({ productId });
     if (existingOptions.length)
@@ -946,6 +968,13 @@ export class CatalogApplicationService implements CatalogModuleContract {
         }),
       ),
     );
+    await variantMedia.save(
+      desired.variants.flatMap((variant) =>
+        (variant.mediaIds ?? []).map((mediaId, position) =>
+          variantMedia.create({ variantId: variant.id, mediaId, position }),
+        ),
+      ),
+    );
   }
 
   private async replaceCanonicalSlug(
@@ -991,6 +1020,11 @@ export class CatalogApplicationService implements CatalogModuleContract {
       ? await manager
           .getRepository(CatalogVariantSelection)
           .findBy({ variantId: In(variants.map((variant) => variant.id)) })
+      : [];
+    const variantMedia = variants.length
+      ? await manager.getRepository(CatalogVariantMedia).findBy({
+          variantId: In(variants.map((variant) => variant.id)),
+        })
       : [];
     const media = await manager.getRepository(CatalogProductMedia).find({
       where: { productId: product.id },
@@ -1038,6 +1072,10 @@ export class CatalogApplicationService implements CatalogModuleContract {
           .filter((selection) => selection.variantId === variant.id)
           .map((selection) => selection.optionValueId)
           .sort(),
+        mediaIds: variantMedia
+          .filter((media) => media.variantId === variant.id)
+          .sort((left, right) => left.position - right.position)
+          .map((media) => media.mediaId),
       })),
     };
   }
@@ -1198,6 +1236,7 @@ export class CatalogApplicationService implements CatalogModuleContract {
           fulfillmentClassification: variant.fulfillmentClassification,
           position: variant.position,
           selectionValueIds: variant.selectionValueIds,
+          mediaIds: variant.mediaIds,
         })),
     };
   }

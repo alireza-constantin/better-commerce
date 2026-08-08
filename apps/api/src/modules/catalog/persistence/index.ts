@@ -10,6 +10,7 @@ export { CatalogCollectionSlug } from './collection-slug.entity';
 export { CatalogCollectionProduct } from './collection-product.entity';
 export { CatalogGroupingStatus } from './grouping-status';
 export { CatalogProductMedia } from './product-media.entity';
+export { CatalogVariantMedia } from './variant-media.entity';
 export { CatalogVariantSelection } from './variant-selection.entity';
 export {
   CatalogVariant,

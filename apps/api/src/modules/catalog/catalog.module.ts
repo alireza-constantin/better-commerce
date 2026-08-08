@@ -27,6 +27,7 @@ import {
   CatalogProductSlug,
   CatalogVariant,
   CatalogVariantSelection,
+  CatalogVariantMedia,
   CatalogProductCategory,
 } from './persistence';
 import { CommerceAuditModule } from '../commerce-audit/commerce-audit.module';
@@ -61,6 +62,7 @@ function configuredReservedRoutes(config: ConfigService): readonly string[] {
       CatalogProductOption,
       CatalogOptionValue,
       CatalogVariantSelection,
+      CatalogVariantMedia,
     ]),
   ],
   providers: [
