@@ -514,7 +514,7 @@ function CatalogProductContent({
         product={product.data}
       />
       {canWrite ? (
-        <ConfigurationEditor
+        <VisualConfigurationEditor
           isSubmitting={isSubmitting}
           key={`configuration-${product.data.version}`}
           onSubmit={async (input) => {
@@ -939,7 +939,324 @@ function ProductMediaEditor({
   );
 }
 
-function ConfigurationEditor({
+type ConfigurationDraft = {
+  options: {
+    id: string;
+    name: string;
+    position: number;
+    values: { id: string; label: string; position: number }[];
+  }[];
+  variants: {
+    fulfillmentClassification: 'physical' | 'digital' | 'service';
+    id: string;
+    position: number;
+    selectionValueIds: string[];
+    sku: string | null;
+    status: 'active' | 'archived';
+    title: string | null;
+  }[];
+};
+
+function VisualConfigurationEditor({
+  isSubmitting,
+  onSubmit,
+  product,
+}: {
+  readonly isSubmitting: boolean;
+  readonly onSubmit: (input: ProductConfigurationInput) => Promise<void>;
+  readonly product: AdminProduct;
+}) {
+  const [draft, setDraft] = useState(() => configurationDraft(product));
+  const [validation, setValidation] = useState<string>();
+  const savedVariantIds = new Set(
+    product.variants.map((variant) => variant.id),
+  );
+  const generate = () => {
+    const combinations = optionCombinations(draft.options);
+    if (!combinations) {
+      setValidation(
+        'برای ساخت گونه‌ها، برای هر گزینه دست‌کم یک مقدار وارد کنید.',
+      );
+      return;
+    }
+    const existing = new Map(
+      draft.variants.map((variant) => [
+        selectionKey(variant.selectionValueIds),
+        variant,
+      ]),
+    );
+    setDraft((current) => ({
+      ...current,
+      variants: combinations.map(
+        (selectionValueIds, position) =>
+          existing.get(selectionKey(selectionValueIds)) ?? {
+            id: newClientId(),
+            fulfillmentClassification:
+              current.variants[0]?.fulfillmentClassification ?? 'physical',
+            position,
+            selectionValueIds,
+            sku: null,
+            status: 'active' as const,
+            title: null,
+          },
+      ),
+    }));
+    setValidation(undefined);
+  };
+  const updateVariant = (
+    index: number,
+    patch: Partial<ConfigurationDraft['variants'][number]>,
+  ) =>
+    setDraft((current) => ({
+      ...current,
+      variants: current.variants.map((variant, variantIndex) =>
+        variantIndex === index ? { ...variant, ...patch } : variant,
+      ),
+    }));
+  return (
+    <form
+      className="rounded-lg border border-border bg-card p-5"
+      dir="rtl"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (
+          draft.options.some(
+            (option) =>
+              !option.name.trim() ||
+              option.values.some((value) => !value.label.trim()),
+          )
+        ) {
+          setValidation('نام گزینه‌ها و مقدارهای آن‌ها الزامی است.');
+          return;
+        }
+        setValidation(undefined);
+        void onSubmit({
+          ...draft,
+          expectedVersion: product.version,
+        } as ProductConfigurationInput).catch(() => undefined);
+      }}
+    >
+      <h2 className="font-semibold">پیکربندی گونه‌ها</h2>
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+        گزینه‌ها را با فیلدهای عادی وارد کنید، ترکیب‌ها را پیش‌نمایش کنید و فقط
+        ترکیب‌هایی را که می‌فروشید ذخیره کنید.
+      </p>
+      <div className="mt-4 space-y-4">
+        {draft.options.map((option, optionIndex) => (
+          <fieldset
+            className="rounded-md border border-border p-4"
+            key={option.id}
+          >
+            <legend className="px-1 text-sm font-medium">
+              گزینه {optionIndex + 1}
+            </legend>
+            <input
+              className="catalog-input"
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  options: current.options.map((item, index) =>
+                    index === optionIndex
+                      ? { ...item, name: event.target.value }
+                      : item,
+                  ),
+                }))
+              }
+              placeholder="مانند رنگ یا اندازه"
+              value={option.name}
+            />
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {option.values.map((value, valueIndex) => (
+                <input
+                  className="catalog-input"
+                  key={value.id}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      options: current.options.map((item, index) =>
+                        index !== optionIndex
+                          ? item
+                          : {
+                              ...item,
+                              values: item.values.map(
+                                (candidate, candidateIndex) =>
+                                  candidateIndex === valueIndex
+                                    ? {
+                                        ...candidate,
+                                        label: event.target.value,
+                                      }
+                                    : candidate,
+                              ),
+                            },
+                      ),
+                    }))
+                  }
+                  placeholder={'مقدار ' + (valueIndex + 1)}
+                  value={value.label}
+                />
+              ))}
+            </div>
+            <Button
+              className="mt-3"
+              onClick={() =>
+                setDraft((current) => ({
+                  ...current,
+                  options: current.options.map((item, index) =>
+                    index !== optionIndex
+                      ? item
+                      : {
+                          ...item,
+                          values: [
+                            ...item.values,
+                            {
+                              id: newClientId(),
+                              label: '',
+                              position: item.values.length,
+                            },
+                          ],
+                        },
+                  ),
+                }))
+              }
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              افزودن مقدار
+            </Button>
+          </fieldset>
+        ))}
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button
+          disabled={draft.options.length >= 5}
+          onClick={() =>
+            setDraft((current) => ({
+              ...current,
+              options: [
+                ...current.options,
+                {
+                  id: newClientId(),
+                  name: '',
+                  position: current.options.length,
+                  values: [{ id: newClientId(), label: '', position: 0 }],
+                },
+              ],
+            }))
+          }
+          type="button"
+          variant="outline"
+        >
+          افزودن گزینه
+        </Button>
+        <Button onClick={generate} type="button" variant="outline">
+          ساخت ترکیب‌های انتخاب‌شده
+        </Button>
+      </div>
+      <div className="mt-5 overflow-x-auto">
+        <table className="w-full min-w-[42rem] text-sm">
+          <thead className="border-b border-border text-right text-muted-foreground">
+            <tr>
+              <th className="pb-2">گونه</th>
+              <th className="pb-2">عنوان</th>
+              <th className="pb-2">کد کالا</th>
+              <th className="pb-2">وضعیت</th>
+              <th className="pb-2">
+                <span className="sr-only">حذف</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {draft.variants.map((variant, index) => (
+              <tr className="border-b border-border/60" key={variant.id}>
+                <td className="py-3">
+                  {variantLabel(variant, draft.options) || 'گونهٔ پیش‌فرض'}
+                </td>
+                <td className="py-3 pe-2">
+                  <input
+                    className="catalog-input"
+                    onChange={(event) =>
+                      updateVariant(index, {
+                        title: event.target.value || null,
+                      })
+                    }
+                    value={variant.title ?? ''}
+                  />
+                </td>
+                <td className="py-3 pe-2">
+                  <input
+                    className="catalog-input"
+                    dir="ltr"
+                    onChange={(event) =>
+                      updateVariant(index, { sku: event.target.value || null })
+                    }
+                    value={variant.sku ?? ''}
+                  />
+                </td>
+                <td className="py-3 pe-2">
+                  <select
+                    className="catalog-input"
+                    onChange={(event) =>
+                      updateVariant(index, {
+                        status: event.target.value as 'active' | 'archived',
+                      })
+                    }
+                    value={variant.status}
+                  >
+                    <option value="active">فعال</option>
+                    <option value="archived">بایگانی‌شده</option>
+                  </select>
+                </td>
+                <td className="py-3 text-end">
+                  <Button
+                    onClick={() =>
+                      setDraft((current) => ({
+                        ...current,
+                        variants: current.variants
+                          .map((item) =>
+                            item.id !== variant.id
+                              ? item
+                              : savedVariantIds.has(item.id)
+                                ? { ...item, status: 'archived' as const }
+                                : null,
+                          )
+                          .filter(
+                            (
+                              item,
+                            ): item is ConfigurationDraft['variants'][number] =>
+                              Boolean(item),
+                          )
+                          .map((item, position) => ({ ...item, position })),
+                      }))
+                    }
+                    size="sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    {savedVariantIds.has(variant.id) ? 'بایگانی' : 'حذف'}
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {validation ? (
+        <p className="mt-3 text-sm text-destructive" role="alert">
+          {validation}
+        </p>
+      ) : null}
+      <div className="mt-4 flex justify-end">
+        <Button disabled={isSubmitting} type="submit">
+          <FilePenLine aria-hidden="true" />{' '}
+          {isSubmitting ? 'در حال ذخیره…' : 'ذخیرهٔ گونه‌ها'}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+export function ConfigurationEditor({
   isSubmitting,
   onSubmit,
   product,
@@ -1311,6 +1628,62 @@ function isConflict(error: unknown) {
     error.problem.kind === 'api' &&
     error.problem.status === 409
   );
+}
+function configurationDraft(product: AdminProduct): ConfigurationDraft {
+  return {
+    options: product.options.map((option, position) => ({
+      id: option.id,
+      name: option.name,
+      position,
+      values: option.values.map((value, valuePosition) => ({
+        id: value.id,
+        label: value.label,
+        position: valuePosition,
+      })),
+    })),
+    variants: product.variants.map((variant, position) => ({
+      fulfillmentClassification: variant.fulfillmentClassification,
+      id: variant.id,
+      position,
+      selectionValueIds: [...variant.selectionValueIds],
+      sku: variant.sku,
+      status: variant.status,
+      title: variant.title,
+    })),
+  };
+}
+function newClientId(): string {
+  return crypto.randomUUID();
+}
+function selectionKey(ids: readonly string[]): string {
+  return [...ids].sort().join(':');
+}
+function optionCombinations(
+  options: ConfigurationDraft['options'],
+): string[][] | null {
+  if (!options.length) return [[]];
+  if (options.some((option) => !option.values.length)) return null;
+  return options.reduce<string[][]>(
+    (combinations, option) =>
+      combinations.flatMap((combination) =>
+        option.values.map((value) => [...combination, value.id]),
+      ),
+    [[]],
+  );
+}
+function variantLabel(
+  variant: ConfigurationDraft['variants'][number],
+  options: ConfigurationDraft['options'],
+): string {
+  const labels = new Map(
+    options.flatMap((option) =>
+      option.values.map((value) => [value.id, value.label] as const),
+    ),
+  );
+  return variant.selectionValueIds
+    .map((selectionId) => labels.get(selectionId))
+    .filter((label): label is string => Boolean(label))
+    .join(' · ');
 }
 function isConfigurationPayload(
   value: unknown,
