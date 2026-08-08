@@ -53,6 +53,8 @@ import {
   type CatalogApplicationErrorCode,
 } from './catalog-application.error';
 import { CatalogNavigationService } from './catalog-navigation.service';
+import type { DatabaseTransactionContext } from '../../../platform/database';
+import { unwrapTypeOrmTransaction } from '../../../platform/database/typeorm-transaction-context';
 
 export interface CreateProductCommand {
   readonly title: string;
@@ -494,6 +496,7 @@ export class CatalogApplicationService implements CatalogModuleContract {
   async replaceConfiguration(
     productId: string,
     input: ReplaceConfigurationCommand,
+    transaction?: DatabaseTransactionContext,
   ): Promise<ProductDetail> {
     return this.command(
       productId,
@@ -523,6 +526,7 @@ export class CatalogApplicationService implements CatalogModuleContract {
         }
         await this.replaceConfigurationRows(manager, product.id, materialized);
       },
+      transaction,
     );
   }
 
@@ -706,6 +710,7 @@ export class CatalogApplicationService implements CatalogModuleContract {
     productId: string,
     expectedVersion: number,
     work: (manager: EntityManager, product: CatalogProduct) => Promise<void>,
+    transaction?: DatabaseTransactionContext,
   ): Promise<ProductDetail> {
     if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1)
       throw this.error(
@@ -713,7 +718,7 @@ export class CatalogApplicationService implements CatalogModuleContract {
         'expectedVersion must be a positive integer',
       );
     try {
-      return await this.persistence.withTransaction(async (manager) => {
+      const execute = async (manager: EntityManager) => {
         const products = manager.getRepository(CatalogProduct);
         const product = await products.findOneBy({ id: productId });
         if (!product)
@@ -739,7 +744,10 @@ export class CatalogApplicationService implements CatalogModuleContract {
         }
         const updated = await products.findOneByOrFail({ id: productId });
         return this.loadDetail(manager, updated);
-      });
+      };
+      return transaction
+        ? await execute(unwrapTypeOrmTransaction(transaction))
+        : await this.persistence.withTransaction((manager) => execute(manager));
     } catch (error) {
       throw this.translate(error);
     }

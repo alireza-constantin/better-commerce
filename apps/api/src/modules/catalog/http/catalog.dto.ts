@@ -160,6 +160,68 @@ export class ReplaceConfigurationDto {
   @ValidateNested({ each: true })
   @Type(() => ConfigurationVariantDto)
   variants!: ConfigurationVariantDto[];
+
+  @ApiPropertyOptional({ type: () => [VariantPriceChangeDto], maxItems: 500 })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => VariantPriceChangeDto)
+  prices?: VariantPriceChangeDto[];
+
+  @ApiPropertyOptional({
+    type: () => [VariantInventoryChangeDto],
+    maxItems: 500,
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => VariantInventoryChangeDto)
+  inventory?: VariantInventoryChangeDto[];
+}
+
+export class VariantPriceChangeDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID('4')
+  variantId!: string;
+
+  @ApiPropertyOptional({
+    example: '120.00',
+    pattern: '^\d+(?:\.\d+)?$',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  amount!: string | null;
+}
+
+export class VariantInventoryChangeDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID('4')
+  variantId!: string;
+
+  @ApiProperty({ enum: ['not_configured', 'tracked', 'untracked'] })
+  @IsIn(['not_configured', 'tracked', 'untracked'])
+  trackingMode!: 'not_configured' | 'tracked' | 'untracked';
+
+  @ApiPropertyOptional({ minimum: 0, nullable: true, type: Number })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  currentOnHand?: number | null;
+
+  @ApiPropertyOptional({ maxLength: 80, nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  reasonCode?: string | null;
+
+  @ApiPropertyOptional({ maxLength: 500, nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  note?: string | null;
 }
 
 export class ProductTransitionDto {

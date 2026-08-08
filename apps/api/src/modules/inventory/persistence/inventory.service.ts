@@ -188,6 +188,103 @@ export class InventoryService implements InventoryModuleContract {
     });
   }
 
+  async applyCurrentInventory(
+    variantId: string,
+    trackingMode: InventoryTrackingMode | 'not_configured',
+    currentOnHand: number | null,
+    reasonCode: string | null,
+    note: string | undefined,
+    actorUserId: string,
+    requestId: string | null,
+    transaction: DatabaseTransactionContext,
+  ) {
+    if (
+      trackingMode !== 'not_configured' &&
+      trackingMode !== InventoryTrackingMode.TRACKED &&
+      trackingMode !== InventoryTrackingMode.UNTRACKED
+    )
+      throw new Error('Inventory tracking mode is invalid');
+    if (
+      trackingMode === InventoryTrackingMode.TRACKED &&
+      (currentOnHand === null ||
+        !Number.isSafeInteger(currentOnHand) ||
+        currentOnHand < 0)
+    )
+      throw new Error('Current on-hand quantity is invalid');
+    const manager = unwrapTypeOrmTransaction(transaction);
+    const items = manager.getRepository(InventoryItem);
+    let item = await items.findOne({
+      where: { variantId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    if (trackingMode === 'not_configured') {
+      if (!item) return null;
+      throw new Error('Configured inventory cannot be cleared');
+    }
+    const targetOnHand =
+      trackingMode === InventoryTrackingMode.UNTRACKED
+        ? 0
+        : (currentOnHand as number);
+    const previousOnHand = item?.onHand ?? 0;
+    if (
+      item &&
+      item.trackingMode === trackingMode &&
+      item.onHand === targetOnHand
+    )
+      return this.toView(item);
+    if (!item) {
+      item = items.create({
+        variantId,
+        trackingMode,
+        onHand: targetOnHand,
+        reservedQuantity: 0,
+        version: 1,
+      });
+    } else {
+      if (item.trackingMode !== trackingMode && item.reservedQuantity !== 0)
+        throw new Error(
+          'Inventory tracking mode cannot change while stock is reserved',
+        );
+      if (item.reservedQuantity > targetOnHand)
+        throw new Error('Current quantity cannot be below reserved quantity');
+      item.trackingMode = trackingMode;
+      item.onHand = targetOnHand;
+      item.version += 1;
+    }
+    await items.save(item);
+    const delta = targetOnHand - previousOnHand;
+    if (delta !== 0) {
+      if (!reasonCode?.trim())
+        throw new Error('A stock-change reason is required');
+      await manager.getRepository(InventoryAdjustment).save({
+        inventoryItemId: item.id,
+        variantId,
+        delta,
+        resultingOnHand: targetOnHand,
+        reasonCode: reasonCode.trim(),
+        note: note?.trim() || null,
+        actorUserId,
+      });
+    }
+    await this.audit.record(
+      {
+        actorUserId,
+        action: CommerceAuditAction.INVENTORY_CONFIGURED,
+        targetType: 'variant',
+        targetId: variantId,
+        requestId,
+        metadata: {
+          trackingMode,
+          onHand: targetOnHand,
+          delta,
+          reasonCode: reasonCode?.trim() ?? null,
+        },
+      },
+      transaction,
+    );
+    return this.toView(item);
+  }
+
   async adjust(
     variantId: string,
     delta: number,

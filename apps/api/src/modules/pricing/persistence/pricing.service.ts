@@ -48,13 +48,29 @@ export class PricingService implements PricingModuleContract {
     actorUserId: string,
     requestId: string | null = null,
   ) {
-    const money = parseMoney(amount, this.currency);
-    if (money.minorAmount <= 0n) throw new Error('Price must be positive');
-    const [variant] = await this.catalog.resolvePurchasableVariants([
-      variantId,
-    ]);
-    if (!variant) throw new Error('Variant was not found');
-    return this.transactions.run(async (transaction) => {
+    return this.transactions.run((transaction) =>
+      this.applyCurrentPrice(
+        variantId,
+        amount,
+        actorUserId,
+        requestId,
+        transaction,
+      ),
+    );
+  }
+
+  async applyCurrentPrice(
+    variantId: string,
+    amount: string | null,
+    actorUserId: string,
+    requestId: string | null,
+    transaction: DatabaseTransactionContext,
+  ) {
+    if (amount !== null) {
+      const money = parseMoney(amount, this.currency);
+      if (money.minorAmount <= 0n) throw new Error('Price must be positive');
+    }
+    {
       const manager = unwrapTypeOrmTransaction(transaction);
       const repository = manager.getRepository(PriceVersion);
       const current = await repository.findOne({
@@ -62,6 +78,26 @@ export class PricingService implements PricingModuleContract {
         lock: { mode: 'pessimistic_write' },
       });
       const now = new Date();
+      if (!amount) {
+        if (!current) return null;
+        current.effectiveUntil = now;
+        await repository.save(current);
+        await this.audit.record(
+          {
+            actorUserId,
+            action: CommerceAuditAction.PRICE_CHANGED,
+            targetType: 'variant',
+            targetId: variantId,
+            requestId,
+            metadata: { priceVersionId: current.id, withdrawn: true },
+          },
+          transaction,
+        );
+        return null;
+      }
+      const money = parseMoney(amount, this.currency);
+      if (current && current.minorAmount === money.minorAmount.toString())
+        return this.toResponse(current);
       if (current) {
         current.effectiveUntil = now;
         await repository.save(current);
@@ -91,7 +127,7 @@ export class PricingService implements PricingModuleContract {
         transaction,
       );
       return this.toResponse(version);
-    });
+    }
   }
 
   async quoteVariantPrices(

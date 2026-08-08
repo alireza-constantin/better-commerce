@@ -6,8 +6,18 @@ import {
 const ALLOWED_METADATA: Readonly<
   Record<CommerceAuditAction, readonly string[]>
 > = Object.freeze({
-  [CommerceAuditAction.PRICE_CHANGED]: ['priceVersionId', 'amount', 'currency'],
-  [CommerceAuditAction.INVENTORY_CONFIGURED]: ['trackingMode', 'onHand'],
+  [CommerceAuditAction.PRICE_CHANGED]: [
+    'priceVersionId',
+    'amount',
+    'currency',
+    'withdrawn',
+  ],
+  [CommerceAuditAction.INVENTORY_CONFIGURED]: [
+    'trackingMode',
+    'onHand',
+    'delta',
+    'reasonCode',
+  ],
   [CommerceAuditAction.INVENTORY_ADJUSTED]: [
     'delta',
     'reasonCode',
@@ -41,6 +51,12 @@ const ALLOWED_METADATA: Readonly<
   [CommerceAuditAction.CATEGORY_ARCHIVED]: [],
   [CommerceAuditAction.CATEGORY_RESTORED]: [],
   [CommerceAuditAction.PRODUCT_CATEGORIES_REPLACED]: ['categoryCount'],
+  [CommerceAuditAction.VARIANT_CONFIGURATION_REPLACED]: [
+    'variantCount',
+    'priceChangeCount',
+    'inventoryChangeCount',
+    'mediaAssignmentCount',
+  ],
   [CommerceAuditAction.COLLECTION_CREATED]: [],
   [CommerceAuditAction.COLLECTION_UPDATED]: [],
   [CommerceAuditAction.COLLECTION_ARCHIVED]: [],

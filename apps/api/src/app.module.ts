@@ -27,6 +27,7 @@ import { HealthModule } from './platform/health/health.module';
 import { ObservabilityModule } from './platform/observability';
 import { SecurityModule } from './platform/security';
 import { ObjectStorageModule } from './platform/object-storage';
+import { VariantConfigurationModule } from './modules/catalog/http/variant-configuration.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ObjectStorageModule } from './platform/object-storage';
     ObservabilityModule,
     AuthorizationModule,
     CatalogModule,
+    VariantConfigurationModule,
     PricingModule,
     InventoryModule,
     ShippingModule,

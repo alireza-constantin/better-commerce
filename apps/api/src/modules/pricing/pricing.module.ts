@@ -18,6 +18,6 @@ import { CommerceAuditModule } from '../commerce-audit';
     { provide: PRICING_MODULE_CONTRACT, useExisting: PricingService },
   ],
   controllers: [PricingAdminController],
-  exports: [PRICING_MODULE_CONTRACT],
+  exports: [PRICING_MODULE_CONTRACT, PricingService],
 })
 export class PricingModule {}

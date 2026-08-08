@@ -169,7 +169,7 @@ export class CatalogAdminController {
       translateCatalogError(error);
     }
   }
-  @Put('products/:productId/configuration')
+  @Put('products/:productId/configuration-legacy')
   @ApiCsrfProtected()
   @ApiOperation({
     summary: 'Atomically replace allowed Product configuration',

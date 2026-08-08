@@ -25,6 +25,7 @@ export const CommerceAuditAction = {
   CATEGORY_ARCHIVED: 'catalog.category_archived',
   CATEGORY_RESTORED: 'catalog.category_restored',
   PRODUCT_CATEGORIES_REPLACED: 'catalog.product_categories_replaced',
+  VARIANT_CONFIGURATION_REPLACED: 'catalog.variant_configuration_replaced',
   COLLECTION_CREATED: 'catalog.collection_created',
   COLLECTION_UPDATED: 'catalog.collection_updated',
   COLLECTION_ARCHIVED: 'catalog.collection_archived',

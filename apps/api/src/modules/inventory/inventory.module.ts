@@ -26,6 +26,6 @@ import { CommerceAuditModule } from '../commerce-audit';
     { provide: INVENTORY_MODULE_CONTRACT, useExisting: InventoryService },
   ],
   controllers: [InventoryAdminController],
-  exports: [INVENTORY_MODULE_CONTRACT],
+  exports: [INVENTORY_MODULE_CONTRACT, InventoryService],
 })
 export class InventoryModule {}

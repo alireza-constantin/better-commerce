@@ -80,6 +80,6 @@ function configuredReservedRoutes(config: ConfigService): readonly string[] {
     },
   ],
   controllers: [CatalogAdminController, CatalogNavigationAdminController],
-  exports: [CATALOG_MODULE_CONTRACT],
+  exports: [CATALOG_MODULE_CONTRACT, CatalogApplicationService],
 })
 export class CatalogModule {}
