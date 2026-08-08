@@ -149,12 +149,36 @@ export class PricingService implements PricingModuleContract {
   }
 
   async listCurrentPrices(variantIds: readonly string[]) {
-    const quotes = await this.quoteVariantPrices(variantIds);
-    return quotes.map((quote) => ({
-      variantId: quote.variantId,
-      priceVersionId: quote.priceVersionId,
-      ...formatMoney(quote.unitPrice),
-    }));
+    const ids = [...new Set(variantIds)];
+    if (!ids.length) return [];
+    const prices = await this.dataSource
+      .getRepository(PriceVersion)
+      .createQueryBuilder('price')
+      .where('price.variant_id IN (:...ids)', { ids })
+      .andWhere('price.currency = :currency', { currency: this.currency })
+      .andWhere('price.effective_until IS NULL')
+      .getMany();
+    const byVariant = new Map(prices.map((price) => [price.variantId, price]));
+    return ids.map((variantId) => {
+      const price = byVariant.get(variantId);
+      if (!price)
+        return {
+          variantId,
+          priceVersionId: null,
+          amount: null,
+          currency: null,
+          state: 'price_on_request' as const,
+        };
+      return {
+        variantId,
+        priceVersionId: price.id,
+        ...formatMoney({
+          minorAmount: BigInt(price.minorAmount),
+          currency: price.currency,
+        }),
+        state: 'priced' as const,
+      };
+    });
   }
 
   private toResponse(price: PriceVersion) {

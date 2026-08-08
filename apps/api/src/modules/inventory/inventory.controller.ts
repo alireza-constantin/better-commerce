@@ -30,7 +30,11 @@ import { PermissionKey } from '../authorization/data';
 import { AdminApi, RequirePermissions } from '../authorization/enforcement';
 import { InventoryTrackingMode } from './inventory-item.entity';
 import { InventoryService } from './persistence/inventory.service';
-import { InventoryResponseDto } from './inventory.dto';
+import {
+  CurrentInventoryQueryDto,
+  CurrentInventoryResponseDto,
+  InventoryResponseDto,
+} from './inventory.dto';
 
 class ConfigureInventoryDto {
   @ApiProperty({ enum: InventoryTrackingMode })
@@ -69,6 +73,14 @@ export class InventoryAdminController {
     private readonly inventory: InventoryService,
     private readonly requestContext: RequestContextService,
   ) {}
+
+  @Post('current')
+  @ApiCsrfProtected()
+  @RequirePermissions(PermissionKey.INVENTORY_READ)
+  @ApiCreatedResponse({ type: [CurrentInventoryResponseDto] })
+  list(@Body() dto: CurrentInventoryQueryDto) {
+    return this.inventory.listCurrentInventory(dto.variantIds);
+  }
 
   @Post(':variantId/configure')
   @ApiCsrfProtected()

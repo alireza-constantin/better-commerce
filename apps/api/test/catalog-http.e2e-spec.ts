@@ -273,6 +273,75 @@ describe('Catalog HTTP contracts', () => {
       });
   });
 
+  it('returns explicit missing price and inventory states for Admin matrices', async () => {
+    const manager = await staffAgent(
+      'matrix@example.test',
+      RoleKey.CATALOG_MANAGER,
+    );
+    const product = await createProduct(manager, 'matrix-product');
+
+    await manager
+      .post('/api/v1/admin/pricing/current')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', await csrf(manager))
+      .send({ variantIds: [product.variantId] })
+      .expect(201)
+      .expect((response) => {
+        expect(response.body).toEqual([
+          expect.objectContaining({
+            variantId: product.variantId,
+            state: 'price_on_request',
+            priceVersionId: null,
+            amount: null,
+            currency: null,
+          }),
+        ]);
+      });
+
+    await manager
+      .post('/api/v1/admin/inventory/variants/current')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', await csrf(manager))
+      .send({ variantIds: [product.variantId] })
+      .expect(201)
+      .expect((response) => {
+        expect(response.body).toEqual([
+          expect.objectContaining({
+            variantId: product.variantId,
+            state: 'not_configured',
+            trackingMode: null,
+            onHand: null,
+            available: null,
+          }),
+        ]);
+      });
+
+    await manager
+      .post(`/api/v1/admin/inventory/variants/${product.variantId}/configure`)
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', await csrf(manager))
+      .send({ trackingMode: 'tracked', initialOnHand: 7 })
+      .expect(201);
+
+    await manager
+      .post('/api/v1/admin/inventory/variants/current')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', await csrf(manager))
+      .send({ variantIds: [product.variantId] })
+      .expect(201)
+      .expect((response) => {
+        expect(response.body).toEqual([
+          expect.objectContaining({
+            variantId: product.variantId,
+            state: 'tracked',
+            trackingMode: 'tracked',
+            onHand: 7,
+            available: 7,
+          }),
+        ]);
+      });
+  });
+
   it('documents Catalog routes, security, permissions, and problem responses', async () => {
     await request(server)
       .get('/docs/openapi.json')

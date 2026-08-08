@@ -61,6 +61,44 @@ export class InventoryService implements InventoryModuleContract {
     });
   }
 
+  async listCurrentInventory(variantIds: readonly string[]) {
+    const ids = [...new Set(variantIds)];
+    if (!ids.length) return [];
+    const items = await this.dataSource
+      .getRepository(InventoryItem)
+      .findBy({ variantId: In(ids) });
+    const byVariant = new Map(items.map((item) => [item.variantId, item]));
+    return ids.map((variantId) => {
+      const item = byVariant.get(variantId);
+      if (!item)
+        return {
+          variantId,
+          state: 'not_configured' as const,
+          trackingMode: null,
+          onHand: null,
+          reservedQuantity: null,
+          available: null,
+        };
+      if (item.trackingMode === InventoryTrackingMode.UNTRACKED)
+        return {
+          variantId,
+          state: 'untracked' as const,
+          trackingMode: item.trackingMode,
+          onHand: null,
+          reservedQuantity: null,
+          available: null,
+        };
+      return {
+        variantId,
+        state: 'tracked' as const,
+        trackingMode: item.trackingMode,
+        onHand: item.onHand,
+        reservedQuantity: item.reservedQuantity,
+        available: item.onHand - item.reservedQuantity,
+      };
+    });
+  }
+
   async configure(
     variantId: string,
     trackingMode: InventoryTrackingMode,
