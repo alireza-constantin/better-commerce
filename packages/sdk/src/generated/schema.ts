@@ -412,6 +412,22 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/v1/admin/inventory/variants/current": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: operations["InventoryAdmin_current"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/v1/admin/inventory/variants/{variantId}/configure": {
         readonly parameters: {
             readonly query?: never;
@@ -1468,6 +1484,8 @@ export interface components {
             readonly id?: string;
             readonly position: number;
             readonly selectionValueIds: readonly string[];
+            /** Format: uuid */
+            readonly mediaIds?: readonly string[];
             readonly sku?: Record<string, never> | null;
             /** @enum {string} */
             readonly status: "active" | "archived";
@@ -1546,13 +1564,28 @@ export interface components {
         };
         readonly CurrentPriceResponseDto: {
             /** @example 120.00 */
-            readonly amount: string;
+            readonly amount: string | null;
             /** @example USD */
-            readonly currency: string;
+            readonly currency: string | null;
             /** Format: uuid */
-            readonly priceVersionId: string;
+            readonly priceVersionId: string | null;
+            /** @enum {string} */
+            readonly state: "priced" | "price_on_request";
             /** Format: uuid */
             readonly variantId: string;
+        };
+        readonly CurrentInventoryQueryDto: {
+            readonly variantIds: readonly string[];
+        };
+        readonly CurrentInventoryResponseDto: {
+            /** Format: uuid */
+            readonly variantId: string;
+            /** @enum {string} */
+            readonly state: "not_configured" | "untracked" | "tracked";
+            readonly trackingMode: "tracked" | "untracked" | null;
+            readonly onHand: number | null;
+            readonly reservedQuantity: number | null;
+            readonly available: number | null;
         };
         readonly DeliveryAddressDto: {
             readonly city: string;
@@ -1833,6 +1866,8 @@ export interface components {
             readonly price: components["schemas"]["PublicMoneyResponseDto"] | null;
             readonly purchasable: boolean;
             readonly selectionValueIds: readonly string[];
+            /** Format: uuid */
+            readonly mediaIds: readonly string[];
             readonly sku: string | null;
             readonly title: string | null;
         };
@@ -1957,6 +1992,21 @@ export interface components {
             readonly expectedVersion: number;
             readonly options: readonly components["schemas"]["ConfigurationOptionDto"][];
             readonly variants: readonly components["schemas"]["ConfigurationVariantDto"][];
+            readonly prices?: readonly components["schemas"]["VariantPriceChangeDto"][];
+            readonly inventory?: readonly components["schemas"]["VariantInventoryChangeDto"][];
+        };
+        readonly VariantPriceChangeDto: {
+            /** Format: uuid */
+            readonly variantId: string;
+            readonly amount?: string | null;
+        };
+        readonly VariantInventoryChangeDto: {
+            /** Format: uuid */
+            readonly variantId: string;
+            readonly trackingMode: "not_configured" | "tracked" | "untracked";
+            readonly currentOnHand?: number | null;
+            readonly reasonCode?: string | null;
+            readonly note?: string | null;
         };
         readonly ReplaceProductCategoriesDto: {
             readonly categoryIds: readonly string[];
@@ -3966,6 +4016,33 @@ export interface operations {
                 };
                 content: {
                     readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly InventoryAdmin_current: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CurrentInventoryQueryDto"];
+            };
+        };
+        readonly responses: {
+            readonly 201: {
+                headers: {
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": readonly components["schemas"]["CurrentInventoryResponseDto"][];
                 };
             };
         };
