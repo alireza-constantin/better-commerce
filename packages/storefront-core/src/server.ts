@@ -14,8 +14,10 @@ import {
   type StorefrontCacheMetadata,
 } from './index.js';
 
-export interface StorefrontServerOptions
-  extends Omit<BetterCommerceServerClientOptions, 'headers'> {
+export interface StorefrontServerOptions extends Omit<
+  BetterCommerceServerClientOptions,
+  'headers'
+> {
   /** A request signal supplied by the selected renderer, when available. */
   readonly signal?: AbortSignal;
 }
@@ -40,35 +42,145 @@ export function createStorefrontServer(options: StorefrontServerOptions) {
   const client = createServerBetterCommerceClient(clientOptions);
 
   return {
-    async listCategoryNavigation(): Promise<{ readonly items: readonly StorefrontCategoryNavigationItem[]; readonly cache: StorefrontCacheMetadata }> {
-      const response = await client.GET('/api/v1/catalog/categories/navigation', { signal });
-      if (!response.data) throw toStorefrontApiError(response.response.status, response.error);
-      return { items: response.data.items, cache: { visibility: 'public', cacheKeyParts: ['catalog-category-navigation'] } };
+    async listCategoryNavigation(): Promise<{
+      readonly items: readonly StorefrontCategoryNavigationItem[];
+      readonly cache: StorefrontCacheMetadata;
+    }> {
+      const response = await client.GET(
+        '/api/v1/catalog/categories/navigation',
+        { signal },
+      );
+      if (!response.data)
+        throw toStorefrontApiError(response.response.status, response.error);
+      return {
+        items: response.data.items,
+        cache: {
+          visibility: 'public',
+          cacheKeyParts: ['catalog-category-navigation'],
+        },
+      };
     },
-    async getPublicCategory(slug: string, requestOptions: { readonly signal?: AbortSignal } = {}): Promise<StorefrontCategoryDetail> {
-      const response = await client.GET('/api/v1/catalog/categories/{slug}', { params: { path: { slug } }, signal: requestOptions.signal ?? signal });
-      if (!response.data) throw toStorefrontApiError(response.response.status, response.error);
-      return { ...response.data, cache: { visibility: 'public', cacheKeyParts: ['catalog-category', `slug=${slug}`] } };
+    async getPublicCategory(
+      slug: string,
+      requestOptions: { readonly signal?: AbortSignal } = {},
+    ): Promise<StorefrontCategoryDetail> {
+      const response = await client.GET('/api/v1/catalog/categories/{slug}', {
+        params: { path: { slug } },
+        signal: requestOptions.signal ?? signal,
+      });
+      if (!response.data)
+        throw toStorefrontApiError(response.response.status, response.error);
+      return {
+        ...response.data,
+        cache: {
+          visibility: 'public',
+          cacheKeyParts: ['catalog-category', `slug=${slug}`],
+        },
+      };
     },
-    async listCategoryProducts(slug: string, query: ListPublicProductsOptions = {}): Promise<StorefrontProductListPage> {
-      const response = await client.GET('/api/v1/catalog/categories/{slug}/products', { params: { path: { slug }, query: compactQuery({ cursor: query.cursor, limit: query.limit, q: query.query }) }, signal: query.signal ?? signal });
-      if (!response.data) throw toStorefrontApiError(response.response.status, response.error);
-      return { items: response.data.items.map(toProductListItem), nextCursor: response.data.nextCursor, cache: { visibility: 'public', cacheKeyParts: ['catalog-category-products', `slug=${slug}`, `cursor=${query.cursor ?? ''}`, `limit=${query.limit ?? ''}`, `query=${query.query ?? ''}`] } };
+    async listCategoryProducts(
+      slug: string,
+      query: ListPublicProductsOptions = {},
+    ): Promise<StorefrontProductListPage> {
+      const response = await client.GET(
+        '/api/v1/catalog/categories/{slug}/products',
+        {
+          params: {
+            path: { slug },
+            query: compactQuery({
+              cursor: query.cursor,
+              limit: query.limit,
+              q: query.query,
+            }),
+          },
+          signal: query.signal ?? signal,
+        },
+      );
+      if (!response.data)
+        throw toStorefrontApiError(response.response.status, response.error);
+      return {
+        items: response.data.items.map(toProductListItem),
+        nextCursor: response.data.nextCursor,
+        cache: {
+          visibility: 'public',
+          cacheKeyParts: [
+            'catalog-category-products',
+            `slug=${slug}`,
+            `cursor=${query.cursor ?? ''}`,
+            `limit=${query.limit ?? ''}`,
+            `query=${query.query ?? ''}`,
+          ],
+        },
+      };
     },
-    async listCollections(requestOptions: { readonly signal?: AbortSignal } = {}) {
-      const response = await client.GET('/api/v1/catalog/collections', { signal: requestOptions.signal ?? signal });
-      if (!response.data) throw toStorefrontApiError(response.response.status, response.error);
-      return { ...response.data, cache: { visibility: 'public' as const, cacheKeyParts: ['catalog-collections'] } };
+    async listCollections(
+      requestOptions: { readonly signal?: AbortSignal } = {},
+    ) {
+      const response = await client.GET('/api/v1/catalog/collections', {
+        signal: requestOptions.signal ?? signal,
+      });
+      if (!response.data)
+        throw toStorefrontApiError(response.response.status, response.error);
+      return {
+        ...response.data,
+        cache: {
+          visibility: 'public' as const,
+          cacheKeyParts: ['catalog-collections'],
+        },
+      };
     },
-    async getPublicCollection(slug: string, requestOptions: { readonly signal?: AbortSignal } = {}): Promise<StorefrontCollectionDetail> {
-      const response = await client.GET('/api/v1/catalog/collections/{slug}', { params: { path: { slug } }, signal: requestOptions.signal ?? signal });
-      if (!response.data) throw toStorefrontApiError(response.response.status, response.error);
-      return { ...response.data, cache: { visibility: 'public', cacheKeyParts: ['catalog-collection', `slug=${slug}`] } };
+    async getPublicCollection(
+      slug: string,
+      requestOptions: { readonly signal?: AbortSignal } = {},
+    ): Promise<StorefrontCollectionDetail> {
+      const response = await client.GET('/api/v1/catalog/collections/{slug}', {
+        params: { path: { slug } },
+        signal: requestOptions.signal ?? signal,
+      });
+      if (!response.data)
+        throw toStorefrontApiError(response.response.status, response.error);
+      return {
+        ...response.data,
+        cache: {
+          visibility: 'public',
+          cacheKeyParts: ['catalog-collection', `slug=${slug}`],
+        },
+      };
     },
-    async listCollectionProducts(slug: string, query: ListPublicProductsOptions = {}): Promise<StorefrontProductListPage> {
-      const response = await client.GET('/api/v1/catalog/collections/{slug}/products', { params: { path: { slug }, query: compactQuery({ cursor: query.cursor, limit: query.limit, q: query.query }) }, signal: query.signal ?? signal });
-      if (!response.data) throw toStorefrontApiError(response.response.status, response.error);
-      return { items: response.data.items.map(toProductListItem), nextCursor: response.data.nextCursor, cache: { visibility: 'public', cacheKeyParts: ['catalog-collection-products', `slug=${slug}`, `cursor=${query.cursor ?? ''}`, `limit=${query.limit ?? ''}`, `query=${query.query ?? ''}`] } };
+    async listCollectionProducts(
+      slug: string,
+      query: ListPublicProductsOptions = {},
+    ): Promise<StorefrontProductListPage> {
+      const response = await client.GET(
+        '/api/v1/catalog/collections/{slug}/products',
+        {
+          params: {
+            path: { slug },
+            query: compactQuery({
+              cursor: query.cursor,
+              limit: query.limit,
+              q: query.query,
+            }),
+          },
+          signal: query.signal ?? signal,
+        },
+      );
+      if (!response.data)
+        throw toStorefrontApiError(response.response.status, response.error);
+      return {
+        items: response.data.items.map(toProductListItem),
+        nextCursor: response.data.nextCursor,
+        cache: {
+          visibility: 'public',
+          cacheKeyParts: [
+            'catalog-collection-products',
+            `slug=${slug}`,
+            `cursor=${query.cursor ?? ''}`,
+            `limit=${query.limit ?? ''}`,
+            `query=${query.query ?? ''}`,
+          ],
+        },
+      };
     },
     async listPublicProducts(
       query: ListPublicProductsOptions = {},
@@ -131,6 +243,7 @@ export function createStorefrontServer(options: StorefrontServerOptions) {
             price: variant.price,
             availability: variant.availability,
             purchasable: variant.purchasable,
+            mediaIds: variant.mediaIds,
           })),
         },
         cache: {
@@ -167,7 +280,10 @@ function toProductListItem(
   };
 }
 
-function toStorefrontApiError(status: number, error: unknown): StorefrontApiError {
+function toStorefrontApiError(
+  status: number,
+  error: unknown,
+): StorefrontApiError {
   const problem = asProblemDetails(error);
   return new StorefrontApiError({
     status,

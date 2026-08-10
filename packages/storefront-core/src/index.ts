@@ -37,9 +37,7 @@ export interface StorefrontProductMedia {
 }
 
 export type StorefrontAvailability =
-  | 'in_stock'
-  | 'out_of_stock'
-  | 'unavailable';
+  'in_stock' | 'out_of_stock' | 'unavailable';
 
 export interface StorefrontMoney {
   /** Exact decimal string from the API; consumers must not coerce it to Number. */
@@ -61,6 +59,7 @@ export interface StorefrontVariantProjection {
   readonly price: StorefrontMoney | null;
   readonly availability: StorefrontAvailability;
   readonly purchasable: boolean;
+  readonly mediaIds: readonly string[];
 }
 
 export interface StorefrontProductListPage {
