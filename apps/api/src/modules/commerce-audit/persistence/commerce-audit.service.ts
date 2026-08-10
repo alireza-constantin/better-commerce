@@ -8,6 +8,7 @@ import type {
   CommerceAuditWrite,
 } from '../commerce-audit.contract';
 import { CommerceAuditEvent } from './commerce-audit-event.entity';
+import { CatalogVariant } from '../../catalog/persistence/variant.entity';
 
 @Injectable()
 export class CommerceAuditService implements CommerceAuditContract {
@@ -23,7 +24,7 @@ export class CommerceAuditService implements CommerceAuditContract {
     await repository.save(repository.create(input));
   }
 
-  async list(input: { limit: number; cursor?: string }) {
+  async list(input: { limit: number; cursor?: string; productId?: string }) {
     const cursor = this.decodeCursor(input.cursor);
     const query = this.dataSource
       .getRepository(CommerceAuditEvent)
@@ -31,6 +32,23 @@ export class CommerceAuditService implements CommerceAuditContract {
       .orderBy('event.createdAt', 'DESC')
       .addOrderBy('event.id', 'DESC')
       .take(input.limit + 1);
+    if (input.productId) {
+      const variantIds = query
+        .subQuery()
+        .select('variant.id')
+        .from(CatalogVariant, 'variant')
+        .where('variant.productId = :productId')
+        .getQuery();
+      query.andWhere(
+        '((event.targetType = :productTargetType AND event.targetId = :productId) OR (event.targetType = :variantTargetType AND event.targetId IN ' +
+          variantIds + '))',
+        {
+          productId: input.productId,
+          productTargetType: 'product',
+          variantTargetType: 'variant',
+        },
+      );
+    }
     if (cursor) {
       query.andWhere(
         '(event.createdAt < :cursorCreatedAt OR (event.createdAt = :cursorCreatedAt AND event.id < :cursorId))',

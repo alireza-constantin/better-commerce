@@ -4,6 +4,9 @@ import type { CommerceAuditEvent, CommerceAuditPage } from '../api';
 
 export interface CommerceAuditEventsProps {
   readonly page?: CommerceAuditPage;
+  readonly heading?: string;
+  readonly description?: string;
+  readonly emptyTitle?: string;
   readonly isLoading?: boolean;
   readonly isFetching?: boolean;
   readonly hasPreviousPage?: boolean;
@@ -41,20 +44,26 @@ export function CommerceAuditEvents({
   onPreviousPage,
   onRetry,
   page,
+  heading,
+  description,
+  emptyTitle,
 }: CommerceAuditEventsProps) {
+  const resolvedHeading = heading ?? 'فعالیت فروشگاه';
+  const resolvedDescription = description ?? 'رویدادهای ثبت‌شده عملیات مهم فروشگاه، از جدیدترین به قدیمی‌ترین.';
+  const resolvedEmptyTitle = emptyTitle ?? 'هنوز رویدادی ثبت نشده است';
   if (isLoading) return <CommerceAuditLoading />;
   if (error) return <CommerceAuditError error={error} onRetry={onRetry} />;
-  if (!page || page.items.length === 0) return <CommerceAuditEmpty />;
+  if (!page || page.items.length === 0) return <CommerceAuditEmpty title={resolvedEmptyTitle} />;
 
   return (
     <section aria-labelledby="commerce-audit-heading" className="space-y-4" dir="rtl">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-[-0.025em]" id="commerce-audit-heading">
-            ممیزی فروشگاه
+            {resolvedHeading}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            رویدادهای ثبت‌شدهٔ عملیات مهم فروشگاه، از جدیدترین به قدیمی‌ترین.
+            {resolvedDescription}
           </p>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -153,8 +162,8 @@ function CommerceAuditLoading() {
   return <section aria-busy="true" aria-label="در حال دریافت رویدادهای ممیزی فروشگاه" className="space-y-4" dir="rtl"><div className="h-8 w-40 animate-pulse rounded bg-muted" /><div className="overflow-hidden rounded-lg border border-border bg-card"><div className="h-12 animate-pulse border-b border-border bg-muted/50" />{Array.from({ length: 5 }, (_, index) => <div className="h-16 animate-pulse border-b border-border last:border-b-0" key={index}><div className="mx-4 mt-5 h-4 w-2/3 rounded bg-muted" /></div>)}</div></section>;
 }
 
-function CommerceAuditEmpty() {
-  return <section className="flex min-h-72 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card px-6 text-center" dir="rtl"><ClipboardList aria-hidden="true" className="size-8 text-muted-foreground" /><h1 className="mt-4 text-lg font-semibold">هنوز رویدادی ثبت نشده است</h1><p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">پس از انجام عملیات فروشگاه، رویدادهای مربوط در این بخش نمایش داده می‌شوند.</p></section>;
+function CommerceAuditEmpty({ title }: { readonly title: string }) {
+  return <section className="flex min-h-48 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card px-6 text-center" dir="rtl"><ClipboardList aria-hidden="true" className="size-8 text-muted-foreground" /><h1 className="mt-4 text-lg font-semibold">{title}</h1><p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">پس از انجام عملیات فروشگاه، رویدادهای مربوط در این بخش نمایش داده می‌شوند.</p></section>;
 }
 
 function CommerceAuditError({ error, onRetry }: { readonly error: string; readonly onRetry?: () => void }) {

@@ -1452,7 +1452,7 @@ export interface components {
         };
         readonly CommerceAuditEventResponseDto: {
             /** @enum {string} */
-            readonly action: "pricing.price_changed" | "inventory.configured" | "inventory.adjusted" | "shipping.zone_created" | "shipping.zone_updated" | "shipping.zone_archived" | "shipping.method_created" | "shipping.method_updated" | "shipping.method_archived" | "shipping.rule_created" | "shipping.rule_updated" | "shipping.rule_archived" | "orders.submitted" | "orders.accepted" | "orders.rejected" | "payments.confirmed" | "catalog.category_created" | "catalog.category_updated" | "catalog.category_moved" | "catalog.category_archived" | "catalog.category_restored" | "catalog.product_categories_replaced" | "catalog.collection_created" | "catalog.collection_updated" | "catalog.collection_archived" | "catalog.collection_restored" | "catalog.collection_products_replaced";
+            readonly action: "pricing.price_changed" | "inventory.configured" | "inventory.adjusted" | "shipping.zone_created" | "shipping.zone_updated" | "shipping.zone_archived" | "shipping.method_created" | "shipping.method_updated" | "shipping.method_archived" | "shipping.rule_created" | "shipping.rule_updated" | "shipping.rule_archived" | "orders.submitted" | "orders.accepted" | "orders.rejected" | "payments.confirmed" | "catalog.category_created" | "catalog.category_updated" | "catalog.category_moved" | "catalog.category_archived" | "catalog.category_restored" | "catalog.product_categories_replaced" | "catalog.variant_configuration_replaced" | "catalog.collection_created" | "catalog.collection_updated" | "catalog.collection_archived" | "catalog.collection_restored" | "catalog.collection_products_replaced";
             /** Format: uuid */
             readonly actorUserId: string | null;
             /** Format: date-time */
@@ -3968,6 +3968,8 @@ export interface operations {
                 /** @description Opaque cursor returned as `nextCursor` by the previous page. */
                 readonly cursor?: string;
                 readonly limit?: components["schemas"]["Object"];
+                /** @description Product id used to return product events together with events for its variants. */
+                readonly productId?: string;
             };
             readonly header?: never;
             readonly path?: never;

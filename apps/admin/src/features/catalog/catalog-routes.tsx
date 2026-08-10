@@ -44,6 +44,8 @@ import {
   listCurrentInventory,
   type CurrentInventory,
 } from '@/features/inventory/api/inventory-api';
+import { commerceAuditListQueryOptions } from '@/features/commerce-audit/api/commerce-audit-query';
+import { CommerceAuditEvents } from '@/features/commerce-audit/components';
 import {
   categoriesQuery,
   productCategoriesMutation,
@@ -388,6 +390,11 @@ function CatalogProductContent({
     profile.permissions,
     'catalog.categories.read',
   );
+  const canReadActivity = hasPermission(profile.permissions, 'audit.read');
+  const activity = useQuery({
+    ...commerceAuditListQueryOptions({ productId }),
+    enabled: canReadActivity,
+  });
   const categories = useQuery({
     ...categoriesQuery(),
     enabled: canReadCategories,
@@ -544,6 +551,18 @@ function CatalogProductContent({
       ) : (
         <ConfigurationReadOnly product={product.data} />
       )}
+      {canReadActivity ? (
+        <CommerceAuditEvents
+          description="تغییرات محصول، واریانت، قیمت و موجودی به‌صورت یکپارچه ثبت می‌شوند."
+          emptyTitle="هنوز فعالیتی برای این محصول ثبت نشده است"
+          error={activity.error instanceof Error ? activity.error.message : undefined}
+          heading="فعالیت محصول"
+          isFetching={activity.isFetching}
+          isLoading={activity.isPending}
+          onRetry={() => void activity.refetch()}
+          page={activity.data}
+        />
+      ) : null}
     </article>
   );
 }
@@ -1016,6 +1035,8 @@ function VisualConfigurationEditor({
   });
   useEffect(() => {
     if (prices.data)
+      // The query is external state; seed the local editor only when it arrives.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPriceDraft(
         Object.fromEntries(
           prices.data.map((price) => [
@@ -1027,6 +1048,8 @@ function VisualConfigurationEditor({
   }, [prices.data]);
   useEffect(() => {
     if (inventory.data)
+      // The query is external state; seed the local editor only when it arrives.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInventoryDraft(
         Object.fromEntries(
           inventory.data.map((item: CurrentInventory) => [

@@ -9,6 +9,7 @@ export type CommerceAuditPage =
 export interface CommerceAuditListInput {
   readonly cursor?: string;
   readonly limit?: number;
+  readonly productId?: string;
 }
 
 export async function listCommerceAuditEvents(
@@ -21,6 +22,7 @@ export async function listCommerceAuditEvents(
       params: {
         query: {
           cursor: input.cursor,
+          productId: input.productId,
           // OpenAPI currently represents this numeric parameter as Object.
           limit: input.limit as never,
         },

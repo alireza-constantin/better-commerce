@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -11,6 +12,15 @@ import {
 import { CommerceAuditAction } from './commerce-audit.contract';
 
 export class CommerceAuditQueryDto {
+  @ApiPropertyOptional({
+    description:
+      'Product id used to return product events together with events for its variants.',
+    format: 'uuid',
+  })
+  @IsOptional()
+  @IsUUID()
+  productId?: string;
+
   @ApiPropertyOptional({
     description: 'Opaque cursor returned as `nextCursor` by the previous page.',
     maxLength: 512,
