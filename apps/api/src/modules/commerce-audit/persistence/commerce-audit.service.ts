@@ -35,13 +35,14 @@ export class CommerceAuditService implements CommerceAuditContract {
     if (input.productId) {
       const variantIds = query
         .subQuery()
-        .select('variant.id')
+        .select('variant.id::text')
         .from(CatalogVariant, 'variant')
-        .where('variant.productId = :productId')
+        .where('variant.product_id = :productId')
         .getQuery();
       query.andWhere(
         '((event.targetType = :productTargetType AND event.targetId = :productId) OR (event.targetType = :variantTargetType AND event.targetId IN ' +
-          variantIds + '))',
+          variantIds +
+          '))',
         {
           productId: input.productId,
           productTargetType: 'product',

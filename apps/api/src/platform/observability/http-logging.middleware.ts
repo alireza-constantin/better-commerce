@@ -1,11 +1,24 @@
 import { Injectable, type NestMiddleware } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
-import { StructuredLoggerService } from './structured-logger.service';
+import {
+  type LogLevel,
+  StructuredLoggerService,
+} from './structured-logger.service';
 
 function routeTemplate(request: Request): string {
   const route = request.route as { path?: unknown } | undefined;
   const path = typeof route?.path === 'string' ? route.path : 'unmatched';
   return `${request.baseUrl || ''}${path}` || '/';
+}
+
+function levelForResponse(
+  statusCode: number,
+  outcome: 'aborted' | 'completed',
+): LogLevel {
+  if (outcome === 'aborted') return 'warn';
+  if (statusCode >= 500) return 'error';
+  if (statusCode >= 400) return 'warn';
+  return 'info';
 }
 
 @Injectable()
@@ -29,14 +42,18 @@ export class HttpLoggingMiddleware implements NestMiddleware {
         }
       ).authUser;
 
-      this.logger.event('info', 'http_request_completed', {
-        method: request.method,
-        route: routeTemplate(request),
-        statusCode: response.statusCode,
-        durationMs: Number(durationMs.toFixed(3)),
-        outcome,
-        userId: typeof authUser?.id === 'string' ? authUser.id : undefined,
-      });
+      this.logger.event(
+        levelForResponse(response.statusCode, outcome),
+        'http_request_completed',
+        {
+          method: request.method,
+          route: routeTemplate(request),
+          statusCode: response.statusCode,
+          durationMs: Number(durationMs.toFixed(3)),
+          outcome,
+          userId: typeof authUser?.id === 'string' ? authUser.id : undefined,
+        },
+      );
     };
 
     const onFinish = () => record('completed');

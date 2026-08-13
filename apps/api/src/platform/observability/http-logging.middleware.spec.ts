@@ -52,6 +52,25 @@ describe('HttpLoggingMiddleware', () => {
     expect(JSON.stringify(event.mock.calls)).not.toContain('Bearer secret');
   });
 
+  it('records server failures as errors instead of normal request logs', () => {
+    const event = jest.fn();
+    const middleware = new HttpLoggingMiddleware({ event } as never);
+    const res = response(500);
+
+    middleware.use(
+      { method: 'GET', baseUrl: '', route: { path: '/health' } } as Request,
+      res,
+      jest.fn(),
+    );
+    res.emit('finish');
+
+    expect(event).toHaveBeenCalledWith(
+      'error',
+      'http_request_completed',
+      expect.objectContaining({ statusCode: 500 }),
+    );
+  });
+
   it('logs middleware failures and aborted connections without a raw URL', () => {
     const event = jest.fn();
     const middleware = new HttpLoggingMiddleware({
@@ -68,7 +87,7 @@ describe('HttpLoggingMiddleware', () => {
     res.emit('close');
 
     expect(event).toHaveBeenCalledWith(
-      'info',
+      'warn',
       'http_request_completed',
       expect.objectContaining({
         method: 'POST',
