@@ -40,7 +40,7 @@ export class CommerceAuditService implements CommerceAuditContract {
         .where('variant.product_id = :productId')
         .getQuery();
       query.andWhere(
-        '((event.targetType = :productTargetType AND event.targetId = :productId) OR (event.targetType = :variantTargetType AND event.targetId IN ' +
+        '((event.target_type = :productTargetType AND event.target_id = :productId) OR (event.target_type = :variantTargetType AND event.target_id IN ' +
           variantIds +
           '))',
         {
@@ -52,7 +52,7 @@ export class CommerceAuditService implements CommerceAuditContract {
     }
     if (cursor) {
       query.andWhere(
-        '(event.createdAt < :cursorCreatedAt OR (event.createdAt = :cursorCreatedAt AND event.id < :cursorId))',
+        '(event.created_at < :cursorCreatedAt OR (event.created_at = :cursorCreatedAt AND event.id < :cursorId))',
         { cursorCreatedAt: cursor.createdAt, cursorId: cursor.id },
       );
     }
