@@ -1,3 +1,7 @@
+# Keep the local Compose identity stable when the repository directory is
+# renamed. Existing development containers and data volumes use this name.
+name: nest-typeorm-auth-template
+
 services:
   postgres:
     image: postgres:16-alpine
