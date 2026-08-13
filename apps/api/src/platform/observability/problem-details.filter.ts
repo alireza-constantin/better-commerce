@@ -80,6 +80,24 @@ function safeExtensions(
   return extensions;
 }
 
+function databaseErrorCode(exception: unknown): string | undefined {
+  if (
+    typeof exception !== 'object' ||
+    exception === null ||
+    !('driverError' in exception)
+  ) {
+    return undefined;
+  }
+  const driverError = exception.driverError;
+  if (typeof driverError !== 'object' || driverError === null) {
+    return undefined;
+  }
+  const code = 'code' in driverError ? driverError.code : undefined;
+  return typeof code === 'string' && /^[A-Z0-9]{1,12}$/i.test(code)
+    ? code
+    : undefined;
+}
+
 @Catch()
 export class ProblemDetailsFilter implements ExceptionFilter {
   constructor(
@@ -99,10 +117,12 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     response.setHeader(REQUEST_ID_HEADER, requestId);
 
     if (!(exception instanceof HttpException)) {
+      const errorCode = databaseErrorCode(exception);
       this.logger.event('error', 'unhandled_exception', {
         method: request.method,
         errorType:
           exception instanceof Error ? exception.constructor.name : 'Unknown',
+        ...(errorCode ? { databaseErrorCode: errorCode } : {}),
       });
       response
         .status(HttpStatus.INTERNAL_SERVER_ERROR)

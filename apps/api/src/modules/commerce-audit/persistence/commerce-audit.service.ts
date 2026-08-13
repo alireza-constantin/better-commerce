@@ -40,11 +40,12 @@ export class CommerceAuditService implements CommerceAuditContract {
         .where('variant.product_id = :productId')
         .getQuery();
       query.andWhere(
-        '((event.target_type = :productTargetType AND event.target_id = :productId) OR (event.target_type = :variantTargetType AND event.target_id IN ' +
+        '((event.target_type = :productTargetType AND event.target_id = :productTargetId) OR (event.target_type = :variantTargetType AND event.target_id IN ' +
           variantIds +
           '))',
         {
           productId: input.productId,
+          productTargetId: input.productId,
           productTargetType: 'product',
           variantTargetType: 'variant',
         },

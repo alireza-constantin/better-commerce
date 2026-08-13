@@ -131,4 +131,29 @@ describe('ProblemDetailsFilter', () => {
       errorType: 'Error',
     });
   });
+
+  it('records a database error code without exposing database details to clients', () => {
+    const test = harness();
+    const exception = Object.assign(new Error('database query failed'), {
+      driverError: Object.assign(new Error('operator does not exist'), {
+        code: '42883',
+      }),
+    });
+
+    test.context.run({ requestId: test.requestId }, () => {
+      test.filter.catch(exception, test.host);
+    });
+
+    expect(test.event).toHaveBeenCalledWith('error', 'unhandled_exception', {
+      method: 'POST',
+      errorType: 'Error',
+      databaseErrorCode: '42883',
+    });
+    expect(test.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 500,
+        detail: 'An unexpected server error occurred',
+      }),
+    );
+  });
 });

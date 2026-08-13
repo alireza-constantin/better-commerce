@@ -29,9 +29,10 @@ describe('CommerceAuditService', () => {
     expect(where).toHaveBeenCalledWith('variant.product_id = :productId');
     expect(select).toHaveBeenCalledWith('variant.id::text');
     expect(query.andWhere).toHaveBeenCalledWith(
-      expect.stringContaining('event.target_type'),
+      expect.stringContaining('event.target_id = :productTargetId'),
       expect.objectContaining({
         productId: 'ee0f75bf-bd9f-4866-ab22-a020a95d675b',
+        productTargetId: 'ee0f75bf-bd9f-4866-ab22-a020a95d675b',
       }),
     );
   });
