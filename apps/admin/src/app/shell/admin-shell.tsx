@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import {
   ChevronLeft,
   Menu,
@@ -7,12 +8,25 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { type ReactNode, useDeferredValue, useEffect, useId, useRef, useState } from 'react';
 import type {
   AdminNavigationGroup,
   AdminNavigationItem,
 } from '@/app/navigation';
-import { Button, Input, ModalLayer } from '@/components/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  ModalLayer,
+  Skeleton,
+  StatusBadge,
+} from '@/components/ui';
+import { adminRoutes } from '@/app/routes/admin-route-contract';
+import { adminProductsListQueryOptions } from '@/features/catalog/api';
 import { cn } from '@/lib/utils';
 
 const SIDEBAR_PREFERENCE_KEY = 'better-commerce.admin.sidebar-collapsed';
@@ -242,6 +256,11 @@ function SearchDialog({
   readonly open: boolean;
 }) {
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query.trim());
+  const products = useQuery({
+    ...adminProductsListQueryOptions({ limit: 8, q: deferredQuery }),
+    enabled: open && deferredQuery.length >= 2,
+  });
   const items = navigation
     .flatMap((group) => group.items)
     .filter((item) => item.label.includes(query.trim()));
@@ -256,27 +275,24 @@ function SearchDialog({
   };
 
   return (
-    <ModalLayer
-      className="mt-[8vh] max-w-2xl"
-      onClose={close}
-      open={open}
-      title="جست‌وجوی سریع"
-    >
-      <div className="flex items-center gap-2 border-b border-border p-3">
-        <Search aria-hidden="true" className="size-5 text-muted-foreground" />
-        <Input
-          aria-label="جست‌وجو در بخش‌های مدیریت"
-          autoFocus
-          className="border-0 shadow-none focus-visible:ring-0"
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="نام یک بخش را وارد کنید…"
-          value={query}
-        />
-        <Button aria-label="بستن جست‌وجو" onClick={close} size="icon" variant="ghost">
-          <X />
-        </Button>
-      </div>
-      <div className="max-h-[60vh] overflow-y-auto p-2">
+    <Dialog onOpenChange={(nextOpen) => { if (!nextOpen) close(); }} open={open}>
+      <DialogContent className="gap-0 p-0 sm:max-w-2xl" dir="rtl">
+        <DialogHeader className="sr-only">
+          <DialogTitle>جست‌وجوی سریع</DialogTitle>
+          <DialogDescription>بخش‌های مدیریت و کالاهای فروشگاه را جست‌وجو کنید.</DialogDescription>
+        </DialogHeader>
+        <div className="flex items-center gap-2 border-b border-border p-3">
+          <Search aria-hidden="true" className="size-5 text-muted-foreground" />
+          <Input
+            aria-label="جست‌وجو در مدیریت"
+            autoFocus
+            className="border-0 shadow-none focus-visible:ring-0"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="نام بخش یا کالا را وارد کنید…"
+            value={query}
+          />
+        </div>
+        <div className="max-h-[65vh] overflow-y-auto p-2">
         <p className="px-3 py-2 text-xs font-medium text-muted-foreground">
           بخش‌های در دسترس
         </p>
@@ -300,15 +316,39 @@ function SearchDialog({
             })}
           </ul>
         ) : (
-          <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+          <p className="px-3 py-4 text-sm text-muted-foreground">
             بخشی با این نام پیدا نشد.
           </p>
         )}
-        <p className="mt-2 border-t border-border px-3 py-3 text-xs leading-5 text-muted-foreground">
-          جست‌وجوی کالا، کد کالا و سفارش پس از اضافه‌شدن قرارداد جست‌وجوی سراسری فعال می‌شود.
-        </p>
-      </div>
-    </ModalLayer>
+        {deferredQuery.length >= 2 ? (
+          <div className="mt-2 border-t border-border pt-2">
+            <p className="px-3 py-2 text-xs font-medium text-muted-foreground">کالاها</p>
+            {products.isPending ? (
+              <div className="space-y-2 px-2 pb-2"><Skeleton className="h-11" /><Skeleton className="h-11" /></div>
+            ) : products.data?.items.length ? (
+              <ul className="space-y-1">
+                {products.data.items.map((product) => (
+                  <li key={product.id}>
+                    <Link
+                      className="flex min-h-12 items-center justify-between gap-3 rounded-lg px-3 text-sm outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={navigate}
+                      search={{ product: product.id, tab: 'general' }}
+                      to={adminRoutes.catalog.path}
+                    >
+                      <span className="min-w-0"><span className="block truncate font-medium">{product.title}</span><span className="block truncate text-xs text-muted-foreground" dir="ltr">{product.slug}</span></span>
+                      <StatusBadge tone={product.status === 'published' ? 'success' : 'neutral'}>{product.status === 'published' ? 'منتشرشده' : product.status === 'draft' ? 'پیش‌نویس' : 'بایگانی'}</StatusBadge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="px-3 py-4 text-sm text-muted-foreground">کالایی با این عبارت پیدا نشد.</p>}
+          </div>
+        ) : (
+          <p className="mt-2 border-t border-border px-3 py-3 text-xs leading-5 text-muted-foreground">برای جست‌وجوی کالا دست‌کم دو حرف وارد کنید.</p>
+        )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
