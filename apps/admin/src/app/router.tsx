@@ -38,6 +38,7 @@ interface AdminNavigationSearch {
   readonly sku?: string;
   readonly status?: 'draft' | 'published' | 'archived';
   readonly product?: string;
+  readonly tab?: 'general' | 'organization' | 'media' | 'variants' | 'activity';
   readonly create?: boolean;
   readonly action?: string;
   readonly targetType?: string;
@@ -60,6 +61,16 @@ function catalogStatus(value: unknown) {
     : undefined;
 }
 
+function productTab(value: unknown): AdminNavigationSearch['tab'] {
+  return value === 'general' ||
+    value === 'organization' ||
+    value === 'media' ||
+    value === 'variants' ||
+    value === 'activity'
+    ? value
+    : undefined;
+}
+
 function adminNavigationSearch(
   search: Record<string, unknown>,
 ): AdminNavigationSearch {
@@ -72,6 +83,7 @@ function adminNavigationSearch(
     sku: stringValue(search.sku),
     status: catalogStatus(search.status),
     product: stringValue(search.product),
+    tab: productTab(search.tab),
     create: search.create === true ? true : undefined,
     action: stringValue(search.action),
     targetType: stringValue(search.targetType),

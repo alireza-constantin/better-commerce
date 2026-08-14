@@ -7,20 +7,25 @@ import {
   ChevronRight,
   FilePenLine,
   ImagePlus,
+  Images,
+  LayoutList,
+  ListTree,
   PackagePlus,
   RefreshCw,
   RotateCcw,
   Save,
   Send,
+  Settings2,
+  History,
   Trash2,
   Undo2,
 } from 'lucide-react';
 import { getRouteApi } from '@tanstack/react-router';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import './catalog.css';
 import { adminRoutes } from '@/app/routes/admin-route-contract';
 import { isAdminApiError } from '@/api/client';
-import { Button } from '@/components/ui/button';
+import { Button, PageHeader } from '@/components/ui';
 import { PermissionBoundary } from '@/features/auth/permissions/permission-boundary';
 import { hasPermission } from '@/features/auth/permissions/permissions';
 import { useAdminSession } from '@/features/auth/session/use-admin-session';
@@ -67,12 +72,23 @@ export function CatalogRoute() {
 /** Exported for the later `/catalog/$productId` lazy route. */
 export function CatalogProductRoute({
   onBack,
+  onTabChange,
   productId,
+  tab,
 }: {
   readonly onBack: () => void;
+  readonly onTabChange: (tab: ProductWorkspaceTab) => void;
   readonly productId: string;
+  readonly tab: ProductWorkspaceTab;
 }) {
-  return <CatalogProductContent productId={productId} onBack={onBack} />;
+  return (
+    <CatalogProductContent
+      productId={productId}
+      onBack={onBack}
+      onTabChange={onTabChange}
+      tab={tab}
+    />
+  );
 }
 
 function CatalogContent() {
@@ -87,8 +103,10 @@ function CatalogContent() {
   if (search.product)
     return (
       <CatalogProductRoute
-        onBack={() => setSearch({ product: undefined })}
+        onBack={() => setSearch({ product: undefined, tab: undefined })}
+        onTabChange={(tab) => setSearch({ tab })}
         productId={search.product}
+        tab={search.tab ?? 'general'}
       />
     );
   if (search.create)
@@ -96,7 +114,7 @@ function CatalogContent() {
       <CreateProductScreen
         onBack={() => setSearch({ create: undefined })}
         onCreated={(productId) =>
-          setSearch({ create: undefined, product: productId })
+          setSearch({ create: undefined, product: productId, tab: 'general' })
         }
       />
     );
@@ -116,8 +134,28 @@ type CatalogSearch = {
   readonly sku?: string;
   readonly status?: 'draft' | 'published' | 'archived';
   readonly product?: string;
+  readonly tab?: ProductWorkspaceTab;
   readonly create?: boolean;
 };
+
+type ProductWorkspaceTab =
+  | 'general'
+  | 'organization'
+  | 'media'
+  | 'variants'
+  | 'activity';
+
+const PRODUCT_WORKSPACE_TABS = [
+  { id: 'general', label: 'اطلاعات', icon: LayoutList },
+  { id: 'organization', label: 'دسته‌بندی و مجموعه', icon: ListTree },
+  { id: 'media', label: 'تصاویر', icon: Images },
+  { id: 'variants', label: 'گونه‌ها، قیمت و موجودی', icon: Settings2 },
+  { id: 'activity', label: 'فعالیت', icon: History },
+] as const satisfies ReadonlyArray<{
+  id: ProductWorkspaceTab;
+  label: string;
+  icon: typeof LayoutList;
+}>;
 
 function ProductsListScreen({
   onSearchChange,
@@ -374,10 +412,14 @@ function CreateProductScreen({
 
 function CatalogProductContent({
   onBack,
+  onTabChange,
   productId,
+  tab,
 }: {
   readonly onBack: () => void;
+  readonly onTabChange: (tab: ProductWorkspaceTab) => void;
   readonly productId: string;
+  readonly tab: ProductWorkspaceTab;
 }) {
   const profile = useAdminSession();
   const queryClient = useQueryClient();
@@ -447,24 +489,12 @@ function CatalogProductContent({
     replaceCategories.isPending ||
     transition.isPending;
   return (
-    <article className="mx-auto max-w-5xl space-y-6" dir="rtl">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Button onClick={onBack} size="sm" variant="ghost">
-            بازگشت به کالاها
-          </Button>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-[-0.025em]">
-              {product.data.title}
-            </h1>
-            <ProductStatus status={product.data.status} />
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            نامک: <bdi dir="ltr">{product.data.slug}</bdi> · نسخه{' '}
-            {product.data.version.toLocaleString('fa-IR')}
-          </p>
-        </div>
-        <LifecycleActions
+    <article className="mx-auto max-w-6xl space-y-6" dir="rtl">
+      <Button onClick={onBack} size="sm" variant="ghost">
+        بازگشت به کالاها
+      </Button>
+      <PageHeader
+        actions={<LifecycleActions
           canArchive={canArchive}
           canPublish={canPublish}
           isSubmitting={isSubmitting}
@@ -478,10 +508,28 @@ function CatalogProductContent({
             await refresh();
           }}
           product={product.data}
-        />
-      </header>
+        />}
+        description={<span>نامک: <bdi dir="ltr">{product.data.slug}</bdi> · نسخه {product.data.version.toLocaleString('fa-IR')}</span>}
+        eyebrow={<span className="flex items-center gap-2">فضای کاری کالا <ProductStatus status={product.data.status} /></span>}
+        title={product.data.title}
+      />
+      <nav aria-label="بخش‌های کالا" className="overflow-x-auto border-b border-border">
+        <div className="flex min-w-max gap-1">
+          {PRODUCT_WORKSPACE_TABS.map(({ id, icon: Icon, label }) => (
+            <button
+              aria-current={tab === id ? 'page' : undefined}
+              className={tab === id ? 'flex min-h-11 items-center gap-2 border-b-2 border-primary px-3 text-sm font-medium text-primary' : 'flex min-h-11 items-center gap-2 border-b-2 border-transparent px-3 text-sm text-muted-foreground hover:text-foreground'}
+              key={id}
+              onClick={() => onTabChange(id)}
+              type="button"
+            >
+              <Icon aria-hidden="true" className="size-4" /> {label}
+            </button>
+          ))}
+        </div>
+      </nav>
       {error ? <CatalogProblem error={error} /> : null}
-      {canWrite ? (
+      {tab === 'general' && canWrite ? (
         <ProductEditor
           initial={product.data}
           isSubmitting={isSubmitting}
@@ -501,31 +549,33 @@ function CatalogProductContent({
             await refresh();
           }}
         />
-      ) : (
+      ) : tab === 'general' ? (
         <ProductReadOnly product={product.data} />
-      )}
-      {canWrite && canReadCategories && categories.data ? (
-        <ProductCategoryEditor
-          categories={categories.data.items}
-          isSubmitting={isSubmitting}
-          key={`categories-${product.data.version}`}
-          onSubmit={async (categoryIds) => {
-            await replaceCategories.mutateAsync({
-              categoryIds,
-              expectedVersion: product.data.version,
-              id: productId,
-            });
-            await refresh();
-          }}
-          product={product.data}
-        />
       ) : null}
-      <ProductMediaEditor
-        canWrite={canWrite}
-        onChanged={refresh}
-        product={product.data}
-      />
-      {canWrite ? (
+      {tab === 'organization' ? (
+        !canReadCategories ? (
+          <p className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">برای مشاهده دسته‌بندی‌های این کالا دسترسی لازم را ندارید.</p>
+        ) : categories.isPending ? (
+          <CatalogSkeleton />
+        ) : categories.isError ? (
+          <CatalogProblem error={categories.error} onRetry={() => void categories.refetch()} />
+        ) : canWrite ? (
+          <ProductCategoryEditor
+            categories={categories.data.items}
+            isSubmitting={isSubmitting}
+            key={`categories-${product.data.version}`}
+            onSubmit={async (categoryIds) => {
+              await replaceCategories.mutateAsync({ categoryIds, expectedVersion: product.data.version, id: productId });
+              await refresh();
+            }}
+            product={product.data}
+          />
+        ) : (
+          <ProductCategoryReadOnly categories={categories.data.items} product={product.data} />
+        )
+      ) : null}
+      {tab === 'media' ? <ProductMediaEditor canWrite={canWrite} onChanged={refresh} product={product.data} /> : null}
+      {tab === 'variants' && canWrite ? (
         <VisualConfigurationEditor
           canReadInventory={hasPermission(
             profile.permissions,
@@ -548,10 +598,10 @@ function CatalogProductContent({
           }}
           product={product.data}
         />
-      ) : (
+      ) : tab === 'variants' ? (
         <ConfigurationReadOnly product={product.data} />
-      )}
-      {canReadActivity ? (
+      ) : null}
+      {tab === 'activity' && canReadActivity ? (
         <CommerceAuditEvents
           description="تغییرات محصول، واریانت، قیمت و موجودی به‌صورت یکپارچه ثبت می‌شوند."
           emptyTitle="هنوز فعالیتی برای این محصول ثبت نشده است"
@@ -562,8 +612,30 @@ function CatalogProductContent({
           onRetry={() => void activity.refetch()}
           page={activity.data}
         />
-      ) : null}
+      ) : tab === 'activity' ? <p className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">برای مشاهده فعالیت‌های این کالا دسترسی لازم را ندارید.</p> : null}
     </article>
+  );
+}
+
+function ProductCategoryReadOnly({
+  categories,
+  product,
+}: {
+  readonly categories: readonly { id: string; title: string }[];
+  readonly product: AdminProduct;
+}) {
+  const selected = categories.filter((category) =>
+    product.categoryIds.includes(category.id),
+  );
+  return (
+    <section className="rounded-xl border border-border bg-card p-5">
+      <h2 className="font-semibold">دسته‌بندی‌های کالا</h2>
+      <p className="mt-3 text-sm leading-7 text-muted-foreground">
+        {selected.length
+          ? selected.map((category) => category.title).join('، ')
+          : 'این کالا هنوز در دسته‌بندی‌ای قرار نگرفته است.'}
+      </p>
+    </section>
   );
 }
 
@@ -648,6 +720,36 @@ type ProductFormValue = {
   readonly fulfillmentClassification: 'physical' | 'digital' | 'service';
 };
 
+function initialProductFormValue(initial?: AdminProduct): ProductFormValue {
+  return {
+    title: initial?.title ?? '',
+    slug: initial?.slug ?? '',
+    summary: initial?.summary ?? '',
+    description: initial?.description ?? '',
+    defaultVariantTitle: initial?.variants[0]?.title ?? '',
+    defaultVariantSku: initial?.variants[0]?.sku ?? '',
+    fulfillmentClassification:
+      initial?.variants[0]?.fulfillmentClassification ?? 'physical',
+  };
+}
+
+function recoveredProductDraft(key: string | undefined) {
+  if (!key) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(key) ?? 'null');
+    if (!parsed || typeof parsed !== 'object') return undefined;
+    const candidate = parsed as Partial<ProductFormValue>;
+    return typeof candidate.title === 'string' &&
+      typeof candidate.slug === 'string' &&
+      typeof candidate.summary === 'string' &&
+      typeof candidate.description === 'string'
+      ? (candidate as ProductFormValue)
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function ProductEditor({
   initial,
   isSubmitting,
@@ -659,16 +761,28 @@ function ProductEditor({
   readonly onSubmit: (input: ProductFormValue) => Promise<void>;
   readonly submitLabel: string;
 }) {
-  const [value, setValue] = useState<ProductFormValue>(() => ({
-    title: initial?.title ?? '',
-    slug: initial?.slug ?? '',
-    summary: initial?.summary ?? '',
-    description: initial?.description ?? '',
-    defaultVariantTitle: initial?.variants[0]?.title ?? '',
-    defaultVariantSku: initial?.variants[0]?.sku ?? '',
-    fulfillmentClassification:
-      initial?.variants[0]?.fulfillmentClassification ?? 'physical',
-  }));
+  const baseline = useMemo(() => initialProductFormValue(initial), [initial]);
+  const draftKey = initial
+    ? `better-commerce.admin.product-draft.${initial.id}`
+    : undefined;
+  const recovered = useMemo(() => recoveredProductDraft(draftKey), [draftKey]);
+  const [value, setValue] = useState<ProductFormValue>(() => recovered ?? baseline);
+  const isDirty = JSON.stringify(value) !== JSON.stringify(baseline);
+  useEffect(() => {
+    if (!draftKey) return;
+    try {
+      if (isDirty) localStorage.setItem(draftKey, JSON.stringify(value));
+      else localStorage.removeItem(draftKey);
+    } catch {
+      // Draft recovery is best-effort in restricted browser contexts.
+    }
+  }, [draftKey, isDirty, value]);
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty]);
   const set = <K extends keyof ProductFormValue>(
     key: K,
     next: ProductFormValue[K],
@@ -678,14 +792,22 @@ function ProductEditor({
       className="space-y-5 rounded-lg border border-border bg-card p-5"
       onSubmit={(event) => {
         event.preventDefault();
-        void onSubmit(value).catch(() => undefined);
+        void onSubmit(value)
+          .then(() => {
+            if (draftKey) localStorage.removeItem(draftKey);
+          })
+          .catch(() => undefined);
       }}
     >
       <div>
-        <h2 className="font-semibold">اطلاعات کالا</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold">اطلاعات کالا</h2>
+          {isDirty ? <span className="rounded-full bg-warning/12 px-2.5 py-1 text-xs font-medium text-amber-800">تغییر ذخیره‌نشده</span> : null}
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           فقط داده‌های نمایش محصول در این بخش ذخیره می‌شوند.
         </p>
+        {recovered ? <p className="mt-2 text-xs text-primary">تغییرات ذخیره‌نشده قبلی بازیابی شد.</p> : null}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="نام کالا">
