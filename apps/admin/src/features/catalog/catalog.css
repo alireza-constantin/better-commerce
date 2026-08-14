@@ -34,9 +34,43 @@
 }
 
 .catalog-media-grid > li {
+  position: relative;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 0.75rem;
+}
+
+@media (max-width: 47.999rem) {
+  .variant-matrix,
+  .variant-matrix tbody,
+  .variant-matrix tr,
+  .variant-matrix td {
+    display: block;
+    width: 100%;
+  }
+
+  .variant-matrix thead {
+    display: none;
+  }
+
+  .variant-matrix tr {
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 0.75rem;
+  }
+
+  .variant-matrix td {
+    padding: 0.5rem 0;
+  }
+
+  .variant-matrix td::before {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--muted-foreground);
+    content: attr(data-label);
+    font-size: 0.75rem;
+  }
 }
 
 .catalog-media-grid img {

@@ -25,7 +25,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import './catalog.css';
 import { adminRoutes } from '@/app/routes/admin-route-contract';
 import { isAdminApiError } from '@/api/client';
-import { Button, PageHeader } from '@/components/ui';
+import { Button, ModalLayer, PageHeader, StatusBadge } from '@/components/ui';
 import { PermissionBoundary } from '@/features/auth/permissions/permission-boundary';
 import { hasPermission } from '@/features/auth/permissions/permissions';
 import { useAdminSession } from '@/features/auth/session/use-admin-session';
@@ -929,6 +929,9 @@ function ProductMediaEditor({
   const [items, setItems] = useState(() =>
     product.media.map((item) => ({ ...item })),
   );
+  const [selectedFile, setSelectedFile] = useState<File>();
+  const [uploadAltText, setUploadAltText] = useState('');
+  const [dragActive, setDragActive] = useState(false);
   const error = upload.error ?? replace.error ?? remove.error;
   const busy = upload.isPending || replace.isPending || remove.isPending;
   const move = (index: number, direction: -1 | 1) =>
@@ -940,19 +943,23 @@ function ProductMediaEditor({
       return next.map((item, position) => ({ ...item, position }));
     });
   return (
-    <section className="rounded-lg border border-border bg-card p-5">
-      <div>
-        <h2 className="font-semibold">تصاویر کالا</h2>
+    <section className="rounded-2xl border border-border bg-card p-5 shadow-xs">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+        <h2 className="text-lg font-semibold">کتابخانه تصاویر</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           تصویر اول، تصویر اصلی کالا است. برای دسترس‌پذیری هر تصویر متن جایگزین
           بنویسید.
         </p>
+        </div>
+        <StatusBadge tone={items.length >= 20 ? 'warning' : 'neutral'}>{items.length.toLocaleString('fa-IR')} از ۲۰ تصویر</StatusBadge>
       </div>
       {error ? <CatalogProblem error={error} /> : null}
       {items.length ? (
         <ol className="catalog-media-grid">
           {items.map((item, index) => (
             <li key={item.id}>
+              {index === 0 ? <span className="absolute m-2 rounded-full bg-primary px-2 py-1 text-xs text-primary-foreground">تصویر اصلی</span> : null}
               <img
                 alt={item.altText}
                 height={item.height}
@@ -1030,39 +1037,52 @@ function ProductMediaEditor({
       {canWrite ? (
         <div className="mt-5 flex flex-wrap items-end justify-between gap-3 border-t border-border pt-5">
           <form
-            className="flex flex-wrap items-end gap-2"
+            className="grid w-full gap-4 lg:grid-cols-[minmax(16rem,1fr)_minmax(14rem,1fr)_auto] lg:items-end"
+            onDragEnter={() => setDragActive(true)}
+            onDragLeave={() => setDragActive(false)}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDragActive(false);
+              const file = event.dataTransfer.files.item(0);
+              if (file?.type.match(/^image\/(jpeg|png|webp)$/)) setSelectedFile(file);
+            }}
             onSubmit={(event) => {
               event.preventDefault();
-              const form = new FormData(event.currentTarget);
-              const file = form.get('file');
-              const altText = form.get('altText');
-              if (!(file instanceof File) || file.size === 0) return;
+              if (!selectedFile || selectedFile.size === 0) return;
               void upload
                 .mutateAsync({
-                  altText: typeof altText === 'string' ? altText : '',
+                  altText: uploadAltText,
                   expectedVersion: product.version,
-                  file,
+                  file: selectedFile,
                   productId: product.id,
                 })
-                .then(onChanged)
+                .then(async () => {
+                  setSelectedFile(undefined);
+                  setUploadAltText('');
+                  await onChanged();
+                })
                 .catch(() => undefined);
             }}
           >
-            <Field label="فایل تصویر">
+            <label className={dragActive ? 'flex min-h-24 cursor-pointer flex-col justify-center rounded-xl border-2 border-dashed border-primary bg-primary/5 p-4 text-sm' : 'flex min-h-24 cursor-pointer flex-col justify-center rounded-xl border-2 border-dashed border-border p-4 text-sm hover:border-primary/40'}>
+              <span className="font-medium">تصویر را اینجا رها کنید یا انتخاب کنید</span>
+              <span className="mt-1 text-xs text-muted-foreground">JPEG، PNG یا WebP تا ۱۰ مگابایت</span>
+              {selectedFile ? <span className="mt-2 text-xs text-primary" dir="ltr">{selectedFile.name} · {(selectedFile.size / 1024 / 1024).toFixed(2)} MB</span> : null}
               <input
                 accept="image/jpeg,image/png,image/webp"
-                className="catalog-input"
+                className="sr-only"
                 disabled={busy || items.length >= 20}
-                name="file"
+                onChange={(event) => setSelectedFile(event.target.files?.[0])}
                 required
                 type="file"
               />
-            </Field>
+            </label>
             <Field label="متن جایگزین">
-              <input className="catalog-input" maxLength={300} name="altText" />
+              <input className="catalog-input" maxLength={300} onChange={(event) => setUploadAltText(event.target.value)} value={uploadAltText} />
             </Field>
-            <Button disabled={busy || items.length >= 20} type="submit">
-              <ImagePlus aria-hidden="true" /> بارگذاری تصویر
+            <Button disabled={busy || items.length >= 20 || !selectedFile} type="submit">
+              <ImagePlus aria-hidden="true" /> {upload.isPending ? 'در حال بارگذاری…' : 'بارگذاری تصویر'}
             </Button>
           </form>
           {items.length ? (
@@ -1133,6 +1153,7 @@ function VisualConfigurationEditor({
 }) {
   const [draft, setDraft] = useState(() => configurationDraft(product));
   const [validation, setValidation] = useState<string>();
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [priceDraft, setPriceDraft] = useState<Record<string, string>>({});
   const [inventoryDraft, setInventoryDraft] = useState<
     Record<
@@ -1231,6 +1252,49 @@ function VisualConfigurationEditor({
         variantIndex === index ? { ...variant, ...patch } : variant,
       ),
     }));
+  const originalPrices = new Map(
+    (prices.data ?? []).map((price) => [
+      price.variantId,
+      price.state === 'priced' ? (price.amount ?? '') : '',
+    ]),
+  );
+  const changedPrices = Object.entries(priceDraft).filter(
+    ([variantId, amount]) => amount.trim() !== (originalPrices.get(variantId) ?? ''),
+  );
+  const originalInventory = new Map(
+    (inventory.data ?? []).map((item) => [item.variantId, item] as const),
+  );
+  const changedInventory = Object.entries(inventoryDraft).filter(
+    ([variantId, value]) => {
+      const original = originalInventory.get(variantId);
+      return (
+        value.mode !== (original?.state ?? 'not_configured') ||
+        (value.mode === 'tracked' && value.onHand !== String(original?.onHand ?? '')) ||
+        Boolean(value.reason.trim())
+      );
+    },
+  );
+  const submitDraft = () =>
+    onSubmit({
+      ...draft,
+      expectedVersion: product.version,
+      ...(canWritePricing
+        ? { prices: changedPrices.map(([variantId, amount]) => ({ variantId, amount: amount.trim() || null })) }
+        : {}),
+      ...(canWriteInventory
+        ? {
+            inventory: changedInventory.map(([variantId, value]) => ({
+              variantId,
+              trackingMode: value.mode,
+              currentOnHand:
+                value.mode === 'tracked' && value.onHand.trim()
+                  ? Number(value.onHand)
+                  : null,
+              reasonCode: value.reason.trim() || null,
+            })),
+          }
+        : {}),
+    } as ProductConfigurationInput);
   return (
     <form
       className="rounded-lg border border-border bg-card p-5"
@@ -1247,46 +1311,16 @@ function VisualConfigurationEditor({
           setValidation('نام گزینه‌ها و مقدارهای آن‌ها الزامی است.');
           return;
         }
-        setValidation(undefined);
-        const operationalChanges =
-          (canWritePricing && Object.keys(priceDraft).length > 0) ||
-          (canWriteInventory && Object.keys(inventoryDraft).length > 0);
-        if (
-          operationalChanges &&
-          !window.confirm(
-            'تغییرات قیمت و موجودی ثبت و در تاریخچه ذخیره می‌شوند. ادامه می‌دهید؟',
-          )
-        )
+        if (changedInventory.some(([, value]) => !value.reason.trim())) {
+          setValidation('برای هر تغییر موجودی، دلیل تغییر را وارد کنید.');
           return;
-        void onSubmit({
-          ...draft,
-          expectedVersion: product.version,
-          ...(canWritePricing
-            ? {
-                prices: Object.entries(priceDraft).map(
-                  ([variantId, amount]) => ({
-                    variantId,
-                    amount: amount.trim() || null,
-                  }),
-                ),
-              }
-            : {}),
-          ...(canWriteInventory
-            ? {
-                inventory: Object.entries(inventoryDraft).map(
-                  ([variantId, value]) => ({
-                    variantId,
-                    trackingMode: value.mode,
-                    currentOnHand:
-                      value.mode === 'tracked' && value.onHand.trim()
-                        ? Number(value.onHand)
-                        : null,
-                    reasonCode: value.reason.trim() || null,
-                  }),
-                ),
-              }
-            : {}),
-        } as ProductConfigurationInput).catch(() => undefined);
+        }
+        setValidation(undefined);
+        if (changedPrices.length || changedInventory.length) {
+          setReviewOpen(true);
+          return;
+        }
+        void submitDraft().catch(() => undefined);
       }}
     >
       <h2 className="font-semibold">پیکربندی گونه‌ها</h2>
@@ -1407,7 +1441,7 @@ function VisualConfigurationEditor({
         </Button>
       </div>
       <div className="mt-5 overflow-x-auto">
-        <table className="w-full min-w-[42rem] text-sm">
+        <table className="variant-matrix w-full text-sm md:min-w-[62rem]">
           <thead className="border-b border-border text-right text-muted-foreground">
             <tr>
               <th className="pb-2">گونه</th>
@@ -1425,10 +1459,10 @@ function VisualConfigurationEditor({
           <tbody>
             {draft.variants.map((variant, index) => (
               <tr className="border-b border-border/60" key={variant.id}>
-                <td className="py-3">
+                <td className="py-3" data-label="گونه">
                   {variantLabel(variant, draft.options) || 'گونهٔ پیش‌فرض'}
                 </td>
-                <td className="py-3 pe-2">
+                <td className="py-3 pe-2" data-label="عنوان">
                   <input
                     className="catalog-input"
                     onChange={(event) =>
@@ -1439,7 +1473,7 @@ function VisualConfigurationEditor({
                     value={variant.title ?? ''}
                   />
                 </td>
-                <td className="py-3 pe-2">
+                <td className="py-3 pe-2" data-label="قیمت">
                   {canReadPricing ? (
                     canWritePricing ? (
                       <input
@@ -1466,7 +1500,7 @@ function VisualConfigurationEditor({
                     </span>
                   )}
                 </td>
-                <td className="py-3 pe-2">
+                <td className="py-3 pe-2" data-label="موجودی">
                   {canReadInventory ? (
                     canWriteInventory ? (
                       <div className="space-y-1">
@@ -1513,6 +1547,23 @@ function VisualConfigurationEditor({
                             value={inventoryDraft[variant.id]?.onHand ?? ''}
                           />
                         ) : null}
+                        <input
+                          className="catalog-input"
+                          onChange={(event) =>
+                            setInventoryDraft((current) => ({
+                              ...current,
+                              [variant.id]: {
+                                ...(current[variant.id] ?? {
+                                  mode: 'not_configured',
+                                  onHand: '',
+                                }),
+                                reason: event.target.value,
+                              },
+                            }))
+                          }
+                          placeholder="دلیل تغییر موجودی"
+                          value={inventoryDraft[variant.id]?.reason ?? ''}
+                        />
                       </div>
                     ) : (
                       <span>
@@ -1529,7 +1580,7 @@ function VisualConfigurationEditor({
                     </span>
                   )}
                 </td>
-                <td className="py-3 pe-2">
+                <td className="py-3 pe-2" data-label="کد کالا">
                   <input
                     className="catalog-input"
                     dir="ltr"
@@ -1539,7 +1590,7 @@ function VisualConfigurationEditor({
                     value={variant.sku ?? ''}
                   />
                 </td>
-                <td className="py-3 pe-2">
+                <td className="py-3 pe-2" data-label="وضعیت">
                   <select
                     className="catalog-input"
                     onChange={(event) =>
@@ -1553,16 +1604,18 @@ function VisualConfigurationEditor({
                     <option value="archived">بایگانی‌شده</option>
                   </select>
                 </td>
-                <td className="py-3 pe-2">
+                <td className="py-3 pe-2" data-label="تصاویر">
                   <div className="flex flex-wrap gap-2">
                     {product.media.length ? (
                       product.media.map((media) => (
                         <label
-                          className="flex items-center gap-1 text-xs"
+                          className={variant.mediaIds.includes(media.id) ? 'relative cursor-pointer overflow-hidden rounded-lg ring-2 ring-primary ring-offset-2' : 'relative cursor-pointer overflow-hidden rounded-lg border border-border opacity-65 hover:opacity-100'}
                           key={media.id}
+                          title={media.altText || `تصویر ${media.position + 1}`}
                         >
                           <input
                             checked={variant.mediaIds.includes(media.id)}
+                            className="sr-only"
                             onChange={() =>
                               setDraft((current) => ({
                                 ...current,
@@ -1585,7 +1638,8 @@ function VisualConfigurationEditor({
                             }
                             type="checkbox"
                           />
-                          {media.position + 1}
+                          <img alt="" className="size-11 object-cover" height={44} src={media.url} width={44} />
+                          <span className="sr-only">{media.altText || `تصویر ${media.position + 1}`}</span>
                         </label>
                       ))
                     ) : (
@@ -1595,7 +1649,7 @@ function VisualConfigurationEditor({
                     )}
                   </div>
                 </td>
-                <td className="py-3 text-end">
+                <td className="py-3 text-end" data-label="عملیات">
                   <Button
                     onClick={() =>
                       setDraft((current) => ({
@@ -1640,6 +1694,20 @@ function VisualConfigurationEditor({
           {isSubmitting ? 'در حال ذخیره…' : 'ذخیرهٔ گونه‌ها'}
         </Button>
       </div>
+      <ModalLayer onClose={() => setReviewOpen(false)} open={reviewOpen} title="بررسی تغییرات تجاری">
+        <div className="p-5">
+          <h2 className="text-lg font-semibold">بررسی تغییرات تجاری</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">این تغییرات پس از ثبت در تاریخچه باقی می‌مانند. پیش از ادامه تعداد موارد را بررسی کنید.</p>
+          <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl bg-muted p-4"><dt className="text-xs text-muted-foreground">قیمت‌های تغییرکرده</dt><dd className="mt-1 text-2xl font-semibold">{changedPrices.length.toLocaleString('fa-IR')}</dd></div>
+            <div className="rounded-xl bg-muted p-4"><dt className="text-xs text-muted-foreground">موجودی‌های تغییرکرده</dt><dd className="mt-1 text-2xl font-semibold">{changedInventory.length.toLocaleString('fa-IR')}</dd></div>
+          </dl>
+          <div className="mt-6 flex justify-end gap-2">
+            <Button onClick={() => setReviewOpen(false)} type="button" variant="ghost">بازگشت</Button>
+            <Button disabled={isSubmitting} onClick={() => void submitDraft().then(() => setReviewOpen(false)).catch(() => undefined)} type="button">تأیید و ثبت</Button>
+          </div>
+        </div>
+      </ModalLayer>
     </form>
   );
 }
