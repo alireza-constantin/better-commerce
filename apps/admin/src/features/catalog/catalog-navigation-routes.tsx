@@ -8,7 +8,25 @@ import {
   Save,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Field as FormField,
+  FieldLabel,
+  Input,
+  Skeleton,
+  StatusBadge,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Textarea,
+} from '@/components/ui';
 import { isAdminApiError } from '@/api/client';
 import { PermissionBoundary } from '@/features/auth/permissions/permission-boundary';
 import { hasPermission } from '@/features/auth/permissions/permissions';
@@ -63,55 +81,60 @@ function Form({
   submit: TextCommand;
 }) {
   return (
-    <form
-      className="grid gap-3 rounded-lg border border-border bg-card p-5"
+    <Card>
+      <CardHeader><CardTitle>{label}</CardTitle></CardHeader>
+      <CardContent>
+      <form
+      className="grid gap-3"
       onSubmit={(event) => {
         event.preventDefault();
         void submit(text(event.currentTarget));
       }}
     >
-      <label className="text-sm font-medium">
-        عنوان
-        <input
-          className="catalog-input"
+      <FormField>
+        <FieldLabel htmlFor={`${label}-title`}>عنوان</FieldLabel>
+        <Input
           defaultValue={initial?.title}
           name="title"
+          id={`${label}-title`}
           required
         />
-      </label>
-      <label className="text-sm font-medium">
-        نامک
-        <input
-          className="catalog-input"
+      </FormField>
+      <FormField>
+        <FieldLabel htmlFor={`${label}-slug`}>نامک</FieldLabel>
+        <Input
           defaultValue={initial?.slug}
           dir="ltr"
           name="slug"
+          id={`${label}-slug`}
           required
         />
-      </label>
-      <label className="text-sm font-medium">
-        خلاصه
-        <input
-          className="catalog-input"
+      </FormField>
+      <FormField>
+        <FieldLabel htmlFor={`${label}-summary`}>خلاصه</FieldLabel>
+        <Input
           defaultValue={initial?.summary ?? ''}
           name="summary"
+          id={`${label}-summary`}
         />
-      </label>
-      <label className="text-sm font-medium">
-        توضیحات
-        <textarea
-          className="catalog-input min-h-28 py-2"
+      </FormField>
+      <FormField>
+        <FieldLabel htmlFor={`${label}-description`}>توضیحات</FieldLabel>
+        <Textarea
           defaultValue={initial?.description ?? ''}
           name="description"
+          id={`${label}-description`}
         />
-      </label>
+      </FormField>
       <div className="flex justify-end">
         <Button disabled={busy} type="submit">
           <Save aria-hidden="true" />
           {busy ? 'در حال ذخیره…' : label}
         </Button>
       </div>
-    </form>
+      </form>
+      </CardContent>
+    </Card>
   );
 }
 function ErrorMessage({
@@ -142,8 +165,8 @@ function ErrorMessage({
 function Loading() {
   return (
     <div aria-busy="true" className="space-y-3">
-      <div className="h-8 w-32 animate-pulse rounded bg-muted" />
-      <div className="h-56 animate-pulse rounded-lg bg-muted" />
+      <Skeleton className="h-8 w-32" />
+      <Skeleton className="h-56 rounded-lg" />
     </div>
   );
 }
@@ -194,19 +217,29 @@ function Categories() {
       </header>
       <ErrorMessage error={error} />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <section className="overflow-x-auto rounded-lg border border-border bg-card">
-          <table className="w-full min-w-140 text-right text-sm">
-            <thead className="border-b bg-muted/45 text-xs text-muted-foreground">
-              <tr>
-                <th className="p-3">عنوان</th>
-                <th className="p-3">نامک</th>
-                <th className="p-3">وضعیت</th>
-                <th className="p-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y">
+        <div>
+          <div className="grid gap-2 md:hidden">
+            {categories.map((category) => (
+              <button className="flex items-center justify-between gap-3 rounded-lg bg-card p-4 text-right ring-1 ring-foreground/10" key={category.id} onClick={() => setSelected(category)} type="button">
+                <span className="min-w-0"><span className="block truncate font-medium">{category.title}</span><span className="block truncate text-xs text-muted-foreground" dir="ltr">{category.slug}</span></span>
+                <StatusBadge tone={category.status === 'active' ? 'success' : 'neutral'}>{category.status === 'active' ? 'فعال' : 'بایگانی'}</StatusBadge>
+              </button>
+            ))}
+          </div>
+          <Card className="hidden overflow-hidden md:block">
+          <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col">عنوان</TableHead>
+                <TableHead scope="col">نامک</TableHead>
+                <TableHead scope="col">وضعیت</TableHead>
+                <TableHead scope="col"><span className="sr-only">عملیات</span></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {categories.map((category) => (
-                <tr
+                <TableRow
                   className={
                     selected?.id === category.id
                       ? 'bg-muted/45'
@@ -214,14 +247,12 @@ function Categories() {
                   }
                   key={category.id}
                 >
-                  <td className="p-3 font-medium">{category.title}</td>
-                  <td className="p-3">
+                  <TableCell className="font-medium">{category.title}</TableCell>
+                  <TableCell>
                     <bdi dir="ltr">{category.slug}</bdi>
-                  </td>
-                  <td className="p-3">
-                    {category.status === 'active' ? 'فعال' : 'بایگانی‌شده'}
-                  </td>
-                  <td className="p-3 text-left">
+                  </TableCell>
+                  <TableCell><StatusBadge tone={category.status === 'active' ? 'success' : 'neutral'}>{category.status === 'active' ? 'فعال' : 'بایگانی'}</StatusBadge></TableCell>
+                  <TableCell className="text-left">
                     <Button
                       onClick={() => setSelected(category)}
                       size="sm"
@@ -229,17 +260,19 @@ function Categories() {
                     >
                       مدیریت
                     </Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
+          </CardContent>
+          </Card>
           {!categories.length ? (
             <p className="p-8 text-center text-sm text-muted-foreground">
               هنوز دسته‌بندی ثبت نشده است.
             </p>
           ) : null}
-        </section>
+        </div>
         {canWrite ? (
           <Form
             label="ایجاد دسته‌بندی"
@@ -472,18 +505,28 @@ function Collections() {
       </header>
       <ErrorMessage error={error} />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <section className="overflow-x-auto rounded-lg border border-border bg-card">
-          <table className="w-full min-w-140 text-right text-sm">
-            <thead className="border-b bg-muted/45 text-xs text-muted-foreground">
-              <tr>
-                <th className="p-3">عنوان</th>
-                <th className="p-3">کالاها</th>
-                <th className="p-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y">
+        <div>
+          <div className="grid gap-2 md:hidden">
+            {data.data.items.map((collection) => (
+              <button className="flex items-center justify-between gap-3 rounded-lg bg-card p-4 text-right ring-1 ring-foreground/10" key={collection.id} onClick={() => setSelected(collection)} type="button">
+                <span className="min-w-0"><span className="block truncate font-medium">{collection.title}</span><span className="block text-xs text-muted-foreground">{collection.products.length.toLocaleString('fa-IR')} کالا</span></span>
+                <StatusBadge tone={collection.status === 'active' ? 'success' : 'neutral'}>{collection.status === 'active' ? 'فعال' : 'بایگانی'}</StatusBadge>
+              </button>
+            ))}
+          </div>
+          <Card className="hidden overflow-hidden md:block">
+          <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col">عنوان</TableHead>
+                <TableHead scope="col">کالاها</TableHead>
+                <TableHead scope="col"><span className="sr-only">عملیات</span></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {data.data.items.map((collection) => (
-                <tr
+                <TableRow
                   className={
                     selected?.id === collection.id
                       ? 'bg-muted/45'
@@ -491,11 +534,11 @@ function Collections() {
                   }
                   key={collection.id}
                 >
-                  <td className="p-3 font-medium">{collection.title}</td>
-                  <td className="p-3">
+                  <TableCell className="font-medium">{collection.title}</TableCell>
+                  <TableCell>
                     {collection.products.length.toLocaleString('fa-IR')}
-                  </td>
-                  <td className="p-3 text-left">
+                  </TableCell>
+                  <TableCell className="text-left">
                     <Button
                       onClick={() => setSelected(collection)}
                       size="sm"
@@ -503,17 +546,19 @@ function Collections() {
                     >
                       مدیریت
                     </Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
+          </CardContent>
+          </Card>
           {!data.data.items.length ? (
             <p className="p-8 text-center text-sm text-muted-foreground">
               هنوز مجموعه‌ای ثبت نشده است.
             </p>
           ) : null}
-        </section>
+        </div>
         {canWrite ? (
           <Form
             label="ایجاد مجموعه"
