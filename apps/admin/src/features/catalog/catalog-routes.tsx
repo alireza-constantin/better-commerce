@@ -594,7 +594,7 @@ function CatalogProductContent({
     transition.isPending;
   return (
     <article className="mx-auto flex max-w-[90rem] flex-col gap-5" dir="rtl">
-      <header className="sticky top-0 z-20 -mx-4 bg-background/95 px-4 pt-2 backdrop-blur-sm">
+      <header className="sticky top-16 z-10 -mx-4 bg-background/95 px-4 pt-2 backdrop-blur-sm">
         <div className="flex flex-col gap-4 border-b border-border pb-4">
           <Button className="w-fit" onClick={onBack} size="sm" variant="ghost">
             بازگشت به کالاها
@@ -632,8 +632,8 @@ function CatalogProductContent({
         <ProductWorkspaceTabs onChange={onTabChange} value={tab} />
       </header>
       {error ? <CatalogProblem error={error} /> : null}
-      {tab === 'general' && canWrite ? (
-        <ProductEditor
+      <div hidden={tab !== 'general'}>
+        {canWrite ? <ProductEditor
           initial={product.data}
           isSubmitting={isSubmitting}
           key={`product-${product.data.version}`}
@@ -651,12 +651,10 @@ function CatalogProductContent({
             });
             await refresh();
           }}
-        />
-      ) : tab === 'general' ? (
-        <ProductReadOnly product={product.data} />
-      ) : null}
-      {tab === 'organization' ? (
-        !canReadCategories ? (
+        /> : <ProductReadOnly product={product.data} />}
+      </div>
+      <div hidden={tab !== 'organization'}>
+        {!canReadCategories ? (
           <p className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">برای مشاهده دسته‌بندی‌های این کالا دسترسی لازم را ندارید.</p>
         ) : categories.isPending ? (
           <CatalogSkeleton />
@@ -675,11 +673,11 @@ function CatalogProductContent({
           />
         ) : (
           <ProductCategoryReadOnly categories={categories.data.items} product={product.data} />
-        )
-      ) : null}
-      {tab === 'media' ? <ProductMediaEditor canWrite={canWrite} onChanged={refresh} product={product.data} /> : null}
-      {tab === 'variants' && canWrite ? (
-        <VisualConfigurationEditor
+        )}
+      </div>
+      <div hidden={tab !== 'media'}><ProductMediaEditor canWrite={canWrite} onChanged={refresh} product={product.data} /></div>
+      <div hidden={tab !== 'variants'}>
+        {canWrite ? <VisualConfigurationEditor
           canReadInventory={hasPermission(
             profile.permissions,
             'inventory.read',
@@ -700,10 +698,8 @@ function CatalogProductContent({
             await refresh();
           }}
           product={product.data}
-        />
-      ) : tab === 'variants' ? (
-        <ConfigurationReadOnly product={product.data} />
-      ) : null}
+        /> : <ConfigurationReadOnly product={product.data} />}
+      </div>
       {tab === 'activity' && canReadActivity ? (
         <CommerceAuditEvents
           description="تغییرات محصول، واریانت، قیمت و موجودی به‌صورت یکپارچه ثبت می‌شوند."
@@ -1465,6 +1461,7 @@ function VisualConfigurationEditor({
       price.state === 'priced' ? (price.amount ?? '') : '',
     ]),
   );
+  const storeCurrency = prices.data?.[0]?.currency;
   const changedPrices = Object.entries(priceDraft).filter(
     ([variantId, amount]) => amount.trim() !== (originalPrices.get(variantId) ?? ''),
   );
@@ -1699,29 +1696,29 @@ function VisualConfigurationEditor({
                   <Input dir="ltr" id={`variant-sku-${variant.id}`} onChange={(event) => updateVariant(index, { sku: event.target.value || null })} value={variant.sku ?? ''} />
                 </FormField>
                 <FormField>
-                  <FieldLabel htmlFor={`variant-price-${variant.id}`}>قیمت</FieldLabel>
+                  <FieldLabel htmlFor={`variant-price-${variant.id}`}>قیمت{storeCurrency ? ` (${storeCurrency})` : ''}</FieldLabel>
                   {canReadPricing ? canWritePricing ? (
                     <Input dir="ltr" id={`variant-price-${variant.id}`} inputMode="decimal" onChange={(event) => setPriceDraft((current) => ({ ...current, [variant.id]: event.target.value }))} placeholder="قیمت درخواستی" value={priceDraft[variant.id] ?? ''} />
                   ) : <p className="flex h-9 items-center text-sm">{priceDraft[variant.id] || 'درخواست قیمت'}</p> : <p className="flex h-9 items-center text-sm text-muted-foreground">بدون دسترسی</p>}
                 </FormField>
                 <FormField>
-                  <FieldLabel>وضعیت فروش</FieldLabel>
+                  <FieldLabel htmlFor={`variant-status-${variant.id}`}>وضعیت فروش</FieldLabel>
                   <Select onValueChange={(value) => updateVariant(index, { status: value as 'active' | 'archived' })} value={variant.status}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id={`variant-status-${variant.id}`}><SelectValue /></SelectTrigger>
                     <SelectContent><SelectItem value="active">فعال</SelectItem><SelectItem value="archived">بایگانی‌شده</SelectItem></SelectContent>
                   </Select>
                 </FormField>
               </div>
               <div className="mt-4 grid gap-4 border-t border-border/70 pt-4 xl:grid-cols-2">
                 <div>
-                  <p className="text-sm font-medium">موجودی</p>
+                    <p className="text-sm font-medium" id={`variant-inventory-${variant.id}`}>موجودی</p>
                   {canReadInventory ? canWriteInventory ? (
                     <div className="mt-2 grid gap-2 sm:grid-cols-3">
                       <Select
                         onValueChange={(value) => setInventoryDraft((current) => ({ ...current, [variant.id]: { ...(current[variant.id] ?? { onHand: '', reason: '' }), mode: value as 'not_configured' | 'tracked' | 'untracked' } }))}
                         value={inventoryDraft[variant.id]?.mode ?? 'not_configured'}
                       >
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger aria-labelledby={`variant-inventory-${variant.id}`}><SelectValue /></SelectTrigger>
                         <SelectContent><SelectItem value="not_configured">تنظیم نشده</SelectItem><SelectItem value="untracked">بدون ردیابی</SelectItem><SelectItem value="tracked">ردیابی‌شده</SelectItem></SelectContent>
                       </Select>
                       {inventoryDraft[variant.id]?.mode === 'tracked' ? (
@@ -2199,7 +2196,7 @@ function configurationDraft(product: AdminProduct): ConfigurationDraft {
               variant as typeof variant & {
                 mediaIds?: readonly string[];
               }
-            ).mediaIds!,
+            ).mediaIds,
           ]
         : [],
       sku: variant.sku,

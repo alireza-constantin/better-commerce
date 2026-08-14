@@ -31,6 +31,7 @@ import {
   adjustInventory,
   configureInventory,
   listCurrentInventory,
+  type CurrentInventory,
   type Inventory,
 } from './api/inventory-api';
 
@@ -131,9 +132,9 @@ function InventoryContent() {
             <CardContent>
               <form className="flex flex-col gap-4" onSubmit={(event) => { void configureSubmit(event); }}>
                 <FormField>
-                  <FieldLabel>روش کنترل</FieldLabel>
+                  <FieldLabel htmlFor="inventory-tracking-mode">روش کنترل</FieldLabel>
                   <Select onValueChange={(value) => setTrackingMode(value as 'tracked' | 'untracked')} value={trackingMode}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="inventory-tracking-mode"><SelectValue /></SelectTrigger>
                     <SelectContent><SelectItem value="tracked">ردیابی‌شده</SelectItem><SelectItem value="untracked">بدون ردیابی</SelectItem></SelectContent>
                   </Select>
                 </FormField>
@@ -161,13 +162,13 @@ function InventoryContent() {
   );
 }
 
-function InventoryStatus({ inventory, isRefreshing, onRefresh }: { readonly inventory: Inventory | { readonly variantId: string; readonly state: 'not_configured' | 'untracked' | 'tracked'; readonly trackingMode: 'tracked' | 'untracked' | null; readonly onHand: number | null; readonly reservedQuantity: number | null; readonly available: number | null }; readonly isRefreshing: boolean; readonly onRefresh: () => Promise<void> }) {
+function InventoryStatus({ inventory, isRefreshing, onRefresh }: { readonly inventory: Inventory | CurrentInventory; readonly isRefreshing: boolean; readonly onRefresh: () => Promise<void> }) {
   const state = 'state' in inventory ? inventory.state : inventory.trackingMode;
   const tracked = state === 'tracked';
   return (
     <Card>
       <CardHeader className="flex-row items-start justify-between gap-3"><div><CardTitle>وضعیت فعلی</CardTitle><CardDescription><bdi dir="ltr">{inventory.variantId}</bdi></CardDescription></div><div className="flex items-center gap-2"><StatusBadge tone={tracked ? 'success' : 'neutral'}>{state === 'tracked' ? 'ردیابی‌شده' : state === 'untracked' ? 'بدون ردیابی' : 'تنظیم نشده'}</StatusBadge><Button aria-label="تازه‌سازی موجودی" disabled={isRefreshing} onClick={() => { void onRefresh(); }} size="icon" variant="ghost"><RefreshCw aria-hidden="true" /></Button></div></CardHeader>
-      {tracked ? <CardContent><dl className="grid gap-4 sm:grid-cols-3"><Metric label="موجودی کل" value={inventory.onHand} /><Metric label="رزروشده" value={inventory.reservedQuantity} /><Metric label="قابل فروش" value={inventory.available} /></dl></CardContent> : <CardContent><p className="text-sm text-muted-foreground">برای موجودی بدون ردیابی، مقدار ساختگی یا بی‌نهایت نمایش داده نمی‌شود.</p></CardContent>}
+      {tracked ? <CardContent><dl className="grid gap-4 sm:grid-cols-3"><Metric label="موجودی کل" value={inventory.onHand ?? null} /><Metric label="رزروشده" value={inventory.reservedQuantity ?? null} /><Metric label="قابل فروش" value={inventory.available ?? null} /></dl></CardContent> : <CardContent><p className="text-sm text-muted-foreground">برای موجودی بدون ردیابی، مقدار ساختگی یا بی‌نهایت نمایش داده نمی‌شود.</p></CardContent>}
     </Card>
   );
 }

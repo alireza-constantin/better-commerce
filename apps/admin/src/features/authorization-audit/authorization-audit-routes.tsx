@@ -9,10 +9,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PermissionBoundary } from '@/features/auth/permissions/permission-boundary';
+import { auditActionLabel, auditTargetLabel, authorizationActionOptions } from '@/features/commerce-audit/components/audit-presenters';
 import {
   authorizationAuditListQueryOptions,
   type AuthorizationAuditEvent,
@@ -100,9 +101,9 @@ function AuthorizationAuditContent() {
       {events.data && events.data.data.length > 0 ? (
         <>
           <div className="grid gap-3 md:hidden">
-            {events.data.data.map((event) => <Card key={event.id}><CardContent className="space-y-3 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-medium"><bdi dir="ltr">{event.action}</bdi></p><p className="mt-1 text-xs text-muted-foreground">{formatDate(event.createdAt)}</p></div><Button aria-label={`مشاهده جزئیات رویداد ${event.action}`} onClick={() => setSelectedEvent(event)} size="icon" variant="ghost"><Eye /></Button></div><div className="grid grid-cols-2 gap-3 text-sm"><CompactValue label="نوع هدف" value={event.targetType} /><CompactValue label="انجام‌دهنده" value={event.actorUserId} emptyLabel="سامانه" /></div></CardContent></Card>)}
+            {events.data.data.map((event) => <Card key={event.id}><CardContent className="space-y-3 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-medium">{auditActionLabel(event.action)}</p><p className="mt-1 text-xs text-muted-foreground">{formatDate(event.createdAt)}</p></div><Button aria-label={`مشاهده جزئیات رویداد ${auditActionLabel(event.action)}`} onClick={() => setSelectedEvent(event)} size="icon" variant="ghost"><Eye /></Button></div><div className="grid grid-cols-2 gap-3 text-sm"><CompactText label="بخش" value={auditTargetLabel(event.targetType)} /><CompactText label="انجام‌دهنده" value={event.actorUserId ? 'کارمند' : 'سامانه'} /></div></CardContent></Card>)}
           </div>
-          <Card className="hidden md:block"><Table><TableHeader><TableRow><TableHead scope="col">زمان</TableHead><TableHead scope="col">عملیات</TableHead><TableHead scope="col">هدف</TableHead><TableHead scope="col">انجام‌دهنده</TableHead><TableHead scope="col"><span className="sr-only">جزئیات</span></TableHead></TableRow></TableHeader><TableBody>{events.data.data.map((event) => <TableRow key={event.id}><TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(event.createdAt)}</TableCell><TableCell className="font-medium"><bdi dir="ltr">{event.action}</bdi></TableCell><TableCell className="max-w-56"><p><bdi dir="ltr">{event.targetType}</bdi></p><p className="mt-1 truncate text-xs text-muted-foreground" title={event.targetId}><bdi dir="ltr">{event.targetId}</bdi></p></TableCell><TableCell className="max-w-48 truncate text-muted-foreground">{event.actorUserId ? <bdi dir="ltr" title={event.actorUserId}>{event.actorUserId}</bdi> : 'سامانه'}</TableCell><TableCell><Button aria-label={`مشاهده جزئیات رویداد ${event.action}`} onClick={() => setSelectedEvent(event)} size="sm" variant="ghost"><Eye /> جزئیات</Button></TableCell></TableRow>)}</TableBody></Table></Card>
+          <Card className="hidden md:block"><Table><TableHeader><TableRow><TableHead scope="col">زمان</TableHead><TableHead scope="col">رویداد</TableHead><TableHead scope="col">بخش</TableHead><TableHead scope="col">انجام‌دهنده</TableHead><TableHead scope="col"><span className="sr-only">جزئیات</span></TableHead></TableRow></TableHeader><TableBody>{events.data.data.map((event) => <TableRow key={event.id}><TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(event.createdAt)}</TableCell><TableCell className="font-medium">{auditActionLabel(event.action)}</TableCell><TableCell>{auditTargetLabel(event.targetType)}</TableCell><TableCell>{event.actorUserId ? 'کارمند' : 'سامانه'}</TableCell><TableCell><Button aria-label={`مشاهده جزئیات رویداد ${auditActionLabel(event.action)}`} onClick={() => setSelectedEvent(event)} size="sm" variant="ghost"><Eye /> جزئیات</Button></TableCell></TableRow>)}</TableBody></Table></Card>
           <nav aria-label="صفحه‌بندی گزارش دسترسی‌ها" className="flex items-center justify-between gap-3">
             <Button disabled={search.history.length === 0 || events.isFetching} onClick={() => {
               const history = [...search.history];
@@ -143,15 +144,12 @@ function AuditFiltersForm({ initial, onApply }: { readonly initial: Authorizatio
   };
 
   return (
-    <Card><CardContent><form className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]" onSubmit={onSubmit}>
+    <Card><CardContent><form className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]" onSubmit={onSubmit}>
       <AuditField label="عملیات">
-        <Input dir="ltr" onChange={(event) => setFilters((value) => ({ ...value, action: event.target.value }))} placeholder="staff.roles_replaced" value={filters.action} />
+        <Select onValueChange={(action) => setFilters((value) => ({ ...value, action: action === 'all' ? '' : action }))} value={filters.action || 'all'}><SelectTrigger aria-label="نوع رویداد"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">همه رویدادها</SelectItem>{authorizationActionOptions.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select>
       </AuditField>
-      <AuditField label="نوع هدف">
-        <Input dir="ltr" onChange={(event) => setFilters((value) => ({ ...value, targetType: event.target.value }))} placeholder="staff" value={filters.targetType} />
-      </AuditField>
-      <AuditField label="شناسه هدف">
-        <Input dir="ltr" onChange={(event) => setFilters((value) => ({ ...value, targetId: event.target.value }))} value={filters.targetId} />
+      <AuditField label="بخش">
+        <Select onValueChange={(targetType) => setFilters((value) => ({ ...value, targetType: targetType === 'all' ? '' : targetType }))} value={filters.targetType || 'all'}><SelectTrigger aria-label="بخش رویداد"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">همه بخش‌ها</SelectItem><SelectItem value="staff_user">کارکنان</SelectItem></SelectContent></Select>
       </AuditField>
       <div className="flex items-end gap-2">
         <Button type="submit">اعمال فیلتر</Button>
@@ -170,7 +168,8 @@ function AuditDetail({ event, onClose }: { readonly event?: AuthorizationAuditEv
     <Dialog open={Boolean(event)} onOpenChange={(open) => { if (!open) onClose(); }}><DialogContent className="max-w-2xl" dir="rtl"><DialogHeader><DialogTitle>جزئیات رویداد</DialogTitle><DialogDescription>داده‌ها فقط برای پیگیری و بررسی نمایش داده می‌شوند.</DialogDescription></DialogHeader>{event ? <><dl className="grid gap-x-6 gap-y-4 text-sm md:grid-cols-2">
         <DetailItem label="شناسه رویداد"><bdi dir="ltr">{event.id}</bdi></DetailItem>
         <DetailItem label="زمان">{formatDate(event.createdAt)}</DetailItem>
-        <DetailItem label="عملیات"><bdi dir="ltr">{event.action}</bdi></DetailItem>
+        <DetailItem label="رویداد">{auditActionLabel(event.action)}</DetailItem>
+        <DetailItem label="کد رویداد"><bdi dir="ltr">{event.action}</bdi></DetailItem>
         <DetailItem label="شناسه درخواست">{event.requestId ? <bdi dir="ltr">{event.requestId}</bdi> : 'ثبت نشده'}</DetailItem>
         <DetailItem label="نوع هدف"><bdi dir="ltr">{event.targetType}</bdi></DetailItem>
         <DetailItem label="شناسه هدف"><bdi dir="ltr">{event.targetId}</bdi></DetailItem>
@@ -188,7 +187,7 @@ function DetailItem({ children, label }: { readonly children: React.ReactNode; r
   return <div className="grid gap-1"><dt className="text-muted-foreground">{label}</dt><dd className="break-all font-medium">{children}</dd></div>;
 }
 
-function CompactValue({ label, value, emptyLabel = '—' }: { readonly label: string; readonly value: string | null; readonly emptyLabel?: string }) { return <div className="min-w-0"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 truncate" title={value ?? undefined}><bdi dir="ltr">{value ?? emptyLabel}</bdi></p></div>; }
+function CompactText({ label, value }: { readonly label: string; readonly value: string }) { return <div className="min-w-0"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 truncate">{value}</p></div>; }
 
 function AuditLoading() {
   return <Card aria-busy="true" aria-label="در حال دریافت گزارش دسترسی‌ها" className="space-y-2 p-4">{Array.from({ length: 5 }, (_, index) => <Skeleton className="h-12" key={index} />)}</Card>;

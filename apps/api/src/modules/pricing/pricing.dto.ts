@@ -31,10 +31,8 @@ export class CurrentPriceResponseDto {
     example: 'USD',
     maxLength: 3,
     minLength: 3,
-    nullable: true,
-    type: String,
   })
-  currency!: string | null;
+  currency!: string;
 
   @ApiProperty({ enum: ['priced', 'price_on_request'] })
   state!: 'priced' | 'price_on_request';

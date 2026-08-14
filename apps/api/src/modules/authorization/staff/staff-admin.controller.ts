@@ -31,6 +31,7 @@ import { AdminApi, RequirePermissions } from '../enforcement';
 import { PermissionKey } from '../data';
 import {
   CreateStaffDto,
+  CreateStaffByEmailDto,
   ReplaceStaffRolesDto,
   RoleResponseDto,
   StaffPageResponseDto,
@@ -100,6 +101,33 @@ export class StaffAdminController {
     @Req() request: Request,
   ): Promise<StaffProfileResponse> {
     return this.staff.create(this.context(request), dto.userId, dto.roleKeys);
+  }
+
+  @Post('staff/by-email')
+  @ApiOperation({ summary: 'Promote an existing user to staff by email' })
+  @ApiCsrfProtected()
+  @RequirePermissions(
+    PermissionKey.STAFF_CREATE,
+    PermissionKey.STAFF_ASSIGN_ROLES,
+  )
+  @ApiConflictResponse({ description: 'The user is already staff.' })
+  @ApiNotFoundResponse({
+    description: 'The user or a requested role was not found.',
+  })
+  @ApiForbiddenResponse({
+    description: 'The actor cannot assign the requested role.',
+  })
+  @ApiServiceUnavailableResponse()
+  @ApiCreatedResponse({ type: StaffProfileResponseDto })
+  async createByEmail(
+    @Body() dto: CreateStaffByEmailDto,
+    @Req() request: Request,
+  ): Promise<StaffProfileResponse> {
+    return this.staff.createByEmail(
+      this.context(request),
+      dto.email,
+      dto.roleKeys,
+    );
   }
 
   @Put('staff/:userId/roles')

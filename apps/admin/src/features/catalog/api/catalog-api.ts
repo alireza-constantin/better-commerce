@@ -83,7 +83,7 @@ export async function replaceProductConfiguration({
   readonly productId: string;
   readonly input: ProductConfigurationInput;
 }): Promise<AdminProduct> {
-  return executeWithCsrf((csrfToken) =>
+  await executeWithCsrf((csrfToken) =>
     executeApiRequest(() =>
       adminApiClient.PUT('/api/v1/admin/catalog/products/{productId}/configuration', {
         body: input,
@@ -91,6 +91,7 @@ export async function replaceProductConfiguration({
       }),
     ),
   );
+  return getAdminProduct(productId);
 }
 
 export async function transitionAdminProduct({

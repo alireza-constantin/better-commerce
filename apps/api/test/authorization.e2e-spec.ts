@@ -130,10 +130,13 @@ describe('Authorization full-stack security contracts', () => {
     const createCsrf = await csrf(administrator);
 
     await administrator
-      .post('/api/v1/admin/staff')
+      .post('/api/v1/admin/staff/by-email')
       .set('Origin', ORIGIN)
       .set('x-csrf-token', createCsrf)
-      .send({ userId: target.id, roleKeys: [RoleKey.SUPPORT_AGENT] })
+      .send({
+        email: 'support@example.test',
+        roleKeys: [RoleKey.SUPPORT_AGENT],
+      })
       .expect(201)
       .expect((response) => {
         expect(response.body).toMatchObject({

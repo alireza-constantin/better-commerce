@@ -202,7 +202,7 @@ export class PricingService implements PricingModuleContract {
           variantId,
           priceVersionId: null,
           amount: null,
-          currency: null,
+          currency: this.currency,
           state: 'price_on_request' as const,
         };
       return {

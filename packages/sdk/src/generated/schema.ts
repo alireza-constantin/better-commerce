@@ -260,6 +260,23 @@ export interface paths {
             readonly cookie?: never;
         };
         readonly get?: never;
+        /** Atomically replace Product variants and operational state */
+        readonly put: operations["VariantConfiguration_replace"];
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/catalog/products/{productId}/configuration-legacy": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
         /**
          * Atomically replace allowed Product configuration
          * @description Requires admin.access and catalog.products.write; catalog.products.archive is also required when restoring or archiving an existing Variant.
@@ -412,22 +429,6 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/v1/admin/inventory/variants/current": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put?: never;
-        readonly post: operations["InventoryAdmin_current"];
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/api/v1/admin/inventory/variants/{variantId}/configure": {
         readonly parameters: {
             readonly query?: never;
@@ -438,6 +439,22 @@ export interface paths {
         readonly get?: never;
         readonly put?: never;
         readonly post: operations["InventoryAdmin_configure"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/inventory/variants/current": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: operations["InventoryAdmin_list"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -765,6 +782,23 @@ export interface paths {
         readonly put?: never;
         /** Suspend administrative access for a staff profile */
         readonly post: operations["StaffAdmin_suspend"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/staff/by-email": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Promote an existing user to staff by email */
+        readonly post: operations["StaffAdmin_createByEmail"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -1379,6 +1413,7 @@ export interface components {
             readonly fulfillmentClassification: "physical" | "digital" | "service";
             /** Format: uuid */
             readonly id: string;
+            readonly mediaIds: readonly string[];
             readonly position: number;
             readonly selectionValueIds: readonly string[];
             readonly sku: string | null;
@@ -1482,10 +1517,9 @@ export interface components {
             readonly fulfillmentClassification: "physical" | "digital" | "service";
             /** Format: uuid */
             readonly id?: string;
+            readonly mediaIds?: readonly string[];
             readonly position: number;
             readonly selectionValueIds: readonly string[];
-            /** Format: uuid */
-            readonly mediaIds?: readonly string[];
             readonly sku?: Record<string, never> | null;
             /** @enum {string} */
             readonly status: "active" | "archived";
@@ -1543,6 +1577,11 @@ export interface components {
             readonly summary?: Record<string, never> | null;
             readonly title: string;
         };
+        readonly CreateStaffByEmailDto: {
+            /** Format: email */
+            readonly email: string;
+            readonly roleKeys: readonly string[];
+        };
         readonly CreateStaffDto: {
             readonly roleKeys: readonly string[];
             /** Format: uuid */
@@ -1562,30 +1601,31 @@ export interface components {
             /** @description Session-bound value to send as x-csrf-token on state-changing requests. */
             readonly csrfToken: string;
         };
+        readonly CurrentInventoryQueryDto: {
+            readonly variantIds: readonly string[];
+        };
+        readonly CurrentInventoryResponseDto: {
+            readonly available?: number | null;
+            readonly onHand?: number | null;
+            readonly reservedQuantity?: number | null;
+            /** @enum {string} */
+            readonly state: "not_configured" | "untracked" | "tracked";
+            /** @enum {string|null} */
+            readonly trackingMode?: "tracked" | "untracked" | null;
+            /** Format: uuid */
+            readonly variantId: string;
+        };
         readonly CurrentPriceResponseDto: {
             /** @example 120.00 */
             readonly amount: string | null;
             /** @example USD */
-            readonly currency: string | null;
+            readonly currency: string;
             /** Format: uuid */
             readonly priceVersionId: string | null;
             /** @enum {string} */
             readonly state: "priced" | "price_on_request";
             /** Format: uuid */
             readonly variantId: string;
-        };
-        readonly CurrentInventoryQueryDto: {
-            readonly variantIds: readonly string[];
-        };
-        readonly CurrentInventoryResponseDto: {
-            /** Format: uuid */
-            readonly variantId: string;
-            /** @enum {string} */
-            readonly state: "not_configured" | "untracked" | "tracked";
-            readonly trackingMode: "tracked" | "untracked" | null;
-            readonly onHand: number | null;
-            readonly reservedQuantity: number | null;
-            readonly available: number | null;
         };
         readonly DeliveryAddressDto: {
             readonly city: string;
@@ -1862,12 +1902,11 @@ export interface components {
             readonly fulfillmentClassification: "physical" | "digital" | "service";
             /** Format: uuid */
             readonly id: string;
+            readonly mediaIds: readonly string[];
             readonly position: number;
             readonly price: components["schemas"]["PublicMoneyResponseDto"] | null;
             readonly purchasable: boolean;
             readonly selectionValueIds: readonly string[];
-            /** Format: uuid */
-            readonly mediaIds: readonly string[];
             readonly sku: string | null;
             readonly title: string | null;
         };
@@ -1990,23 +2029,10 @@ export interface components {
         };
         readonly ReplaceConfigurationDto: {
             readonly expectedVersion: number;
-            readonly options: readonly components["schemas"]["ConfigurationOptionDto"][];
-            readonly variants: readonly components["schemas"]["ConfigurationVariantDto"][];
-            readonly prices?: readonly components["schemas"]["VariantPriceChangeDto"][];
             readonly inventory?: readonly components["schemas"]["VariantInventoryChangeDto"][];
-        };
-        readonly VariantPriceChangeDto: {
-            /** Format: uuid */
-            readonly variantId: string;
-            readonly amount?: string | null;
-        };
-        readonly VariantInventoryChangeDto: {
-            /** Format: uuid */
-            readonly variantId: string;
-            readonly trackingMode: "not_configured" | "tracked" | "untracked";
-            readonly currentOnHand?: number | null;
-            readonly reasonCode?: string | null;
-            readonly note?: string | null;
+            readonly options: readonly components["schemas"]["ConfigurationOptionDto"][];
+            readonly prices?: readonly components["schemas"]["VariantPriceChangeDto"][];
+            readonly variants: readonly components["schemas"]["ConfigurationVariantDto"][];
         };
         readonly ReplaceProductCategoriesDto: {
             readonly categoryIds: readonly string[];
@@ -2159,6 +2185,21 @@ export interface components {
             readonly expectedVersion: number;
             /** Format: binary */
             readonly file: string;
+        };
+        readonly VariantInventoryChangeDto: {
+            readonly currentOnHand?: number | null;
+            readonly note?: Record<string, never> | null;
+            readonly reasonCode?: Record<string, never> | null;
+            /** @enum {string} */
+            readonly trackingMode: "not_configured" | "tracked" | "untracked";
+            /** Format: uuid */
+            readonly variantId: string;
+        };
+        readonly VariantPriceChangeDto: {
+            /** @example 120.00 */
+            readonly amount?: Record<string, never> | null;
+            /** Format: uuid */
+            readonly variantId: string;
         };
     };
     responses: never;
@@ -3422,6 +3463,76 @@ export interface operations {
             };
         };
     };
+    readonly VariantConfiguration_replace: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly productId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["ReplaceConfigurationDto"];
+            };
+        };
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            readonly 409: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
     readonly CatalogAdmin_configuration: {
         readonly parameters: {
             readonly query?: never;
@@ -4022,33 +4133,6 @@ export interface operations {
             };
         };
     };
-    readonly InventoryAdmin_current: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header: {
-                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
-                readonly "x-csrf-token": string;
-            };
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody: {
-            readonly content: {
-                readonly "application/json": components["schemas"]["CurrentInventoryQueryDto"];
-            };
-        };
-        readonly responses: {
-            readonly 201: {
-                headers: {
-                    readonly "x-request-id"?: string;
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/json": readonly components["schemas"]["CurrentInventoryResponseDto"][];
-                };
-            };
-        };
-    };
     readonly InventoryAdmin_adjust: {
         readonly parameters: {
             readonly query?: never;
@@ -4138,6 +4222,67 @@ export interface operations {
                 };
                 content: {
                     readonly "application/json": components["schemas"]["InventoryResponseDto"];
+                };
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly InventoryAdmin_list: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CurrentInventoryQueryDto"];
+            };
+        };
+        readonly responses: {
+            readonly 201: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": readonly components["schemas"]["CurrentInventoryResponseDto"][];
                 };
             };
             /** @description A valid server-side session is required. */
@@ -5747,6 +5892,103 @@ export interface operations {
             };
             /** @description The last active owner cannot be suspended. */
             readonly 409: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly StaffAdmin_createByEmail: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CreateStaffByEmailDto"];
+            };
+        };
+        readonly responses: {
+            readonly 201: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["StaffProfileResponseDto"];
+                };
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /**
+             * @description The actor cannot assign the requested role.
+             *
+             *     The session-bound CSRF token is missing or invalid.
+             */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The user or a requested role was not found. */
+            readonly 404: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The user is already staff. */
+            readonly 409: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            readonly 503: {
                 headers: {
                     /** @description Request correlation identifier. */
                     readonly "x-request-id"?: string;

@@ -6,7 +6,6 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Search,
-  X,
 } from 'lucide-react';
 import { type ReactNode, useDeferredValue, useEffect, useId, useRef, useState } from 'react';
 import type {
@@ -21,10 +20,10 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  ModalLayer,
   Skeleton,
   StatusBadge,
 } from '@/components/ui';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { adminRoutes } from '@/app/routes/admin-route-contract';
 import { adminProductsListQueryOptions } from '@/features/catalog/api';
 import { cn } from '@/lib/utils';
@@ -184,25 +183,13 @@ export function AdminShell({
         </main>
       </div>
 
-      <ModalLayer
-        className="h-full max-w-sm rounded-none sm:rounded-s-2xl"
-        onClose={() => setIsMobileNavigationOpen(false)}
-        open={isMobileNavigationOpen}
-        placement="side"
-        title="منوی مدیریت"
-      >
-        <div className="flex min-h-full flex-col">
-          <div className="flex min-h-16 items-center justify-between border-b border-border px-4">
-            <p className="font-semibold">منوی مدیریت</p>
-            <Button
-              aria-label="بستن منوی مدیریت"
-              onClick={() => setIsMobileNavigationOpen(false)}
-              size="icon"
-              variant="ghost"
-            >
-              <X />
-            </Button>
-          </div>
+      <Sheet open={isMobileNavigationOpen} onOpenChange={setIsMobileNavigationOpen}>
+        <SheetContent className="flex w-[min(22rem,88vw)] flex-col gap-0 p-0" dir="rtl" side="right">
+          <SheetHeader className="min-h-16 border-b border-border px-4 py-4 text-start">
+            <SheetTitle>منوی مدیریت</SheetTitle>
+            <SheetDescription className="sr-only">رفتن به بخش‌های پنل مدیریت فروشگاه</SheetDescription>
+          </SheetHeader>
+          <div className="flex min-h-0 flex-1 flex-col">
           <ShellNavigation
             activePath={activePath}
             collapsed={false}
@@ -214,8 +201,9 @@ export function AdminShell({
             logoutAction={logoutAction}
             staff={staff}
           />
-        </div>
-      </ModalLayer>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <SearchDialog
         navigation={navigation}
@@ -404,7 +392,7 @@ function ShellNavigation({
 }) {
   const groupHeadingPrefix = useId();
   return (
-    <nav aria-label="ناوبری مدیریت" className="flex-1 overflow-y-auto px-3 py-4">
+    <nav aria-label="ناوبری مدیریت" className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
       <div className="space-y-5">
         {navigation.map((group, groupIndex) => {
           const headingId = `${groupHeadingPrefix}-${groupIndex}`;

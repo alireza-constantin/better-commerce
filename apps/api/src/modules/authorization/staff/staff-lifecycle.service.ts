@@ -12,7 +12,10 @@ import {
   type IdentityLockResult,
   type IdentityReference,
 } from '../../identity';
-import { DatabaseTransactionRunner } from '../../../platform/database';
+import {
+  DatabaseTransactionRunner,
+  type DatabaseTransactionContext,
+} from '../../../platform/database';
 import {
   AuditActionKey,
   AuthorizationPersistenceService,
@@ -118,13 +121,45 @@ export class StaffLifecycleService {
     targetUserId: string,
     requestedRoleKeys: readonly string[],
   ): Promise<StaffProfileResponse> {
+    return this.createWithIdentityLock(
+      context,
+      requestedRoleKeys,
+      (transaction) =>
+        this.identities.lockActiveById(transaction, targetUserId),
+    );
+  }
+
+  async createByEmail(
+    context: StaffRequestContext,
+    targetEmail: string,
+    requestedRoleKeys: readonly string[],
+  ): Promise<StaffProfileResponse> {
+    const normalizedEmail = targetEmail.trim().normalize('NFKC').toLowerCase();
+    return this.createWithIdentityLock(
+      context,
+      requestedRoleKeys,
+      (transaction) =>
+        this.identities.lockActiveByNormalizedEmail(
+          transaction,
+          normalizedEmail,
+        ),
+    );
+  }
+
+  private createWithIdentityLock(
+    context: StaffRequestContext,
+    requestedRoleKeys: readonly string[],
+    lockIdentity: (
+      transaction: DatabaseTransactionContext,
+    ) => Promise<IdentityLockResult>,
+  ): Promise<StaffProfileResponse> {
     return this.transactions.run(async (transaction) => {
       const target = this.requireActiveIdentity(
-        await this.identities.lockActiveById(transaction, targetUserId),
+        await lockIdentity(transaction),
         'User was not found',
       );
       const existing = await this.persistence.findProfileWithRoles(
-        targetUserId,
+        target.id,
         transaction,
       );
       if (existing) throw new ConflictException('The user is already staff');

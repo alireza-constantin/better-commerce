@@ -293,7 +293,7 @@ describe('Catalog HTTP contracts', () => {
             state: 'price_on_request',
             priceVersionId: null,
             amount: null,
-            currency: null,
+            currency: 'USD',
           }),
         ]);
       });

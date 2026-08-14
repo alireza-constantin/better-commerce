@@ -8,7 +8,7 @@ import { executeWithCsrf } from '@/api/csrf';
 export type StaffPage = BetterCommerceApiSchemas['StaffPageResponseDto'];
 export type StaffProfile = BetterCommerceApiSchemas['StaffProfileResponseDto'];
 export type StaffRole = BetterCommerceApiSchemas['RoleResponseDto'];
-export type CreateStaffInput = BetterCommerceApiSchemas['CreateStaffDto'];
+export type CreateStaffInput = BetterCommerceApiSchemas['CreateStaffByEmailDto'];
 
 export async function getStaff(cursor?: string, signal?: AbortSignal): Promise<StaffPage> {
   return executeApiRequest(() =>
@@ -23,7 +23,7 @@ export async function getRoles(signal?: AbortSignal): Promise<readonly StaffRole
 }
 
 export async function createStaff(input: CreateStaffInput): Promise<StaffProfile> {
-  return withCsrf((csrfToken) => adminApiClient.POST('/api/v1/admin/staff', {
+  return withCsrf((csrfToken) => adminApiClient.POST('/api/v1/admin/staff/by-email', {
     body: input, params: { header: { 'x-csrf-token': csrfToken } },
   }));
 }
