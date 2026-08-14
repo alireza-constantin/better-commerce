@@ -1,6 +1,6 @@
 import { AlertTriangle, Check, ClipboardCheck, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, ModalLayer, PageHeader } from '@/components/ui';
 import {
   formatExactMoney,
   formatOrderDate,
@@ -43,17 +43,14 @@ export function OrderDetail({
 }: OrderDetailProps) {
   return (
     <article className="mx-auto max-w-6xl space-y-6" dir="rtl">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          {onBack ? <Button className="mb-4" onClick={onBack} size="sm" variant="ghost">بازگشت به سفارش‌ها</Button> : null}
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-[-0.025em]">سفارش <bdi dir="ltr">#{order.orderNumber}</bdi></h1>
-            <OrderStatusBadge label={orderStatusLabel(order.status)} status={order.status} />
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">ثبت‌شده در {formatOrderDate(order.submittedAt)}</p>
-        </div>
-        <p className="text-xl font-semibold"><bdi dir="ltr">{formatExactMoney(order.grandTotal, order.currency)}</bdi></p>
-      </header>
+      {onBack ? <Button onClick={onBack} size="sm" variant="ghost">بازگشت به سفارش‌ها</Button> : null}
+      <PageHeader
+        actions={<p className="text-xl font-semibold" dir="ltr">{formatExactMoney(order.grandTotal, order.currency)}</p>}
+        description={`ثبت‌شده در ${formatOrderDate(order.submittedAt)}`}
+        eyebrow={<OrderStatusBadge label={orderStatusLabel(order.status)} status={order.status} />}
+        title={<span>سفارش <bdi dir="ltr">#{order.orderNumber}</bdi></span>}
+      />
+      <OrderTimeline order={order} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,0.8fr)]">
         <div className="space-y-6">
@@ -66,6 +63,26 @@ export function OrderDetail({
         </div>
       </div>
     </article>
+  );
+}
+
+function OrderTimeline({ order }: { readonly order: AdminOrder }) {
+  const steps = [
+    { label: 'ثبت سفارش', complete: true, time: order.submittedAt },
+    { label: 'پذیرش', complete: Boolean(order.acceptedAt), time: order.acceptedAt },
+    { label: order.status === 'cancelled' ? 'لغوشده' : 'تکمیل', complete: order.status === 'cancelled' || order.status === 'completed', time: order.cancelledAt },
+  ];
+  return (
+    <section aria-label="روند سفارش" className="rounded-2xl border border-border bg-card p-4 shadow-xs">
+      <ol className="grid gap-3 sm:grid-cols-3">
+        {steps.map((step, index) => (
+          <li className="flex items-start gap-3" key={step.label}>
+            <span className={step.complete ? 'flex size-7 shrink-0 items-center justify-center rounded-full bg-success text-xs text-white' : 'flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-muted-foreground'}>{index + 1}</span>
+            <div><p className="text-sm font-medium">{step.label}</p><p className="mt-0.5 text-xs text-muted-foreground">{step.complete ? formatOrderDate(step.time) : 'در انتظار'}</p></div>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 
@@ -93,7 +110,7 @@ function OrderActionPanel({ actions, availability }: { readonly actions?: OrderA
   const available = ['payment', 'accept', 'reject'].some((action) => actionIsAvailable(action as 'payment' | 'accept' | 'reject'));
   if (!available) return null;
 
-  return <section aria-labelledby="order-actions-heading" className="rounded-lg border border-border bg-card px-5 py-4"><h2 className="font-semibold" id="order-actions-heading">عملیات سفارش</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">هر عملیات پس از تأیید ثبت می‌شود و ممکن است قابل بازگشت نباشد.</p><div className="mt-4 flex flex-wrap gap-2">{actionIsAvailable('payment') ? <Button onClick={() => setOpenAction('payment')} size="sm" variant="outline"><ClipboardCheck aria-hidden="true" /> تأیید پرداخت</Button> : null}{actionIsAvailable('accept') ? <Button onClick={() => setOpenAction('accept')} size="sm" variant="outline"><Check aria-hidden="true" /> پذیرش سفارش</Button> : null}{actionIsAvailable('reject') ? <Button className="text-destructive hover:text-destructive" onClick={() => setOpenAction('reject')} size="sm" variant="outline"><X aria-hidden="true" /> رد سفارش</Button> : null}</div>{openAction ? <InlineOrderAction action={openAction} isSubmitting={isSubmitting} onCancel={() => setOpenAction(undefined)} onSubmit={async (input) => { if (openAction === 'payment') await actions?.onConfirmPayment?.(input); if (openAction === 'accept') await actions?.onAccept?.({ note: input.note }); if (openAction === 'reject') await actions?.onReject?.({ note: input.note }); setOpenAction(undefined); }} /> : null}</section>;
+  return <section aria-labelledby="order-actions-heading" className="rounded-2xl border border-border bg-card px-5 py-4"><h2 className="font-semibold" id="order-actions-heading">عملیات سفارش</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">هر عملیات پس از تأیید ثبت می‌شود و ممکن است قابل بازگشت نباشد.</p><div className="mt-4 flex flex-wrap gap-2">{actionIsAvailable('payment') ? <Button onClick={() => setOpenAction('payment')} size="sm" variant="outline"><ClipboardCheck aria-hidden="true" /> تأیید پرداخت</Button> : null}{actionIsAvailable('accept') ? <Button onClick={() => setOpenAction('accept')} size="sm" variant="outline"><Check aria-hidden="true" /> پذیرش سفارش</Button> : null}{actionIsAvailable('reject') ? <Button className="text-destructive hover:text-destructive" onClick={() => setOpenAction('reject')} size="sm" variant="outline"><X aria-hidden="true" /> رد سفارش</Button> : null}</div>{openAction ? <ModalLayer onClose={() => setOpenAction(undefined)} open title="بررسی عملیات سفارش"><div className="p-5"><h2 className="text-lg font-semibold">بررسی عملیات سفارش</h2><InlineOrderAction action={openAction} isSubmitting={isSubmitting} onCancel={() => setOpenAction(undefined)} onSubmit={async (input) => { if (openAction === 'payment') await actions?.onConfirmPayment?.(input); if (openAction === 'accept') await actions?.onAccept?.({ note: input.note }); if (openAction === 'reject') await actions?.onReject?.({ note: input.note }); setOpenAction(undefined); }} /></div></ModalLayer> : null}</section>;
 }
 
 function InlineOrderAction({ action, isSubmitting, onCancel, onSubmit }: { readonly action: 'payment' | 'accept' | 'reject'; readonly isSubmitting: boolean; readonly onCancel: () => void; readonly onSubmit: (input: { readonly note?: string; readonly reference?: string }) => Promise<void> }) {
