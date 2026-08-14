@@ -21,6 +21,14 @@ export {
 } from './card';
 export { Checkbox } from './checkbox';
 export {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './dialog';
+export {
   Empty,
   EmptyContent,
   EmptyDescription,

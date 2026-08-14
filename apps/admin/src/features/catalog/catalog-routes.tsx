@@ -29,6 +29,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
   Button,
   Card,
   CardContent,
@@ -37,6 +38,12 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -47,7 +54,6 @@ import {
   FieldGroup,
   FieldLabel,
   Input,
-  ModalLayer,
   Select,
   SelectContent,
   SelectGroup,
@@ -1088,10 +1094,18 @@ function ProductMediaEditor({
     product.media.map((item) => ({ ...item })),
   );
   const [selectedFile, setSelectedFile] = useState<File>();
+  const [selectedMediaId, setSelectedMediaId] = useState(
+    product.media[0]?.id,
+  );
   const [uploadAltText, setUploadAltText] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const error = upload.error ?? replace.error ?? remove.error;
   const busy = upload.isPending || replace.isPending || remove.isPending;
+  const selectedIndex = Math.max(
+    0,
+    items.findIndex((item) => item.id === selectedMediaId),
+  );
+  const selectedItem = items[selectedIndex];
   const move = (index: number, direction: -1 | 1) =>
     setItems((current) => {
       const target = index + direction;
@@ -1101,101 +1115,132 @@ function ProductMediaEditor({
       return next.map((item, position) => ({ ...item, position }));
     });
   return (
-    <section className="rounded-2xl border border-border bg-card p-5 shadow-xs">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <Card>
+      <CardHeader className="flex-row items-start justify-between gap-4">
         <div>
-        <h2 className="text-lg font-semibold">کتابخانه تصاویر</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          تصویر اول، تصویر اصلی کالا است. برای دسترس‌پذیری هر تصویر متن جایگزین
-          بنویسید.
-        </p>
+          <CardTitle>تصاویر کالا</CardTitle>
+          <CardDescription>
+            تصویر اصلی را انتخاب کنید، ترتیب گالری را بچینید و متن جایگزین بنویسید.
+          </CardDescription>
         </div>
-        <StatusBadge tone={items.length >= 20 ? 'warning' : 'neutral'}>{items.length.toLocaleString('fa-IR')} از ۲۰ تصویر</StatusBadge>
-      </div>
+        <StatusBadge tone={items.length >= 20 ? 'warning' : 'neutral'}>
+          {items.length.toLocaleString('fa-IR')} از ۲۰
+        </StatusBadge>
+      </CardHeader>
       {error ? <CatalogProblem error={error} /> : null}
-      {items.length ? (
-        <ol className="catalog-media-grid">
-          {items.map((item, index) => (
-            <li key={item.id}>
-              {index === 0 ? <span className="absolute m-2 rounded-full bg-primary px-2 py-1 text-xs text-primary-foreground">تصویر اصلی</span> : null}
-              <img
-                alt={item.altText}
-                height={item.height}
-                loading="lazy"
-                src={item.url}
-                width={item.width}
-              />
-              <div className="space-y-2 p-3">
-                <Field label="متن جایگزین">
-                  <input
-                    className="catalog-input"
+      <CardContent className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0">
+          {selectedItem ? (
+            <div className="overflow-hidden rounded-lg bg-muted ring-1 ring-foreground/10">
+              <div className="relative aspect-[4/3] bg-muted">
+                <img
+                  alt={selectedItem.altText}
+                  className="size-full object-contain"
+                  height={selectedItem.height}
+                  src={selectedItem.url}
+                  width={selectedItem.width}
+                />
+                {selectedIndex === 0 ? (
+                  <StatusBadge className="absolute end-3 top-3" tone="success">
+                    تصویر اصلی
+                  </StatusBadge>
+                ) : null}
+              </div>
+              <div className="grid gap-3 bg-card p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+                <FormField>
+                  <FieldLabel htmlFor={`media-alt-${selectedItem.id}`}>
+                    متن جایگزین
+                  </FieldLabel>
+                  <Input
                     disabled={!canWrite || busy}
+                    id={`media-alt-${selectedItem.id}`}
                     maxLength={300}
                     onChange={(event) =>
                       setItems((current) =>
                         current.map((entry) =>
-                          entry.id === item.id
+                          entry.id === selectedItem.id
                             ? { ...entry, altText: event.target.value }
                             : entry,
                         ),
                       )
                     }
-                    value={item.altText}
+                    value={selectedItem.altText}
                   />
-                </Field>
+                </FormField>
                 {canWrite ? (
-                  <div className="flex flex-wrap gap-1">
-                    <Button
-                      aria-label="انتقال تصویر به بالا"
-                      disabled={busy || index === 0}
-                      onClick={() => move(index, -1)}
-                      size="sm"
-                      variant="outline"
-                    >
+                  <div className="flex items-center gap-1">
+                    <Button aria-label="انتقال تصویر به ابتدا" disabled={busy || selectedIndex === 0} onClick={() => move(selectedIndex, -1)} size="icon" type="button" variant="outline">
                       <ArrowUp aria-hidden="true" />
                     </Button>
-                    <Button
-                      aria-label="انتقال تصویر به پایین"
-                      disabled={busy || index === items.length - 1}
-                      onClick={() => move(index, 1)}
-                      size="sm"
-                      variant="outline"
-                    >
+                    <Button aria-label="انتقال تصویر به انتها" disabled={busy || selectedIndex === items.length - 1} onClick={() => move(selectedIndex, 1)} size="icon" type="button" variant="outline">
                       <ArrowDown aria-hidden="true" />
                     </Button>
-                    <Button
-                      className="text-destructive"
-                      disabled={busy}
-                      onClick={() =>
-                        void remove
-                          .mutateAsync({
-                            expectedVersion: product.version,
-                            mediaId: item.id,
-                            productId: product.id,
-                          })
-                          .then(onChanged)
-                          .catch(() => undefined)
-                      }
-                      size="sm"
-                      variant="outline"
-                    >
-                      <Trash2 aria-hidden="true" /> حذف
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button aria-label="حذف تصویر" disabled={busy} size="icon" type="button" variant="ghost">
+                          <Trash2 aria-hidden="true" className="text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>این تصویر حذف شود؟</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            تصویر از گالری کالا و همه گونه‌های مرتبط حذف می‌شود. این کار قابل بازگشت نیست.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>انصراف</AlertDialogCancel>
+                          <AlertDialogAction
+                            disabled={busy}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              void remove.mutateAsync({ expectedVersion: product.version, mediaId: selectedItem.id, productId: product.id }).then(async () => {
+                                setSelectedMediaId(items.find((item) => item.id !== selectedItem.id)?.id);
+                                await onChanged();
+                              }).catch(() => undefined);
+                            }}
+                          >
+                            حذف تصویر
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 ) : null}
               </div>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <p className="mt-5 rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          هنوز تصویری برای این کالا ثبت نشده است.
-        </p>
-      )}
-      {canWrite ? (
-        <div className="mt-5 flex flex-wrap items-end justify-between gap-3 border-t border-border pt-5">
+            </div>
+          ) : (
+            <Empty className="min-h-80 border border-dashed">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><ImagePlus aria-hidden="true" /></EmptyMedia>
+                <EmptyTitle>هنوز تصویری ثبت نشده است</EmptyTitle>
+                <EmptyDescription>اولین تصویر به‌عنوان تصویر اصلی کالا نمایش داده می‌شود.</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          )}
+          {items.length ? (
+            <ol aria-label="گالری تصاویر کالا" className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+              {items.map((item, index) => (
+                <li key={item.id}>
+                  <button
+                    aria-label={`انتخاب تصویر ${index + 1}`}
+                    aria-pressed={item.id === selectedItem?.id}
+                    className="relative aspect-square w-full overflow-hidden rounded-md bg-muted outline-none ring-1 ring-foreground/10 focus-visible:ring-2 focus-visible:ring-ring data-[selected=true]:ring-2 data-[selected=true]:ring-primary"
+                    data-selected={item.id === selectedItem?.id}
+                    onClick={() => setSelectedMediaId(item.id)}
+                    type="button"
+                  >
+                    <img alt="" className="size-full object-cover" height={96} loading="lazy" src={item.url} width={96} />
+                    <span className="absolute bottom-1 end-1 rounded bg-background/90 px-1 text-[10px]">{index + 1}</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          ) : null}
+        </div>
+        {canWrite ? (
           <form
-            className="grid w-full gap-4 lg:grid-cols-[minmax(16rem,1fr)_minmax(14rem,1fr)_auto] lg:items-end"
+            className="flex flex-col gap-4 rounded-lg bg-muted/45 p-4 ring-1 ring-foreground/10"
             onDragEnter={() => setDragActive(true)}
             onDragLeave={() => setDragActive(false)}
             onDragOver={(event) => event.preventDefault()}
@@ -1223,7 +1268,8 @@ function ProductMediaEditor({
                 .catch(() => undefined);
             }}
           >
-            <label className={dragActive ? 'flex min-h-24 cursor-pointer flex-col justify-center rounded-xl border-2 border-dashed border-primary bg-primary/5 p-4 text-sm' : 'flex min-h-24 cursor-pointer flex-col justify-center rounded-xl border-2 border-dashed border-border p-4 text-sm hover:border-primary/40'}>
+            <label className={dragActive ? 'flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/5 p-4 text-center text-sm' : 'flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-card p-4 text-center text-sm hover:border-primary/40'}>
+              <ImagePlus aria-hidden="true" className="mb-3 size-6 text-muted-foreground" />
               <span className="font-medium">تصویر را اینجا رها کنید یا انتخاب کنید</span>
               <span className="mt-1 text-xs text-muted-foreground">JPEG، PNG یا WebP تا ۱۰ مگابایت</span>
               {selectedFile ? <span className="mt-2 text-xs text-primary" dir="ltr">{selectedFile.name} · {(selectedFile.size / 1024 / 1024).toFixed(2)} MB</span> : null}
@@ -1236,14 +1282,18 @@ function ProductMediaEditor({
                 type="file"
               />
             </label>
-            <Field label="متن جایگزین">
-              <input className="catalog-input" maxLength={300} onChange={(event) => setUploadAltText(event.target.value)} value={uploadAltText} />
-            </Field>
-            <Button disabled={busy || items.length >= 20 || !selectedFile} type="submit">
+            <FormField>
+              <FieldLabel htmlFor="new-media-alt">متن جایگزین</FieldLabel>
+              <Input id="new-media-alt" maxLength={300} onChange={(event) => setUploadAltText(event.target.value)} value={uploadAltText} />
+            </FormField>
+            <Button className="w-full" disabled={busy || items.length >= 20 || !selectedFile} type="submit">
               <ImagePlus aria-hidden="true" /> {upload.isPending ? 'در حال بارگذاری…' : 'بارگذاری تصویر'}
             </Button>
           </form>
-          {items.length ? (
+        ) : null}
+      </CardContent>
+      {canWrite && items.length ? (
+        <CardFooter className="justify-end border-t">
             <Button
               disabled={busy}
               onClick={() =>
@@ -1266,10 +1316,9 @@ function ProductMediaEditor({
             >
               <Save aria-hidden="true" /> ذخیره ترتیب و متن‌ها
             </Button>
-          ) : null}
-        </div>
+        </CardFooter>
       ) : null}
-    </section>
+    </Card>
   );
 }
 
@@ -1455,7 +1504,7 @@ function VisualConfigurationEditor({
     } as ProductConfigurationInput);
   return (
     <form
-      className="rounded-lg border border-border bg-card p-5"
+      className="flex flex-col gap-4"
       dir="rtl"
       onSubmit={(event) => {
         event.preventDefault();
@@ -1481,22 +1530,24 @@ function VisualConfigurationEditor({
         void submitDraft().catch(() => undefined);
       }}
     >
-      <h2 className="font-semibold">پیکربندی گونه‌ها</h2>
-      <p className="mt-1 text-sm leading-6 text-muted-foreground">
-        گزینه‌ها را با فیلدهای عادی وارد کنید، ترکیب‌ها را پیش‌نمایش کنید و فقط
-        ترکیب‌هایی را که می‌فروشید ذخیره کنید.
-      </p>
-      <div className="mt-4 space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>گزینه‌های کالا</CardTitle>
+          <CardDescription>
+            ویژگی‌هایی مانند رنگ و اندازه را تعریف کنید؛ سپس گونه‌های موردنیاز را بسازید.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
         {draft.options.map((option, optionIndex) => (
           <fieldset
-            className="rounded-md border border-border p-4"
+            className="rounded-lg bg-muted/35 p-4 ring-1 ring-foreground/10"
             key={option.id}
           >
             <legend className="px-1 text-sm font-medium">
               گزینه {optionIndex + 1}
             </legend>
-            <input
-              className="catalog-input"
+            <Input
+              className="mt-2"
               onChange={(event) =>
                 setDraft((current) => ({
                   ...current,
@@ -1512,8 +1563,7 @@ function VisualConfigurationEditor({
             />
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {option.values.map((value, valueIndex) => (
-                <input
-                  className="catalog-input"
+                <Input
                   key={value.id}
                   onChange={(event) =>
                     setDraft((current) => ({
@@ -1571,8 +1621,8 @@ function VisualConfigurationEditor({
             </Button>
           </fieldset>
         ))}
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
+        </CardContent>
+        <CardFooter className="flex-wrap justify-between gap-2 border-t">
         <Button
           disabled={draft.options.length >= 5}
           onClick={() =>
@@ -1597,235 +1647,37 @@ function VisualConfigurationEditor({
         <Button onClick={generate} type="button" variant="outline">
           ساخت ترکیب‌های انتخاب‌شده
         </Button>
-      </div>
-      <div className="mt-5 overflow-x-auto">
-        <table className="variant-matrix w-full text-sm md:min-w-[62rem]">
-          <thead className="border-b border-border text-right text-muted-foreground">
-            <tr>
-              <th className="pb-2">گونه</th>
-              <th className="pb-2">عنوان</th>
-              <th className="pb-2">قیمت</th>
-              <th className="pb-2">موجودی</th>
-              <th className="pb-2">کد کالا</th>
-              <th className="pb-2">وضعیت</th>
-              <th className="pb-2">تصاویر</th>
-              <th className="pb-2">
-                <span className="sr-only">حذف</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {draft.variants.map((variant, index) => (
-              <tr className="border-b border-border/60" key={variant.id}>
-                <td className="py-3" data-label="گونه">
-                  {variantLabel(variant, draft.options) || 'گونهٔ پیش‌فرض'}
-                </td>
-                <td className="py-3 pe-2" data-label="عنوان">
-                  <input
-                    className="catalog-input"
-                    onChange={(event) =>
-                      updateVariant(index, {
-                        title: event.target.value || null,
-                      })
-                    }
-                    value={variant.title ?? ''}
-                  />
-                </td>
-                <td className="py-3 pe-2" data-label="قیمت">
-                  {canReadPricing ? (
-                    canWritePricing ? (
-                      <input
-                        className="catalog-input"
-                        dir="ltr"
-                        inputMode="decimal"
-                        onChange={(event) =>
-                          setPriceDraft((current) => ({
-                            ...current,
-                            [variant.id]: event.target.value,
-                          }))
-                        }
-                        placeholder="قیمت درخواستی"
-                        value={priceDraft[variant.id] ?? ''}
-                      />
-                    ) : (
-                      <span dir="ltr">
-                        {priceDraft[variant.id] || 'درخواست قیمت'}
-                      </span>
-                    )
-                  ) : (
-                    <span className="text-xs text-muted-foreground">
-                      بدون دسترسی
-                    </span>
-                  )}
-                </td>
-                <td className="py-3 pe-2" data-label="موجودی">
-                  {canReadInventory ? (
-                    canWriteInventory ? (
-                      <div className="space-y-1">
-                        <select
-                          className="catalog-input"
-                          onChange={(event) =>
-                            setInventoryDraft((current) => ({
-                              ...current,
-                              [variant.id]: {
-                                ...(current[variant.id] ?? {
-                                  onHand: '',
-                                  reason: '',
-                                }),
-                                mode: event.target.value as
-                                  'not_configured' | 'tracked' | 'untracked',
-                              },
-                            }))
-                          }
-                          value={
-                            inventoryDraft[variant.id]?.mode ?? 'not_configured'
-                          }
-                        >
-                          <option value="not_configured">تنظیم نشده</option>
-                          <option value="untracked">ردیابی نمی‌شود</option>
-                          <option value="tracked">ردیابی‌شده</option>
-                        </select>
-                        {inventoryDraft[variant.id]?.mode === 'tracked' ? (
-                          <input
-                            className="catalog-input"
-                            inputMode="numeric"
-                            onChange={(event) =>
-                              setInventoryDraft((current) => ({
-                                ...current,
-                                [variant.id]: {
-                                  ...(current[variant.id] ?? {
-                                    mode: 'tracked',
-                                    reason: '',
-                                  }),
-                                  onHand: event.target.value,
-                                },
-                              }))
-                            }
-                            placeholder="موجودی"
-                            value={inventoryDraft[variant.id]?.onHand ?? ''}
-                          />
-                        ) : null}
-                        <input
-                          className="catalog-input"
-                          onChange={(event) =>
-                            setInventoryDraft((current) => ({
-                              ...current,
-                              [variant.id]: {
-                                ...(current[variant.id] ?? {
-                                  mode: 'not_configured',
-                                  onHand: '',
-                                }),
-                                reason: event.target.value,
-                              },
-                            }))
-                          }
-                          placeholder="دلیل تغییر موجودی"
-                          value={inventoryDraft[variant.id]?.reason ?? ''}
-                        />
-                      </div>
-                    ) : (
-                      <span>
-                        {inventoryDraft[variant.id]?.mode === 'untracked'
-                          ? 'ردیابی نمی‌شود'
-                          : inventoryDraft[variant.id]?.mode === 'tracked'
-                            ? inventoryDraft[variant.id]?.onHand
-                            : 'تنظیم نشده'}
-                      </span>
-                    )
-                  ) : (
-                    <span className="text-xs text-muted-foreground">
-                      بدون دسترسی
-                    </span>
-                  )}
-                </td>
-                <td className="py-3 pe-2" data-label="کد کالا">
-                  <input
-                    className="catalog-input"
-                    dir="ltr"
-                    onChange={(event) =>
-                      updateVariant(index, { sku: event.target.value || null })
-                    }
-                    value={variant.sku ?? ''}
-                  />
-                </td>
-                <td className="py-3 pe-2" data-label="وضعیت">
-                  <select
-                    className="catalog-input"
-                    onChange={(event) =>
-                      updateVariant(index, {
-                        status: event.target.value as 'active' | 'archived',
-                      })
-                    }
-                    value={variant.status}
-                  >
-                    <option value="active">فعال</option>
-                    <option value="archived">بایگانی‌شده</option>
-                  </select>
-                </td>
-                <td className="py-3 pe-2" data-label="تصاویر">
-                  <div className="flex flex-wrap gap-2">
-                    {product.media.length ? (
-                      product.media.map((media) => (
-                        <label
-                          className={variant.mediaIds.includes(media.id) ? 'relative cursor-pointer overflow-hidden rounded-lg ring-2 ring-primary ring-offset-2' : 'relative cursor-pointer overflow-hidden rounded-lg border border-border opacity-65 hover:opacity-100'}
-                          key={media.id}
-                          title={media.altText || `تصویر ${media.position + 1}`}
-                        >
-                          <input
-                            checked={variant.mediaIds.includes(media.id)}
-                            className="sr-only"
-                            onChange={() =>
-                              setDraft((current) => ({
-                                ...current,
-                                variants: current.variants.map(
-                                  (item, itemIndex) =>
-                                    itemIndex !== index
-                                      ? item
-                                      : {
-                                          ...item,
-                                          mediaIds: item.mediaIds.includes(
-                                            media.id,
-                                          )
-                                            ? item.mediaIds.filter(
-                                                (id) => id !== media.id,
-                                              )
-                                            : [...item.mediaIds, media.id],
-                                        },
-                                ),
-                              }))
-                            }
-                            type="checkbox"
-                          />
-                          <img alt="" className="size-11 object-cover" height={44} src={media.url} width={44} />
-                          <span className="sr-only">{media.altText || `تصویر ${media.position + 1}`}</span>
-                        </label>
-                      ))
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        بدون تصویر
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="py-3 text-end" data-label="عملیات">
+        </CardFooter>
+      </Card>
+      <Card>
+        <CardHeader className="flex-row items-start justify-between gap-4">
+          <div>
+            <CardTitle>گونه‌های کالا</CardTitle>
+            <CardDescription>
+              عنوان، کد کالا، قیمت، موجودی و تصاویر هر گونه را در یک ردیف کاری مدیریت کنید.
+            </CardDescription>
+          </div>
+          <StatusBadge tone="neutral">{draft.variants.length.toLocaleString('fa-IR')} گونه</StatusBadge>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {draft.variants.map((variant, index) => (
+            <section className="rounded-lg bg-muted/35 p-4 ring-1 ring-foreground/10" key={variant.id}>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3">
+                <div>
+                  <p className="font-semibold">{variantLabel(variant, draft.options) || 'گونهٔ پیش‌فرض'}</p>
+                  <p className="mt-1 text-xs text-muted-foreground"><bdi dir="ltr">{variant.id}</bdi></p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StatusBadge tone={variant.status === 'active' ? 'success' : 'neutral'}>
+                    {variant.status === 'active' ? 'فعال' : 'بایگانی‌شده'}
+                  </StatusBadge>
                   <Button
                     onClick={() =>
                       setDraft((current) => ({
                         ...current,
                         variants: current.variants
-                          .map((item) =>
-                            item.id !== variant.id
-                              ? item
-                              : savedVariantIds.has(item.id)
-                                ? { ...item, status: 'archived' as const }
-                                : null,
-                          )
-                          .filter(
-                            (
-                              item,
-                            ): item is ConfigurationDraft['variants'][number] =>
-                              Boolean(item),
-                          )
+                          .map((item) => item.id !== variant.id ? item : savedVariantIds.has(item.id) ? { ...item, status: 'archived' as const } : null)
+                          .filter((item): item is ConfigurationDraft['variants'][number] => Boolean(item))
                           .map((item, position) => ({ ...item, position })),
                       }))
                     }
@@ -1833,39 +1685,108 @@ function VisualConfigurationEditor({
                     type="button"
                     variant="ghost"
                   >
-                    {savedVariantIds.has(variant.id) ? 'بایگانی' : 'حذف'}
+                    {savedVariantIds.has(variant.id) ? 'بایگانی گونه' : 'حذف گونه'}
                   </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <FormField>
+                  <FieldLabel htmlFor={`variant-title-${variant.id}`}>عنوان نمایشی</FieldLabel>
+                  <Input id={`variant-title-${variant.id}`} onChange={(event) => updateVariant(index, { title: event.target.value || null })} value={variant.title ?? ''} />
+                </FormField>
+                <FormField>
+                  <FieldLabel htmlFor={`variant-sku-${variant.id}`}>کد کالا</FieldLabel>
+                  <Input dir="ltr" id={`variant-sku-${variant.id}`} onChange={(event) => updateVariant(index, { sku: event.target.value || null })} value={variant.sku ?? ''} />
+                </FormField>
+                <FormField>
+                  <FieldLabel htmlFor={`variant-price-${variant.id}`}>قیمت</FieldLabel>
+                  {canReadPricing ? canWritePricing ? (
+                    <Input dir="ltr" id={`variant-price-${variant.id}`} inputMode="decimal" onChange={(event) => setPriceDraft((current) => ({ ...current, [variant.id]: event.target.value }))} placeholder="قیمت درخواستی" value={priceDraft[variant.id] ?? ''} />
+                  ) : <p className="flex h-9 items-center text-sm">{priceDraft[variant.id] || 'درخواست قیمت'}</p> : <p className="flex h-9 items-center text-sm text-muted-foreground">بدون دسترسی</p>}
+                </FormField>
+                <FormField>
+                  <FieldLabel>وضعیت فروش</FieldLabel>
+                  <Select onValueChange={(value) => updateVariant(index, { status: value as 'active' | 'archived' })} value={variant.status}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="active">فعال</SelectItem><SelectItem value="archived">بایگانی‌شده</SelectItem></SelectContent>
+                  </Select>
+                </FormField>
+              </div>
+              <div className="mt-4 grid gap-4 border-t border-border/70 pt-4 xl:grid-cols-2">
+                <div>
+                  <p className="text-sm font-medium">موجودی</p>
+                  {canReadInventory ? canWriteInventory ? (
+                    <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                      <Select
+                        onValueChange={(value) => setInventoryDraft((current) => ({ ...current, [variant.id]: { ...(current[variant.id] ?? { onHand: '', reason: '' }), mode: value as 'not_configured' | 'tracked' | 'untracked' } }))}
+                        value={inventoryDraft[variant.id]?.mode ?? 'not_configured'}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="not_configured">تنظیم نشده</SelectItem><SelectItem value="untracked">بدون ردیابی</SelectItem><SelectItem value="tracked">ردیابی‌شده</SelectItem></SelectContent>
+                      </Select>
+                      {inventoryDraft[variant.id]?.mode === 'tracked' ? (
+                        <Input inputMode="numeric" onChange={(event) => setInventoryDraft((current) => ({ ...current, [variant.id]: { ...(current[variant.id] ?? { mode: 'tracked', reason: '' }), onHand: event.target.value } }))} placeholder="تعداد موجود" value={inventoryDraft[variant.id]?.onHand ?? ''} />
+                      ) : <div className="hidden sm:block" />}
+                      <Input onChange={(event) => setInventoryDraft((current) => ({ ...current, [variant.id]: { ...(current[variant.id] ?? { mode: 'not_configured', onHand: '' }), reason: event.target.value } }))} placeholder="دلیل تغییر" value={inventoryDraft[variant.id]?.reason ?? ''} />
+                    </div>
+                  ) : <p className="mt-2 text-sm">{inventoryDraft[variant.id]?.mode === 'untracked' ? 'بدون ردیابی' : inventoryDraft[variant.id]?.mode === 'tracked' ? `${inventoryDraft[variant.id]?.onHand} عدد` : 'تنظیم نشده'}</p> : <p className="mt-2 text-sm text-muted-foreground">بدون دسترسی</p>}
+                </div>
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium">تصاویر این گونه</p>
+                    <span className="text-xs text-muted-foreground">{variant.mediaIds.length.toLocaleString('fa-IR')} انتخاب‌شده</span>
+                  </div>
+                  <div className="mt-2 flex min-h-14 flex-wrap gap-2">
+                    {product.media.length ? product.media.map((media) => {
+                      const selected = variant.mediaIds.includes(media.id);
+                      return (
+                        <button
+                          aria-label={`${selected ? 'حذف' : 'افزودن'} ${media.altText || `تصویر ${media.position + 1}`}`}
+                          aria-pressed={selected}
+                          className="relative size-14 overflow-hidden rounded-md bg-muted opacity-60 outline-none ring-1 ring-foreground/15 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring data-[selected=true]:opacity-100 data-[selected=true]:ring-2 data-[selected=true]:ring-primary"
+                          data-selected={selected}
+                          key={media.id}
+                          onClick={() => setDraft((current) => ({ ...current, variants: current.variants.map((item, itemIndex) => itemIndex !== index ? item : { ...item, mediaIds: selected ? item.mediaIds.filter((id) => id !== media.id) : [...item.mediaIds, media.id] }) }))}
+                          type="button"
+                        >
+                          <img alt="" className="size-full object-cover" height={56} src={media.url} width={56} />
+                        </button>
+                      );
+                    }) : <span className="text-sm text-muted-foreground">ابتدا در بخش تصاویر، عکس کالا را بارگذاری کنید.</span>}
+                  </div>
+                </div>
+              </div>
+            </section>
+          ))}
+        </CardContent>
+      </Card>
       {validation ? (
         <p className="mt-3 text-sm text-destructive" role="alert">
           {validation}
         </p>
       ) : null}
-      <div className="mt-4 flex justify-end">
+      <div className="flex justify-end rounded-lg bg-card p-3 ring-1 ring-foreground/10">
         <Button disabled={isSubmitting} type="submit">
           <FilePenLine aria-hidden="true" />{' '}
           {isSubmitting ? 'در حال ذخیره…' : 'ذخیرهٔ گونه‌ها'}
         </Button>
       </div>
-      <ModalLayer onClose={() => setReviewOpen(false)} open={reviewOpen} title="بررسی تغییرات تجاری">
-        <div className="p-5">
-          <h2 className="text-lg font-semibold">بررسی تغییرات تجاری</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">این تغییرات پس از ثبت در تاریخچه باقی می‌مانند. پیش از ادامه تعداد موارد را بررسی کنید.</p>
+      <Dialog onOpenChange={setReviewOpen} open={reviewOpen}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>بررسی تغییرات تجاری</DialogTitle>
+            <DialogDescription>این تغییرات پس از ثبت در تاریخچه باقی می‌مانند. پیش از ادامه تعداد موارد را بررسی کنید.</DialogDescription>
+          </DialogHeader>
           <dl className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-muted p-4"><dt className="text-xs text-muted-foreground">قیمت‌های تغییرکرده</dt><dd className="mt-1 text-2xl font-semibold">{changedPrices.length.toLocaleString('fa-IR')}</dd></div>
             <div className="rounded-xl bg-muted p-4"><dt className="text-xs text-muted-foreground">موجودی‌های تغییرکرده</dt><dd className="mt-1 text-2xl font-semibold">{changedInventory.length.toLocaleString('fa-IR')}</dd></div>
           </dl>
-          <div className="mt-6 flex justify-end gap-2">
+          <DialogFooter>
             <Button onClick={() => setReviewOpen(false)} type="button" variant="ghost">بازگشت</Button>
             <Button disabled={isSubmitting} onClick={() => void submitDraft().then(() => setReviewOpen(false)).catch(() => undefined)} type="button">تأیید و ثبت</Button>
-          </div>
-        </div>
-      </ModalLayer>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
@@ -2154,20 +2075,6 @@ function CatalogSkeleton() {
         <Skeleton className="h-16 rounded-lg" key={index} />
       ))}
     </section>
-  );
-}
-function Field({
-  children,
-  label,
-}: {
-  readonly children: React.ReactNode;
-  readonly label: string;
-}) {
-  return (
-    <label className="block text-sm font-medium">
-      {label}
-      {children}
-    </label>
   );
 }
 function Definition({
