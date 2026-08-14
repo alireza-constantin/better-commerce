@@ -38,7 +38,7 @@ export interface AdminNavigationGroup {
  */
 export const adminNavigation: readonly AdminNavigationGroup[] = [
   {
-    label: 'فضای کاری',
+    label: 'نمای کلی',
     items: [
       {
         label: 'نمای کلی',
@@ -48,13 +48,18 @@ export const adminNavigation: readonly AdminNavigationGroup[] = [
     ],
   },
   {
-    label: 'عملیات فروشگاه',
+    label: 'فروش',
     items: [
       {
         label: 'سفارش‌ها',
         ...adminRoutes.orders,
         icon: ShoppingBag,
       },
+    ],
+  },
+  {
+    label: 'محصولات',
+    items: [
       {
         label: 'کاتالوگ',
         ...adminRoutes.catalog,
@@ -70,6 +75,11 @@ export const adminNavigation: readonly AdminNavigationGroup[] = [
         ...adminRoutes.collections,
         icon: FolderTree,
       },
+    ],
+  },
+  {
+    label: 'عملیات',
+    items: [
       {
         label: 'قیمت‌گذاری',
         ...adminRoutes.pricing,
@@ -88,7 +98,7 @@ export const adminNavigation: readonly AdminNavigationGroup[] = [
     ],
   },
   {
-    label: 'مدیریت دسترسی',
+    label: 'تیم و امنیت',
     items: [
       {
         label: 'کارکنان',

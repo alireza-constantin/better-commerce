@@ -1290,10 +1290,10 @@ function VisualConfigurationEditor({
             <tr>
               <th className="pb-2">گونه</th>
               <th className="pb-2">عنوان</th>
-              <th className="pb-2">کد کالا</th>
-              <th className="pb-2">وضعیت</th>
               <th className="pb-2">قیمت</th>
               <th className="pb-2">موجودی</th>
+              <th className="pb-2">کد کالا</th>
+              <th className="pb-2">وضعیت</th>
               <th className="pb-2">تصاویر</th>
               <th className="pb-2">
                 <span className="sr-only">حذف</span>
@@ -1368,7 +1368,7 @@ function VisualConfigurationEditor({
                           }
                         >
                           <option value="not_configured">تنظیم نشده</option>
-                          <option value="untracked">نامحدود</option>
+                          <option value="untracked">ردیابی نمی‌شود</option>
                           <option value="tracked">ردیابی‌شده</option>
                         </select>
                         {inventoryDraft[variant.id]?.mode === 'tracked' ? (
@@ -1395,7 +1395,7 @@ function VisualConfigurationEditor({
                     ) : (
                       <span>
                         {inventoryDraft[variant.id]?.mode === 'untracked'
-                          ? 'نامحدود'
+                          ? 'ردیابی نمی‌شود'
                           : inventoryDraft[variant.id]?.mode === 'tracked'
                             ? inventoryDraft[variant.id]?.onHand
                             : 'تنظیم نشده'}

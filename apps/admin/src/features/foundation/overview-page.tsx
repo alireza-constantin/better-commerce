@@ -1,26 +1,54 @@
+import { Boxes, PackageSearch, ShoppingBag } from 'lucide-react';
+import { FeedbackPanel, PageHeader } from '@/components/ui';
+
+const plannedQueues = [
+  {
+    title: 'سفارش‌های نیازمند بررسی',
+    description: 'سفارش‌هایی که برای پرداخت، تأیید یا ارسال منتظر اقدام هستند.',
+    icon: ShoppingBag,
+  },
+  {
+    title: 'وضعیت موجودی',
+    description: 'کالاهای کم‌موجود یا بدون تنظیم موجودی در این بخش دیده می‌شوند.',
+    icon: Boxes,
+  },
+  {
+    title: 'آمادگی کالاها',
+    description: 'پیش‌نویس‌های ناقص و کالاهای بدون قیمت از اینجا قابل پیگیری‌اند.',
+    icon: PackageSearch,
+  },
+] as const;
+
 export function OverviewPage() {
   return (
-    <section className="mx-auto max-w-5xl">
-      <div className="border-b border-border pb-6">
-        <p className="text-sm font-medium text-muted-foreground">
-          فضای کاری فروشگاه
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-          نمای کلی
-        </h1>
-        <p className="mt-3 max-w-[70ch] leading-7 text-muted-foreground">
-          برای مدیریت سفارش‌ها، محصولات، موجودی و تنظیمات فروشگاه از منوی
-          مدیریت استفاده کنید.
-        </p>
+    <section className="mx-auto max-w-6xl space-y-8" dir="rtl">
+      <PageHeader
+        description="کارهای مهم فروشگاه از اینجا پیگیری می‌شوند. هر عدد و فهرست پس از اتصال قرارداد معتبر همان بخش نمایش داده خواهد شد."
+        eyebrow="فضای کاری فروشگاه"
+        title="نمای کلی"
+      />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        {plannedQueues.map(({ description, icon: Icon, title }) => (
+          <article
+            className="rounded-2xl border border-border bg-card p-5 shadow-xs"
+            key={title}
+          >
+            <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Icon aria-hidden="true" className="size-5" />
+            </span>
+            <h2 className="mt-4 font-semibold">{title}</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {description}
+            </p>
+          </article>
+        ))}
       </div>
 
-      <div className="py-10">
-        <h2 className="text-base font-semibold">عملیات فروشگاه</h2>
-        <p className="mt-2 max-w-[70ch] text-sm leading-7 text-muted-foreground">
-          اطلاعات عملیاتی هر بخش پس از اتصال صفحه‌های همان قابلیت نمایش داده
-          می‌شود. این صفحه آمار یا عددی را بدون داده معتبر API تولید نمی‌کند.
-        </p>
-      </div>
+      <FeedbackPanel title="داده عملیاتی در مرحله بعد متصل می‌شود">
+        این نما عمداً عدد نمایشی یا ساختگی تولید نمی‌کند. صف‌های کاری پس از
+        آماده‌شدن قراردادهای داشبورد به داده واقعی و قابل اقدام متصل می‌شوند.
+      </FeedbackPanel>
     </section>
   );
 }

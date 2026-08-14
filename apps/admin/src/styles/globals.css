@@ -1,26 +1,55 @@
 @import 'tailwindcss';
 
+@font-face {
+  font-family: 'IranSans';
+  src: url('/admin/fonts/IRANSansWeb.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'IranSans';
+  src: url('/admin/fonts/IRANSansWeb_Medium.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 500 600;
+}
+
+@font-face {
+  font-family: 'IranSans';
+  src: url('/admin/fonts/IRANSansWeb_Bold.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 700;
+}
+
 :root {
   color-scheme: light;
-  --background: oklch(0.975 0.003 95);
-  --foreground: oklch(0.205 0.008 80);
-  --card: oklch(0.995 0.001 95);
-  --card-foreground: oklch(0.205 0.008 80);
-  --popover: oklch(0.995 0.001 95);
-  --popover-foreground: oklch(0.205 0.008 80);
-  --primary: oklch(0.25 0.012 80);
-  --primary-foreground: oklch(0.985 0.002 95);
-  --secondary: oklch(0.93 0.006 90);
-  --secondary-foreground: oklch(0.25 0.012 80);
-  --muted: oklch(0.945 0.005 90);
-  --muted-foreground: oklch(0.46 0.012 80);
-  --accent: oklch(0.91 0.01 88);
-  --accent-foreground: oklch(0.25 0.012 80);
+  --background: oklch(0.978 0.004 210);
+  --foreground: oklch(0.22 0.018 235);
+  --card: oklch(0.995 0.002 210);
+  --card-foreground: oklch(0.22 0.018 235);
+  --popover: oklch(0.995 0.002 210);
+  --popover-foreground: oklch(0.22 0.018 235);
+  --primary: oklch(0.43 0.09 220);
+  --primary-foreground: oklch(0.985 0.005 210);
+  --secondary: oklch(0.94 0.012 215);
+  --secondary-foreground: oklch(0.3 0.045 225);
+  --muted: oklch(0.95 0.008 215);
+  --muted-foreground: oklch(0.48 0.025 230);
+  --accent: oklch(0.92 0.025 215);
+  --accent-foreground: oklch(0.3 0.055 225);
   --destructive: oklch(0.58 0.22 27);
-  --border: oklch(0.875 0.008 90);
-  --input: oklch(0.875 0.008 90);
-  --ring: oklch(0.58 0.035 78);
-  --radius: 0.625rem;
+  --success: oklch(0.52 0.14 155);
+  --warning: oklch(0.63 0.14 75);
+  --info: oklch(0.52 0.12 245);
+  --border: oklch(0.88 0.012 220);
+  --input: oklch(0.84 0.018 220);
+  --ring: var(--primary);
+  --radius: 0.75rem;
+  --font-sans: 'IranSans', Tahoma, Arial, sans-serif;
+  --font-technical: ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme inline {
@@ -39,6 +68,9 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -55,9 +87,7 @@
 html {
   min-width: 20rem;
   background: var(--background);
-  font-family:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
 }
 
@@ -69,4 +99,24 @@ body {
 button,
 a {
   -webkit-tap-highlight-color: transparent;
+}
+
+bdi[dir='ltr'],
+[dir='ltr'] {
+  font-family: var(--font-technical);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--primary) 22%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
