@@ -1,5 +1,12 @@
-import { ChevronLeft, ChevronRight, ClipboardList, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardList, Eye, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { CommerceAuditEvent, CommerceAuditPage } from '../api';
 
 export interface CommerceAuditEventsProps {
@@ -18,11 +25,11 @@ export interface CommerceAuditEventsProps {
 
 const actionLabels: Partial<Record<CommerceAuditEvent['action'], string>> = {
   'pricing.price_changed': 'تغییر قیمت',
-  'inventory.configured': 'پیکربندی موجودی',
+  'inventory.configured': 'تنظیم موجودی',
   'inventory.adjusted': 'اصلاح موجودی',
-  'shipping.zone_created': 'ایجاد منطقه ارسال',
-  'shipping.zone_updated': 'ویرایش منطقه ارسال',
-  'shipping.zone_archived': 'بایگانی منطقه ارسال',
+  'shipping.zone_created': 'ایجاد محدوده ارسال',
+  'shipping.zone_updated': 'ویرایش محدوده ارسال',
+  'shipping.zone_archived': 'بایگانی محدوده ارسال',
   'shipping.method_created': 'ایجاد روش ارسال',
   'shipping.method_updated': 'ویرایش روش ارسال',
   'shipping.method_archived': 'بایگانی روش ارسال',
@@ -35,159 +42,35 @@ const actionLabels: Partial<Record<CommerceAuditEvent['action'], string>> = {
   'payments.confirmed': 'تأیید پرداخت',
 };
 
-export function CommerceAuditEvents({
-  error,
-  hasPreviousPage = false,
-  isFetching = false,
-  isLoading = false,
-  onNextPage,
-  onPreviousPage,
-  onRetry,
-  page,
-  heading,
-  description,
-  emptyTitle,
-}: CommerceAuditEventsProps) {
-  const resolvedHeading = heading ?? 'فعالیت فروشگاه';
-  const resolvedDescription = description ?? 'رویدادهای ثبت‌شده عملیات مهم فروشگاه، از جدیدترین به قدیمی‌ترین.';
-  const resolvedEmptyTitle = emptyTitle ?? 'هنوز رویدادی ثبت نشده است';
+export function CommerceAuditEvents({ error, hasPreviousPage = false, isFetching = false, isLoading = false, onNextPage, onPreviousPage, onRetry, page, heading, description, emptyTitle }: CommerceAuditEventsProps) {
+  const [selected, setSelected] = useState<CommerceAuditEvent>();
   if (isLoading) return <CommerceAuditLoading />;
   if (error) return <CommerceAuditError error={error} onRetry={onRetry} />;
-  if (!page || page.items.length === 0) return <CommerceAuditEmpty title={resolvedEmptyTitle} />;
+  if (!page || page.items.length === 0) return <CommerceAuditEmpty title={emptyTitle ?? 'هنوز رویدادی ثبت نشده است'} />;
 
-  return (
-    <section aria-labelledby="commerce-audit-heading" className="space-y-4" dir="rtl">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-[-0.025em]" id="commerce-audit-heading">
-            {resolvedHeading}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {resolvedDescription}
-          </p>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {page.items.length.toLocaleString('fa-IR')} رویداد در این صفحه
-        </p>
-      </header>
+  return <section aria-labelledby="commerce-audit-heading" className="space-y-5" dir="rtl">
+    <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-2xl font-semibold tracking-[-0.025em]" id="commerce-audit-heading">{heading ?? 'فعالیت فروشگاه'}</h1><p className="mt-1 text-sm leading-6 text-muted-foreground">{description ?? 'تغییرات مهم فروشگاه را از جدیدترین رویداد تا قدیمی‌ترین دنبال کنید.'}</p></div><StatusBadge>{page.items.length.toLocaleString('fa-IR')} رویداد در این صفحه</StatusBadge></header>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="w-full min-w-220 text-right text-sm">
-          <thead className="border-b border-border bg-muted/45 text-xs font-medium text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 font-medium">رویداد</th>
-              <th className="px-4 py-3 font-medium">زمان دقیق</th>
-              <th className="px-4 py-3 font-medium">نوع هدف</th>
-              <th className="px-4 py-3 font-medium">شناسه هدف</th>
-              <th className="px-4 py-3 font-medium">عامل</th>
-              <th className="px-4 py-3"><span className="sr-only">جزئیات</span></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {page.items.map((event) => <CommerceAuditEventRow event={event} key={event.id} />)}
-          </tbody>
-        </table>
-      </div>
+    <div className="grid gap-3 md:hidden">{page.items.map((event) => <Card key={event.id}><CardContent className="space-y-3 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-medium">{actionLabel(event)}</p><time className="mt-1 block text-xs text-muted-foreground" dateTime={event.createdAt}>{formatExactDate(event.createdAt)}</time></div><Button aria-label="مشاهده جزئیات رویداد" onClick={() => setSelected(event)} size="icon" variant="ghost"><Eye /></Button></div><div className="grid grid-cols-2 gap-3 text-sm"><CompactValue label="نوع هدف" value={event.targetType} /><CompactValue label="عامل" value={event.actorUserId} emptyLabel="سامانه" /></div></CardContent></Card>)}</div>
 
-      <nav aria-label="صفحه‌بندی ممیزی فروشگاه" className="flex items-center justify-between gap-3">
-        <Button disabled={!hasPreviousPage || isFetching} onClick={onPreviousPage} variant="outline">
-          <ChevronRight aria-hidden="true" /> {isFetching ? 'در حال دریافت…' : 'صفحه پیشین'}
-        </Button>
-        <Button disabled={!page.nextCursor || isFetching} onClick={onNextPage} variant="outline">
-          {isFetching ? 'در حال دریافت…' : 'صفحه بعد'} <ChevronLeft aria-hidden="true" />
-        </Button>
-      </nav>
-    </section>
-  );
+    <Card className="hidden md:block"><Table><TableHeader><TableRow><TableHead scope="col">رویداد</TableHead><TableHead scope="col">زمان</TableHead><TableHead scope="col">نوع هدف</TableHead><TableHead scope="col">شناسه هدف</TableHead><TableHead scope="col">عامل</TableHead><TableHead scope="col"><span className="sr-only">جزئیات</span></TableHead></TableRow></TableHeader><TableBody>{page.items.map((event) => <TableRow key={event.id}><TableCell className="font-medium">{actionLabel(event)}</TableCell><TableCell className="whitespace-nowrap text-muted-foreground"><time dateTime={event.createdAt} title={toIso(event.createdAt)}>{formatExactDate(event.createdAt)}</time></TableCell><TableCell><TechnicalValue value={event.targetType} /></TableCell><TableCell className="max-w-44"><TechnicalValue value={event.targetId} /></TableCell><TableCell className="max-w-44"><TechnicalValue emptyLabel="سامانه" value={event.actorUserId} /></TableCell><TableCell><Button onClick={() => setSelected(event)} size="sm" variant="ghost"><Eye /> جزئیات</Button></TableCell></TableRow>)}</TableBody></Table></Card>
+
+    <nav aria-label="صفحه‌بندی ممیزی فروشگاه" className="flex items-center justify-between gap-3"><Button disabled={!hasPreviousPage || isFetching} onClick={onPreviousPage} variant="outline"><ChevronRight /> صفحه پیشین</Button><Button disabled={!page.nextCursor || isFetching} onClick={onNextPage} variant="outline">صفحه بعد <ChevronLeft /></Button></nav>
+    <EventDialog event={selected} onOpenChange={(open) => { if (!open) setSelected(undefined); }} />
+  </section>;
 }
 
-function CommerceAuditEventRow({ event }: { readonly event: CommerceAuditEvent }) {
-  const actionLabel = actionLabels[event.action];
-
-  return (
-    <tr className="align-top transition-colors hover:bg-muted/40">
-      <td className="px-4 py-3 font-medium">{actionLabel ?? <bdi dir="ltr">{event.action}</bdi>}</td>
-      <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
-        <time dateTime={event.createdAt} title={toIso(event.createdAt)}>{formatExactDate(event.createdAt)}</time>
-      </td>
-      <td className="px-4 py-3"><TechnicalValue value={event.targetType} /></td>
-      <td className="px-4 py-3"><TechnicalValue value={event.targetId} /></td>
-      <td className="px-4 py-3"><TechnicalValue emptyLabel="سامانه" value={event.actorUserId} /></td>
-      <td className="px-4 py-3 text-left">
-        <details className="min-w-80 text-right">
-          <summary className="cursor-pointer text-sm text-primary underline-offset-4 hover:underline">جزئیات</summary>
-          <CommerceAuditDetail event={event} />
-        </details>
-      </td>
-    </tr>
-  );
+function EventDialog({ event, onOpenChange }: { readonly event?: CommerceAuditEvent; readonly onOpenChange: (open: boolean) => void }) {
+  return <Dialog open={Boolean(event)} onOpenChange={onOpenChange}><DialogContent className="max-w-2xl" dir="rtl"><DialogHeader><DialogTitle>{event ? actionLabel(event) : 'جزئیات رویداد'}</DialogTitle><DialogDescription>این اطلاعات فقط برای پیگیری و بررسی نمایش داده می‌شود.</DialogDescription></DialogHeader>{event ? <div className="space-y-5"><dl className="grid gap-4 text-sm sm:grid-cols-2"><Detail label="زمان دقیق" value={formatExactDate(event.createdAt)} /><Detail label="شناسه رویداد" value={event.id} technical /><Detail label="شناسه درخواست" value={event.requestId} technical emptyLabel="ثبت نشده" /><Detail label="نوع هدف" value={event.targetType} technical /><Detail label="شناسه هدف" value={event.targetId} technical /><Detail label="عامل" value={event.actorUserId} technical emptyLabel="سامانه" /></dl><div><p className="mb-2 text-sm font-medium">فراداده</p><pre className="max-h-72 overflow-auto rounded-lg bg-muted p-4 text-left text-xs leading-6" dir="ltr">{safeJson(event.metadata)}</pre></div></div> : null}</DialogContent></Dialog>;
 }
 
-function CommerceAuditDetail({ event }: { readonly event: CommerceAuditEvent }) {
-  return (
-    <div className="mt-3 space-y-3 rounded-md border border-border bg-muted/25 p-3 text-sm shadow-sm">
-      <dl className="grid gap-3 sm:grid-cols-2">
-        <Detail label="شناسه رویداد" value={event.id} technical />
-        <Detail label="شناسه درخواست" value={event.requestId} technical emptyLabel="ثبت نشده" />
-        <Detail label="نوع هدف" value={event.targetType} technical />
-        <Detail label="شناسه هدف" value={event.targetId} technical />
-        <Detail label="عامل" value={event.actorUserId} technical emptyLabel="سامانه" />
-        <Detail label="زمان دقیق" value={formatExactDate(event.createdAt)} />
-      </dl>
-      <div>
-        <p className="text-xs font-medium text-muted-foreground">فراداده</p>
-        <pre className="mt-1 max-h-64 overflow-auto rounded bg-background p-3 text-left text-xs leading-6" dir="ltr">
-          {safeJson(event.metadata)}
-        </pre>
-      </div>
-    </div>
-  );
-}
-
-function Detail({ emptyLabel = '—', label, technical = false, value }: {
-  readonly label: string;
-  readonly value: string | null;
-  readonly technical?: boolean;
-  readonly emptyLabel?: string;
-}) {
-  const content = value ?? emptyLabel;
-  return <div><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-all font-medium">{technical && value ? <bdi dir="ltr">{content}</bdi> : content}</dd></div>;
-}
-
-function TechnicalValue({ emptyLabel = '—', value }: { readonly value: string | null; readonly emptyLabel?: string }) {
-  return value ? <bdi className="break-all" dir="ltr">{value}</bdi> : <span className="text-muted-foreground">{emptyLabel}</span>;
-}
-
-function CommerceAuditLoading() {
-  return <section aria-busy="true" aria-label="در حال دریافت رویدادهای ممیزی فروشگاه" className="space-y-4" dir="rtl"><div className="h-8 w-40 animate-pulse rounded bg-muted" /><div className="overflow-hidden rounded-lg border border-border bg-card"><div className="h-12 animate-pulse border-b border-border bg-muted/50" />{Array.from({ length: 5 }, (_, index) => <div className="h-16 animate-pulse border-b border-border last:border-b-0" key={index}><div className="mx-4 mt-5 h-4 w-2/3 rounded bg-muted" /></div>)}</div></section>;
-}
-
-function CommerceAuditEmpty({ title }: { readonly title: string }) {
-  return <section className="flex min-h-48 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card px-6 text-center" dir="rtl"><ClipboardList aria-hidden="true" className="size-8 text-muted-foreground" /><h1 className="mt-4 text-lg font-semibold">{title}</h1><p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">پس از انجام عملیات فروشگاه، رویدادهای مربوط در این بخش نمایش داده می‌شوند.</p></section>;
-}
-
-function CommerceAuditError({ error, onRetry }: { readonly error: string; readonly onRetry?: () => void }) {
-  return <section className="rounded-lg border border-destructive/25 bg-card px-5 py-6" dir="rtl" role="alert"><h1 className="font-semibold">دریافت رویدادهای ممیزی انجام نشد</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">{error}</p>{onRetry ? <Button className="mt-4" onClick={onRetry} variant="outline"><RefreshCw aria-hidden="true" /> تلاش دوباره</Button> : null}</section>;
-}
-
-function formatExactDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('fa-IR', {
-    dateStyle: 'medium',
-    timeStyle: 'medium',
-  }).format(date);
-}
-
-function toIso(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toISOString();
-}
-
-function safeJson(value: unknown) {
-  try {
-    return JSON.stringify(value, null, 2) ?? 'null';
-  } catch {
-    return 'null';
-  }
-}
+function actionLabel(event: CommerceAuditEvent) { return actionLabels[event.action] ?? <bdi dir="ltr">{event.action}</bdi>; }
+function CompactValue({ label, value, emptyLabel = '—' }: { readonly label: string; readonly value: string | null; readonly emptyLabel?: string }) { return <div className="min-w-0"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 truncate" title={value ?? undefined}><bdi dir="ltr">{value ?? emptyLabel}</bdi></p></div>; }
+function Detail({ emptyLabel = '—', label, technical = false, value }: { readonly label: string; readonly value: string | null; readonly technical?: boolean; readonly emptyLabel?: string }) { return <div><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-all font-medium">{technical && value ? <bdi dir="ltr">{value}</bdi> : value ?? emptyLabel}</dd></div>; }
+function TechnicalValue({ emptyLabel = '—', value }: { readonly value: string | null; readonly emptyLabel?: string }) { return value ? <bdi className="block truncate" dir="ltr" title={value}>{value}</bdi> : <span className="text-muted-foreground">{emptyLabel}</span>; }
+function CommerceAuditLoading() { return <section aria-busy="true" aria-label="در حال دریافت رویدادها" className="space-y-5" dir="rtl"><Skeleton className="h-9 w-48" /><Card className="space-y-2 p-4">{Array.from({ length: 5 }, (_, index) => <Skeleton className="h-12" key={index} />)}</Card></section>; }
+function CommerceAuditEmpty({ title }: { readonly title: string }) { return <Empty className="min-h-64 border" dir="rtl"><EmptyHeader><EmptyMedia variant="icon"><ClipboardList /></EmptyMedia><EmptyTitle>{title}</EmptyTitle><EmptyDescription>پس از انجام عملیات فروشگاه، رویدادهای مربوط در این بخش نمایش داده می‌شوند.</EmptyDescription></EmptyHeader></Empty>; }
+function CommerceAuditError({ error, onRetry }: { readonly error: string; readonly onRetry?: () => void }) { return <Card className="mx-auto max-w-xl" dir="rtl" role="alert"><CardContent className="p-6"><h1 className="font-semibold">دریافت رویدادهای ممیزی انجام نشد</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">{error}</p>{onRetry ? <Button className="mt-4" onClick={onRetry} variant="outline"><RefreshCw /> تلاش دوباره</Button> : null}</CardContent></Card>; }
+function formatExactDate(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'medium' }).format(date); }
+function toIso(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toISOString(); }
+function safeJson(value: unknown) { try { return JSON.stringify(value, null, 2) ?? 'null'; } catch { return 'null'; } }
