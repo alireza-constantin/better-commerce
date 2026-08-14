@@ -7,16 +7,11 @@ import {
   ChevronRight,
   FilePenLine,
   ImagePlus,
-  Images,
-  LayoutList,
-  ListTree,
   PackagePlus,
   RefreshCw,
   RotateCcw,
   Save,
   Send,
-  Settings2,
-  History,
   Trash2,
   Undo2,
 } from 'lucide-react';
@@ -25,7 +20,51 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import './catalog.css';
 import { adminRoutes } from '@/app/routes/admin-route-contract';
 import { isAdminApiError } from '@/api/client';
-import { Button, ModalLayer, PageHeader, StatusBadge } from '@/components/ui';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Checkbox,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  Field as FormField,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  Input,
+  ModalLayer,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  StatusBadge,
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Textarea,
+} from '@/components/ui';
 import { PermissionBoundary } from '@/features/auth/permissions/permission-boundary';
 import { hasPermission } from '@/features/auth/permissions/permissions';
 import { useAdminSession } from '@/features/auth/session/use-admin-session';
@@ -51,6 +90,10 @@ import {
 } from '@/features/inventory/api/inventory-api';
 import { commerceAuditListQueryOptions } from '@/features/commerce-audit/api/commerce-audit-query';
 import { CommerceAuditEvents } from '@/features/commerce-audit/components';
+import {
+  ProductWorkspaceTabs,
+  type ProductWorkspaceTab,
+} from './components/product-workspace-tabs';
 import {
   categoriesQuery,
   productCategoriesMutation,
@@ -138,25 +181,6 @@ type CatalogSearch = {
   readonly create?: boolean;
 };
 
-type ProductWorkspaceTab =
-  | 'general'
-  | 'organization'
-  | 'media'
-  | 'variants'
-  | 'activity';
-
-const PRODUCT_WORKSPACE_TABS = [
-  { id: 'general', label: 'اطلاعات', icon: LayoutList },
-  { id: 'organization', label: 'دسته‌بندی و مجموعه', icon: ListTree },
-  { id: 'media', label: 'تصاویر', icon: Images },
-  { id: 'variants', label: 'گونه‌ها، قیمت و موجودی', icon: Settings2 },
-  { id: 'activity', label: 'فعالیت', icon: History },
-] as const satisfies ReadonlyArray<{
-  id: ProductWorkspaceTab;
-  label: string;
-  icon: typeof LayoutList;
-}>;
-
 function ProductsListScreen({
   onSearchChange,
   search,
@@ -194,8 +218,8 @@ function ProductsListScreen({
     onSearchChange({ cursor, history });
 
   return (
-    <section aria-labelledby="catalog-heading" className="space-y-5" dir="rtl">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+    <section aria-labelledby="catalog-heading" className="flex flex-col gap-5" dir="rtl">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1
             className="text-2xl font-semibold tracking-[-0.025em]"
@@ -203,7 +227,7 @@ function ProductsListScreen({
           >
             کالاها
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             محصولات و گونه‌های قابل فروش فروشگاه را مدیریت کنید.
           </p>
         </div>
@@ -215,45 +239,70 @@ function ProductsListScreen({
           </Button>
         ) : null}
       </header>
-      <form
-        className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_12rem_auto]"
-        onSubmit={applyFilters}
-      >
-        <Field label="جست‌وجو در نام یا نامک">
-          <input
-            className="catalog-input"
-            onChange={(e) => setFilters((v) => ({ ...v, q: e.target.value }))}
-            value={filters.q}
-          />
-        </Field>
-        <Field label="کد کالا (SKU)">
-          <input
-            className="catalog-input"
-            dir="ltr"
-            onChange={(e) => setFilters((v) => ({ ...v, sku: e.target.value }))}
-            value={filters.sku}
-          />
-        </Field>
-        <Field label="وضعیت">
-          <select
-            className="catalog-input"
-            onChange={(e) =>
-              setFilters((v) => ({ ...v, status: e.target.value }))
-            }
-            value={filters.status}
-          >
-            <option value="">همه وضعیت‌ها</option>
-            <option value="draft">پیش‌نویس</option>
-            <option value="published">منتشرشده</option>
-            <option value="archived">بایگانی‌شده</option>
-          </select>
-        </Field>
-        <div className="flex items-end">
-          <Button className="w-full" type="submit" variant="outline">
-            اعمال فیلتر
-          </Button>
-        </div>
-      </form>
+      <Card>
+        <CardContent>
+          <form onSubmit={applyFilters}>
+            <FieldGroup className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(12rem,.55fr)_12rem_auto] md:items-end">
+              <FormField>
+                <FieldLabel htmlFor="product-search">نام یا نامک</FieldLabel>
+                <Input
+                  id="product-search"
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      q: event.target.value,
+                    }))
+                  }
+                  placeholder="جست‌وجوی کالا"
+                  value={filters.q}
+                />
+              </FormField>
+              <FormField>
+                <FieldLabel htmlFor="product-sku">کد کالا</FieldLabel>
+                <Input
+                  dir="ltr"
+                  id="product-sku"
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      sku: event.target.value,
+                    }))
+                  }
+                  placeholder="SKU"
+                  value={filters.sku}
+                />
+              </FormField>
+              <FormField>
+                <FieldLabel htmlFor="product-status">وضعیت</FieldLabel>
+                <Select
+                  onValueChange={(status) =>
+                    setFilters((current) => ({
+                      ...current,
+                      status: status === 'all' ? '' : status,
+                    }))
+                  }
+                  value={filters.status || 'all'}
+                >
+                  <SelectTrigger id="product-status">
+                    <SelectValue placeholder="همه وضعیت‌ها" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                      <SelectItem value="draft">پیش‌نویس</SelectItem>
+                      <SelectItem value="published">منتشرشده</SelectItem>
+                      <SelectItem value="archived">بایگانی‌شده</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <Button type="submit" variant="outline">
+                اعمال فیلتر
+              </Button>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
       {products.isPending ? (
         <CatalogSkeleton />
       ) : products.isError ? (
@@ -265,20 +314,35 @@ function ProductsListScreen({
         <CatalogEmpty />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border border-border bg-card">
-            <table className="w-full min-w-180 text-right text-sm">
-              <thead className="border-b border-border bg-muted/45 text-xs font-medium text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-medium">نام کالا</th>
-                  <th className="px-4 py-3 font-medium">نامک</th>
-                  <th className="px-4 py-3 font-medium">وضعیت</th>
-                  <th className="px-4 py-3 font-medium">آخرین تغییر</th>
-                  <th className="px-4 py-3">
-                    <span className="sr-only">جزئیات</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
+          <div className="grid gap-3 md:hidden">
+            {products.data.items.map((product) => (
+              <ProductCard
+                key={product.id}
+                onSelect={() =>
+                  onSearchChange({ product: product.id, create: undefined })
+                }
+                product={product}
+              />
+            ))}
+          </div>
+          <Card className="hidden md:flex">
+            <CardContent className="px-0">
+              <Table>
+                <TableCaption className="sr-only">
+                  فهرست کالاهای فروشگاه
+                </TableCaption>
+                <TableHeader className="bg-muted/45">
+                  <TableRow>
+                    <TableHead scope="col">نام کالا</TableHead>
+                    <TableHead scope="col">نامک</TableHead>
+                    <TableHead scope="col">وضعیت</TableHead>
+                    <TableHead scope="col">آخرین تغییر</TableHead>
+                    <TableHead scope="col">
+                      <span className="sr-only">مشاهده</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                 {products.data.items.map((product) => (
                   <ProductRow
                     key={product.id}
@@ -288,9 +352,10 @@ function ProductsListScreen({
                     product={product}
                   />
                 ))}
-              </tbody>
-            </table>
-          </div>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
           <nav
             aria-label="صفحه‌بندی کالاها"
             className="flex items-center justify-between gap-3"
@@ -306,7 +371,7 @@ function ProductsListScreen({
               }}
               variant="outline"
             >
-              <ChevronRight aria-hidden="true" /> صفحه پیشین
+              <ChevronRight aria-hidden="true" data-icon="inline-start" /> صفحه پیشین
             </Button>
             <Button
               disabled={!products.data.nextCursor || products.isFetching}
@@ -318,7 +383,7 @@ function ProductsListScreen({
               }
               variant="outline"
             >
-              صفحه بعد <ChevronLeft aria-hidden="true" />
+              صفحه بعد <ChevronLeft aria-hidden="true" data-icon="inline-end" />
             </Button>
           </nav>
         </>
@@ -335,33 +400,66 @@ function ProductRow({
   readonly product: AdminProductSummary;
 }) {
   return (
-    <tr className="transition-colors hover:bg-muted/40">
-      <td className="px-4 py-3 font-medium">
+    <TableRow>
+      <TableCell className="font-medium">
         {product.title}
         <p className="mt-1 text-xs font-normal text-muted-foreground">
           نسخه {product.version.toLocaleString('fa-IR')}
         </p>
-      </td>
-      <td className="px-4 py-3 text-muted-foreground">
-        <bdi dir="ltr">{product.slug}</bdi>
-      </td>
-      <td className="px-4 py-3">
+      </TableCell>
+      <TableCell className="max-w-56 text-muted-foreground">
+        <bdi className="block truncate" dir="ltr">{product.slug}</bdi>
+      </TableCell>
+      <TableCell>
         <ProductStatus status={product.status} />
-      </td>
-      <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
+      </TableCell>
+      <TableCell className="whitespace-nowrap text-muted-foreground">
         {formatDate(product.updatedAt)}
-      </td>
-      <td className="px-4 py-3 text-left">
+      </TableCell>
+      <TableCell className="text-left">
         <Button
           aria-label={`مشاهده ${product.title}`}
           onClick={onSelect}
           size="sm"
           variant="ghost"
         >
-          جزئیات <ChevronLeft aria-hidden="true" />
+          جزئیات <ChevronLeft aria-hidden="true" data-icon="inline-end" />
         </Button>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function ProductCard({
+  onSelect,
+  product,
+}: {
+  readonly onSelect: () => void;
+  readonly product: AdminProductSummary;
+}) {
+  return (
+    <button
+      aria-label={`مشاهده ${product.title}`}
+      className="flex w-full flex-col gap-3 rounded-xl bg-card p-4 text-right ring-1 ring-foreground/10 transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/25"
+      onClick={onSelect}
+      type="button"
+    >
+      <span className="flex w-full items-start justify-between gap-3">
+        <span className="min-w-0">
+          <span className="block truncate font-medium">{product.title}</span>
+          <bdi className="mt-1 block truncate text-xs text-muted-foreground" dir="ltr">
+            {product.slug}
+          </bdi>
+        </span>
+        <ChevronLeft aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
+      </span>
+      <span className="flex w-full items-center justify-between gap-3">
+        <ProductStatus status={product.status} />
+        <span className="text-xs text-muted-foreground">
+          {formatDate(product.updatedAt)}
+        </span>
+      </span>
+    </button>
   );
 }
 
@@ -489,45 +587,44 @@ function CatalogProductContent({
     replaceCategories.isPending ||
     transition.isPending;
   return (
-    <article className="mx-auto max-w-6xl space-y-6" dir="rtl">
-      <Button onClick={onBack} size="sm" variant="ghost">
-        بازگشت به کالاها
-      </Button>
-      <PageHeader
-        actions={<LifecycleActions
-          canArchive={canArchive}
-          canPublish={canPublish}
-          isSubmitting={isSubmitting}
-          onTransition={async (action) => {
-            if (!confirmTransition(action, product.data.title)) return;
-            await transition.mutateAsync({
-              action,
-              expectedVersion: product.data.version,
-              productId,
-            });
-            await refresh();
-          }}
-          product={product.data}
-        />}
-        description={<span>نامک: <bdi dir="ltr">{product.data.slug}</bdi> · نسخه {product.data.version.toLocaleString('fa-IR')}</span>}
-        eyebrow={<span className="flex items-center gap-2">فضای کاری کالا <ProductStatus status={product.data.status} /></span>}
-        title={product.data.title}
-      />
-      <nav aria-label="بخش‌های کالا" className="overflow-x-auto border-b border-border">
-        <div className="flex min-w-max gap-1">
-          {PRODUCT_WORKSPACE_TABS.map(({ id, icon: Icon, label }) => (
-            <button
-              aria-current={tab === id ? 'page' : undefined}
-              className={tab === id ? 'flex min-h-11 items-center gap-2 border-b-2 border-primary px-3 text-sm font-medium text-primary' : 'flex min-h-11 items-center gap-2 border-b-2 border-transparent px-3 text-sm text-muted-foreground hover:text-foreground'}
-              key={id}
-              onClick={() => onTabChange(id)}
-              type="button"
-            >
-              <Icon aria-hidden="true" className="size-4" /> {label}
-            </button>
-          ))}
+    <article className="mx-auto flex max-w-[90rem] flex-col gap-5" dir="rtl">
+      <header className="sticky top-0 z-20 -mx-4 bg-background/95 px-4 pt-2 backdrop-blur-sm">
+        <div className="flex flex-col gap-4 border-b border-border pb-4">
+          <Button className="w-fit" onClick={onBack} size="sm" variant="ghost">
+            بازگشت به کالاها
+          </Button>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="truncate text-2xl font-semibold tracking-[-0.025em]">
+                  {product.data.title}
+                </h1>
+                <ProductStatus status={product.data.status} />
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                نامک: <bdi dir="ltr">{product.data.slug}</bdi>
+                <span aria-hidden="true"> · </span>
+                نسخه {product.data.version.toLocaleString('fa-IR')}
+              </p>
+            </div>
+            <LifecycleActions
+              canArchive={canArchive}
+              canPublish={canPublish}
+              isSubmitting={isSubmitting}
+              onTransition={async (action) => {
+                await transition.mutateAsync({
+                  action,
+                  expectedVersion: product.data.version,
+                  productId,
+                });
+                await refresh();
+              }}
+              product={product.data}
+            />
+          </div>
         </div>
-      </nav>
+        <ProductWorkspaceTabs onChange={onTabChange} value={tab} />
+      </header>
       {error ? <CatalogProblem error={error} /> : null}
       {tab === 'general' && canWrite ? (
         <ProductEditor
@@ -628,14 +725,19 @@ function ProductCategoryReadOnly({
     product.categoryIds.includes(category.id),
   );
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <h2 className="font-semibold">دسته‌بندی‌های کالا</h2>
-      <p className="mt-3 text-sm leading-7 text-muted-foreground">
-        {selected.length
-          ? selected.map((category) => category.title).join('، ')
-          : 'این کالا هنوز در دسته‌بندی‌ای قرار نگرفته است.'}
-      </p>
-    </section>
+    <Card>
+      <CardHeader>
+        <CardTitle>دسته‌بندی‌های کالا</CardTitle>
+        <CardDescription>جایگاه فعلی این کالا در ساختار فروشگاه</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm leading-7 text-muted-foreground">
+          {selected.length
+            ? selected.map((category) => category.title).join('، ')
+            : 'این کالا هنوز در دسته‌بندی‌ای قرار نگرفته است.'}
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -663,25 +765,28 @@ function ProductCategoryEditor({
       return next;
     });
   return (
-    <section className="rounded-lg border border-border bg-card p-5">
-      <h2 className="font-semibold">دسته‌بندی‌های کالا</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        دسته‌بندی‌های این کالا را انتخاب کنید. عضویت‌های موجود کامل خوانده
-        شده‌اند تا هنگام ذخیره از بین نروند.
-      </p>
+    <Card>
+      <CardHeader>
+        <CardTitle>دسته‌بندی‌های کالا</CardTitle>
+        <CardDescription>
+          دسته‌بندی‌هایی را انتخاب کنید که مشتری باید این کالا را در آن‌ها پیدا کند.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
       {categories.length ? (
-        <fieldset className="mt-4 grid gap-2 sm:grid-cols-2">
+        <fieldset className="grid gap-2 sm:grid-cols-2">
           <legend className="sr-only">دسته‌بندی‌های کالا</legend>
           {categories.map((category) => (
             <label
-              className="flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-2 text-sm"
+              className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm ring-1 ring-foreground/10 transition-colors hover:bg-muted/45"
+              htmlFor={`category-${category.id}`}
               key={category.id}
             >
-              <input
+              <Checkbox
                 checked={selected.has(category.id)}
                 disabled={isSubmitting}
-                onChange={() => toggle(category.id)}
-                type="checkbox"
+                id={`category-${category.id}`}
+                onCheckedChange={() => toggle(category.id)}
               />
               <span>{category.title}</span>
               {category.status === 'archived' ? (
@@ -693,20 +798,21 @@ function ProductCategoryEditor({
           ))}
         </fieldset>
       ) : (
-        <p className="mt-4 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           هنوز دسته‌بندی‌ای برای انتخاب وجود ندارد.
         </p>
       )}
-      <div className="mt-4 flex justify-end">
+      </CardContent>
+      <CardFooter className="justify-end">
         <Button
           disabled={isSubmitting}
           onClick={() => void onSubmit([...selected]).catch(() => undefined)}
         >
-          <Save aria-hidden="true" />{' '}
+          <Save aria-hidden="true" data-icon="inline-start" />{' '}
           {isSubmitting ? 'در حال ذخیره…' : 'ذخیره دسته‌بندی‌ها'}
         </Button>
-      </div>
-    </section>
+      </CardFooter>
+    </Card>
   );
 }
 
@@ -789,7 +895,7 @@ function ProductEditor({
   ) => setValue((current) => ({ ...current, [key]: next }));
   return (
     <form
-      className="space-y-5 rounded-lg border border-border bg-card p-5"
+      className="flex flex-col gap-4"
       onSubmit={(event) => {
         event.preventDefault();
         void onSubmit(value)
@@ -799,97 +905,149 @@ function ProductEditor({
           .catch(() => undefined);
       }}
     >
-      <div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold">اطلاعات کالا</h2>
-          {isDirty ? <span className="rounded-full bg-warning/12 px-2.5 py-1 text-xs font-medium text-amber-800">تغییر ذخیره‌نشده</span> : null}
-        </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          فقط داده‌های نمایش محصول در این بخش ذخیره می‌شوند.
+      {recovered ? (
+        <p className="rounded-lg bg-secondary px-3 py-2 text-sm text-secondary-foreground" role="status">
+          تغییرات ذخیره‌نشده قبلی بازیابی شد.
         </p>
-        {recovered ? <p className="mt-2 text-xs text-primary">تغییرات ذخیره‌نشده قبلی بازیابی شد.</p> : null}
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field label="نام کالا">
-          <input
-            className="catalog-input"
-            onChange={(e) => set('title', e.target.value)}
-            required
-            value={value.title}
-          />
-        </Field>
-        <Field label="نامک">
-          <input
-            className="catalog-input"
-            dir="ltr"
-            onChange={(e) => set('slug', e.target.value)}
-            pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
-            required
-            value={value.slug}
-          />
-          <p className="catalog-help">حروف کوچک انگلیسی، عدد و خط تیره</p>
-        </Field>
-        <Field label="خلاصه">
-          <input
-            className="catalog-input"
-            onChange={(e) => set('summary', e.target.value)}
-            value={value.summary}
-          />
-        </Field>
-        {!initial ? (
-          <Field label="نوع تأمین">
-            <select
-              className="catalog-input"
-              onChange={(e) =>
-                set(
-                  'fulfillmentClassification',
-                  e.target
-                    .value as ProductFormValue['fulfillmentClassification'],
-                )
-              }
-              value={value.fulfillmentClassification}
-            >
-              <option value="physical">فیزیکی</option>
-              <option value="digital">دیجیتال</option>
-              <option value="service">خدمات</option>
-            </select>
-          </Field>
-        ) : null}
-      </div>
-      <Field label="توضیحات">
-        <textarea
-          className="catalog-input min-h-28 py-2"
-          onChange={(e) => set('description', e.target.value)}
-          value={value.description}
-        />
-      </Field>
-      {!initial ? (
-        <div className="border-t border-border pt-5">
-          <h3 className="text-sm font-semibold">گونه پیش‌فرض</h3>
-          <div className="mt-3 grid gap-4 md:grid-cols-2">
-            <Field label="عنوان گونه">
-              <input
-                className="catalog-input"
-                onChange={(e) => set('defaultVariantTitle', e.target.value)}
-                value={value.defaultVariantTitle}
-              />
-            </Field>
-            <Field label="کد کالا">
-              <input
-                className="catalog-input"
-                dir="ltr"
-                onChange={(e) => set('defaultVariantSku', e.target.value)}
-                value={value.defaultVariantSku}
-              />
-            </Field>
-          </div>
-        </div>
       ) : null}
-      <div className="flex justify-end">
-        <Button disabled={isSubmitting} type="submit">
-          <Save aria-hidden="true" />{' '}
-          {isSubmitting ? 'در حال ذخیره…' : submitLabel}
-        </Button>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+        <div className="flex flex-col gap-4">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <CardTitle>اطلاعات کالا</CardTitle>
+                {isDirty ? (
+                  <StatusBadge tone="warning">ذخیره‌نشده</StatusBadge>
+                ) : (
+                  <StatusBadge tone="neutral">بدون تغییر</StatusBadge>
+                )}
+              </div>
+              <CardDescription>
+                نام و توضیحاتی که مشتری در فروشگاه مشاهده می‌کند.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FieldGroup>
+                <FormField>
+                  <FieldLabel htmlFor="product-title">نام کالا</FieldLabel>
+                  <Input
+                    id="product-title"
+                    onChange={(event) => set('title', event.target.value)}
+                    required
+                    value={value.title}
+                  />
+                </FormField>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField>
+                    <FieldLabel htmlFor="product-slug">نامک</FieldLabel>
+                    <Input
+                      dir="ltr"
+                      id="product-slug"
+                      onChange={(event) => set('slug', event.target.value)}
+                      pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                      required
+                      value={value.slug}
+                    />
+                    <FieldDescription>
+                      حروف کوچک انگلیسی، عدد و خط تیره
+                    </FieldDescription>
+                  </FormField>
+                  {!initial ? (
+                    <FormField>
+                      <FieldLabel htmlFor="product-fulfillment">نوع تأمین</FieldLabel>
+                      <Select
+                        onValueChange={(next) =>
+                          set(
+                            'fulfillmentClassification',
+                            next as ProductFormValue['fulfillmentClassification'],
+                          )
+                        }
+                        value={value.fulfillmentClassification}
+                      >
+                        <SelectTrigger id="product-fulfillment">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="physical">فیزیکی</SelectItem>
+                            <SelectItem value="digital">دیجیتال</SelectItem>
+                            <SelectItem value="service">خدمات</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </FormField>
+                  ) : null}
+                </div>
+                <FormField>
+                  <FieldLabel htmlFor="product-summary">خلاصه</FieldLabel>
+                  <Input
+                    id="product-summary"
+                    onChange={(event) => set('summary', event.target.value)}
+                    value={value.summary}
+                  />
+                </FormField>
+                <FormField>
+                  <FieldLabel htmlFor="product-description">توضیحات</FieldLabel>
+                  <Textarea
+                    className="min-h-36"
+                    id="product-description"
+                    onChange={(event) => set('description', event.target.value)}
+                    value={value.description}
+                  />
+                </FormField>
+              </FieldGroup>
+            </CardContent>
+          </Card>
+          {!initial ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>گونه پیش‌فرض</CardTitle>
+                <CardDescription>
+                  پس از ساخت پیش‌نویس می‌توانید گزینه‌ها و گونه‌های بیشتری اضافه کنید.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FieldGroup className="grid gap-4 md:grid-cols-2">
+                  <FormField>
+                    <FieldLabel htmlFor="default-variant-title">عنوان گونه</FieldLabel>
+                    <Input
+                      id="default-variant-title"
+                      onChange={(event) =>
+                        set('defaultVariantTitle', event.target.value)
+                      }
+                      value={value.defaultVariantTitle}
+                    />
+                  </FormField>
+                  <FormField>
+                    <FieldLabel htmlFor="default-variant-sku">کد کالا</FieldLabel>
+                    <Input
+                      dir="ltr"
+                      id="default-variant-sku"
+                      onChange={(event) =>
+                        set('defaultVariantSku', event.target.value)
+                      }
+                      value={value.defaultVariantSku}
+                    />
+                  </FormField>
+                </FieldGroup>
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
+        <Card className="lg:sticky lg:top-44">
+          <CardHeader>
+            <CardTitle>ذخیره این بخش</CardTitle>
+            <CardDescription>
+              تصاویر، دسته‌بندی‌ها و گونه‌ها در بخش‌های خودشان ذخیره می‌شوند.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button className="w-full" disabled={isSubmitting || !isDirty} type="submit">
+              <Save aria-hidden="true" data-icon="inline-start" />
+              {isSubmitting ? 'در حال ذخیره…' : submitLabel}
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     </form>
   );
@@ -1856,6 +2014,9 @@ function LifecycleActions({
   ) => Promise<void>;
   readonly product: AdminProduct;
 }) {
+  const [pendingAction, setPendingAction] = useState<
+    'publish' | 'unpublish' | 'archive' | 'restore'
+  >();
   const actions =
     product.status === 'draft'
       ? canPublish
@@ -1888,24 +2049,54 @@ function LifecycleActions({
             ]
           : [];
   return (
-    <div className="flex flex-wrap gap-2">
-      {actions.map(({ action, icon: Icon, label }) => (
-        <Button
-          className={
-            action === 'archive'
-              ? 'text-destructive hover:text-destructive'
-              : undefined
-          }
-          disabled={isSubmitting}
-          key={action}
-          onClick={() => void onTransition(action).catch(() => undefined)}
-          size="sm"
-          variant="outline"
-        >
-          <Icon aria-hidden="true" /> {label}
-        </Button>
-      ))}
-    </div>
+    <>
+      <div className="flex flex-wrap gap-2">
+        {actions.map(({ action, icon: Icon, label }) => (
+          <Button
+            disabled={isSubmitting}
+            key={action}
+            onClick={() => setPendingAction(action)}
+            size="sm"
+            variant={action === 'archive' ? 'destructive' : 'outline'}
+          >
+            <Icon aria-hidden="true" data-icon="inline-start" />
+            {label}
+          </Button>
+        ))}
+      </div>
+      <AlertDialog
+        onOpenChange={(open) => {
+          if (!open && !isSubmitting) setPendingAction(undefined);
+        }}
+        open={Boolean(pendingAction)}
+      >
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>بررسی تغییر وضعیت کالا</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingAction
+                ? transitionDescription(pendingAction, product.title)
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>انصراف</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isSubmitting}
+              onClick={(event) => {
+                event.preventDefault();
+                if (!pendingAction) return;
+                void onTransition(pendingAction)
+                  .then(() => setPendingAction(undefined))
+                  .catch(() => undefined);
+              }}
+            >
+              {isSubmitting ? 'در حال ثبت…' : 'تأیید تغییر وضعیت'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -1936,19 +2127,17 @@ function CatalogProblem({
 }
 function CatalogEmpty() {
   return (
-    <section
-      className="flex min-h-72 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card px-6 text-center"
-      dir="rtl"
-    >
-      <PackagePlus
-        aria-hidden="true"
-        className="size-8 text-muted-foreground"
-      />
-      <h2 className="mt-4 text-lg font-semibold">کالایی پیدا نشد</h2>
-      <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-        فیلترها را تغییر دهید یا اولین کالای فروشگاه را ایجاد کنید.
-      </p>
-    </section>
+    <Empty className="min-h-72 border border-dashed bg-card" dir="rtl">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <PackagePlus aria-hidden="true" />
+        </EmptyMedia>
+        <EmptyTitle>کالایی پیدا نشد</EmptyTitle>
+        <EmptyDescription>
+          فیلترها را تغییر دهید یا اولین کالای فروشگاه را ایجاد کنید.
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 }
 function CatalogSkeleton() {
@@ -1959,10 +2148,10 @@ function CatalogSkeleton() {
       className="space-y-4"
       dir="rtl"
     >
-      <div className="h-8 w-28 animate-pulse rounded bg-muted" />
-      <div className="h-16 animate-pulse rounded-lg bg-muted" />
+      <Skeleton className="h-8 w-28" />
+      <Skeleton className="h-16 rounded-lg" />
       {Array.from({ length: 5 }, (_, index) => (
-        <div className="h-16 animate-pulse rounded-lg bg-muted" key={index} />
+        <Skeleton className="h-16 rounded-lg" key={index} />
       ))}
     </section>
   );
@@ -2006,23 +2195,17 @@ function ProductStatus({
 }) {
   const tone =
     status === 'published'
-      ? 'bg-emerald-700/10 text-emerald-800'
+      ? 'success'
       : status === 'archived'
-        ? 'bg-destructive/10 text-destructive'
-        : 'bg-amber-700/10 text-amber-900';
+        ? 'destructive'
+        : 'warning';
   const label =
     status === 'published'
       ? 'منتشرشده'
       : status === 'archived'
         ? 'بایگانی‌شده'
         : 'پیش‌نویس';
-  return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}
-    >
-      {label}
-    </span>
-  );
+  return <StatusBadge tone={tone}>{label}</StatusBadge>;
 }
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('fa-IR', {
@@ -2051,19 +2234,19 @@ function toCreateProductInput(value: ProductFormValue) {
     title: value.title,
   };
 }
-function confirmTransition(
+function transitionDescription(
   action: 'publish' | 'unpublish' | 'archive' | 'restore',
   title: string,
 ) {
-  const message =
+  return (
     action === 'publish'
-      ? `«${title}» منتشر شود؟`
+      ? `کالای «${title}» در فروشگاه منتشر می‌شود و برای مشتریان قابل مشاهده خواهد بود.`
       : action === 'unpublish'
-        ? `«${title}» به پیش‌نویس برگردد؟`
+        ? `کالای «${title}» به پیش‌نویس برمی‌گردد و از فروشگاه پنهان می‌شود.`
         : action === 'archive'
-          ? `«${title}» بایگانی شود؟`
-          : `«${title}» به پیش‌نویس بازیابی شود؟`;
-  return window.confirm(message);
+          ? `کالای «${title}» بایگانی می‌شود. اطلاعات و سابقه آن حفظ خواهد شد.`
+          : `کالای «${title}» به‌صورت پیش‌نویس بازیابی می‌شود و پیش از انتشار قابل ویرایش است.`
+  );
 }
 function catalogErrorMessage(error: unknown) {
   if (isAdminApiError(error) && error.problem.kind === 'api') {
