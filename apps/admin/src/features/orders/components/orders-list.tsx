@@ -1,5 +1,23 @@
 import { ChevronLeft, ChevronRight, PackageOpen, RefreshCw } from 'lucide-react';
-import { Button, PageHeader, StatusBadge } from '@/components/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  Skeleton,
+  StatusBadge,
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui';
 import {
   formatExactMoney,
   formatOrderDate,
@@ -38,18 +56,24 @@ export function OrdersList({
   if (!page || page.items.length === 0) return <OrdersListEmpty />;
 
   return (
-    <section aria-labelledby="orders-list-heading" className="space-y-5" dir="rtl">
-      <PageHeader
-        description="سفارش‌های تازه و نیازمند اقدام را بررسی و برای پردازش باز کنید."
-        eyebrow={`${page.items.length.toLocaleString('fa-IR')} سفارش در این صفحه`}
-        title={<span id="orders-list-heading">سفارش‌ها</span>}
-      />
+    <section className="mx-auto flex max-w-[90rem] flex-col gap-4" dir="rtl">
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">سفارش‌ها</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            سفارش‌های تازه و نیازمند اقدام را بررسی و برای پردازش باز کنید.
+          </p>
+        </div>
+        <StatusBadge tone="neutral">
+          {page.items.length.toLocaleString('fa-IR')} سفارش در این صفحه
+        </StatusBadge>
+      </header>
 
       <div className="grid gap-3 md:hidden">
         {page.items.map((order) => (
           <button
             aria-label={`مشاهده سفارش ${order.orderNumber}`}
-            className="rounded-2xl border border-border bg-card p-4 text-right shadow-xs outline-none transition hover:border-primary/30 focus-visible:ring-3 focus-visible:ring-primary/15"
+            className="rounded-lg bg-card p-4 text-right outline-none ring-1 ring-foreground/10 transition-colors hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring"
             key={order.id}
             onClick={() => onOrderSelect(order.id)}
             type="button"
@@ -61,61 +85,94 @@ export function OrdersList({
               </div>
               <ChevronLeft aria-hidden="true" className="size-5 text-muted-foreground" />
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <OrderStatusBadge label={orderStatusLabel(order.status)} status={order.status} />
               <PaymentStatusBadge label={paymentStatusLabel(order.paymentStatus)} status={order.paymentStatus} />
             </div>
-            <p className="mt-4 border-t border-border pt-3 font-semibold" dir="ltr">{formatExactMoney(order.grandTotal, order.currency)}</p>
+            <p className="mt-3 border-t border-border pt-3 font-semibold" dir="ltr">
+              {formatExactMoney(order.grandTotal, order.currency)}
+            </p>
           </button>
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card shadow-xs md:block">
-        <table className="w-full min-w-180 text-right text-sm">
-          <caption className="sr-only">فهرست سفارش‌های ثبت‌شده فروشگاه</caption>
-          <thead className="border-b border-border bg-muted/45 text-xs text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 font-medium" scope="col">شماره</th>
-              <th className="px-4 py-3 font-medium" scope="col">زمان ثبت</th>
-              <th className="px-4 py-3 font-medium" scope="col">وضعیت سفارش</th>
-              <th className="px-4 py-3 font-medium" scope="col">پرداخت</th>
-              <th className="px-4 py-3 font-medium" scope="col">مبلغ کل</th>
-              <th className="px-4 py-3" scope="col"><span className="sr-only">مشاهده</span></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {page.items.map((order) => (
-              <tr className="transition-colors hover:bg-muted/40" key={order.id}>
-                <td className="px-4 py-3 font-medium" dir="ltr">#{order.orderNumber}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{formatOrderDate(order.submittedAt)}</td>
-                <td className="px-4 py-3"><OrderStatusBadge label={orderStatusLabel(order.status)} status={order.status} /></td>
-                <td className="px-4 py-3"><PaymentStatusBadge label={paymentStatusLabel(order.paymentStatus)} status={order.paymentStatus} /></td>
-                <td className="whitespace-nowrap px-4 py-3 font-medium" dir="ltr">{formatExactMoney(order.grandTotal, order.currency)}</td>
-                <td className="px-4 py-3 text-left"><Button aria-label={`مشاهده سفارش ${order.orderNumber}`} onClick={() => onOrderSelect(order.id)} size="sm" variant="ghost">جزئیات <ChevronLeft /></Button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Card className="hidden overflow-hidden md:block">
+        <CardContent className="p-0">
+          <Table>
+            <TableCaption className="sr-only">فهرست سفارش‌های ثبت‌شده فروشگاه</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col">شماره سفارش</TableHead>
+                <TableHead scope="col">زمان ثبت</TableHead>
+                <TableHead scope="col">وضعیت سفارش</TableHead>
+                <TableHead scope="col">پرداخت</TableHead>
+                <TableHead scope="col">مبلغ کل</TableHead>
+                <TableHead scope="col"><span className="sr-only">عملیات</span></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {page.items.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell className="font-medium" dir="ltr">#{order.orderNumber}</TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">{formatOrderDate(order.submittedAt)}</TableCell>
+                  <TableCell><OrderStatusBadge label={orderStatusLabel(order.status)} status={order.status} /></TableCell>
+                  <TableCell><PaymentStatusBadge label={paymentStatusLabel(order.paymentStatus)} status={order.paymentStatus} /></TableCell>
+                  <TableCell className="whitespace-nowrap font-medium" dir="ltr">{formatExactMoney(order.grandTotal, order.currency)}</TableCell>
+                  <TableCell className="text-left">
+                    <Button aria-label={`مشاهده سفارش ${order.orderNumber}`} onClick={() => onOrderSelect(order.id)} size="sm" variant="ghost">
+                      جزئیات <ChevronLeft aria-hidden="true" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <nav aria-label="صفحه‌بندی سفارش‌ها" className="flex items-center justify-between gap-3">
-        <Button disabled={!hasPreviousPage || isFetchingPreviousPage} onClick={onPreviousPage} variant="outline"><ChevronRight /> {isFetchingPreviousPage ? 'در حال دریافت…' : 'صفحه پیشین'}</Button>
-        <Button disabled={!page.nextCursor || isFetchingNextPage} onClick={onNextPage} variant="outline">{isFetchingNextPage ? 'در حال دریافت…' : 'صفحه بعد'} <ChevronLeft /></Button>
+        <Button disabled={!hasPreviousPage || isFetchingPreviousPage} onClick={onPreviousPage} variant="outline">
+          <ChevronRight aria-hidden="true" /> {isFetchingPreviousPage ? 'در حال دریافت…' : 'صفحه پیشین'}
+        </Button>
+        <Button disabled={!page.nextCursor || isFetchingNextPage} onClick={onNextPage} variant="outline">
+          {isFetchingNextPage ? 'در حال دریافت…' : 'صفحه بعد'} <ChevronLeft aria-hidden="true" />
+        </Button>
       </nav>
     </section>
   );
 }
 
 function OrdersListLoading() {
-  return <section aria-busy="true" aria-label="در حال دریافت سفارش‌ها" className="space-y-4" dir="rtl"><div className="h-9 w-40 animate-pulse rounded bg-muted" />{Array.from({ length: 5 }, (_, index) => <div className="h-20 animate-pulse rounded-2xl bg-muted" key={index} />)}</section>;
+  return (
+    <section aria-busy="true" aria-label="در حال دریافت سفارش‌ها" className="space-y-4" dir="rtl">
+      <Skeleton className="h-9 w-40" />
+      {Array.from({ length: 5 }, (_, index) => <Skeleton className="h-16 rounded-lg" key={index} />)}
+    </section>
+  );
 }
 
 function OrdersListEmpty() {
-  return <section className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card px-6 text-center" dir="rtl"><PackageOpen className="size-9 text-muted-foreground" /><h1 className="mt-4 text-lg font-semibold">هنوز سفارشی ثبت نشده است</h1><p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">وقتی مشتری سفارشی ثبت کند، برای بررسی و انجام عملیات در این بخش نمایش داده می‌شود.</p></section>;
+  return (
+    <Empty className="min-h-72 border border-dashed bg-card" dir="rtl">
+      <EmptyHeader>
+        <EmptyMedia variant="icon"><PackageOpen aria-hidden="true" /></EmptyMedia>
+        <EmptyTitle>هنوز سفارشی ثبت نشده است</EmptyTitle>
+        <EmptyDescription>وقتی مشتری سفارشی ثبت کند، برای بررسی و انجام عملیات در این بخش نمایش داده می‌شود.</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  );
 }
 
 function OrdersListError({ error, onRetry }: { readonly error: string; readonly onRetry?: () => void }) {
-  return <section className="rounded-2xl border border-destructive/25 bg-card px-5 py-6" dir="rtl" role="alert"><h1 className="font-semibold">دریافت سفارش‌ها انجام نشد</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">{error}</p>{onRetry ? <Button className="mt-4" onClick={onRetry} variant="outline"><RefreshCw /> تلاش دوباره</Button> : null}</section>;
+  return (
+    <Card dir="rtl" role="alert">
+      <CardContent className="py-6">
+        <h1 className="font-semibold">دریافت سفارش‌ها انجام نشد</h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{error}</p>
+        {onRetry ? <Button className="mt-4" onClick={onRetry} variant="outline"><RefreshCw aria-hidden="true" /> تلاش دوباره</Button> : null}
+      </CardContent>
+    </Card>
+  );
 }
 
 export function OrderStatusBadge({ label, status }: { readonly label: string; readonly status: 'submitted' | 'accepted' | 'cancelled' | 'completed' }) {

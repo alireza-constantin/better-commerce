@@ -7,7 +7,7 @@ import {
   getRouteApi,
 } from '@tanstack/react-router';
 import { isAdminApiError } from '@/api/client';
-import { Button } from '@/components/ui/button';
+import { Button, Skeleton } from '@/components/ui';
 import { adminRoutes } from '@/app/routes/admin-route-contract';
 import { PermissionBoundary } from '@/features/auth/permissions/permission-boundary';
 import { hasPermission } from '@/features/auth/permissions/permissions';
@@ -274,10 +274,10 @@ function OrderDetailLoading() {
       aria-label="در حال دریافت جزئیات سفارش"
       className="mx-auto max-w-6xl space-y-5"
     >
-      <div className="h-9 w-52 animate-pulse rounded bg-muted" />
+      <Skeleton className="h-9 w-52" />
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="h-80 animate-pulse rounded-lg bg-muted" />
-        <div className="h-64 animate-pulse rounded-lg bg-muted" />
+        <Skeleton className="h-80 rounded-lg" />
+        <Skeleton className="h-64 rounded-lg" />
       </div>
     </section>
   );
