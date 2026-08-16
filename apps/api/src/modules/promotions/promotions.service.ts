@@ -7,7 +7,6 @@ import {
   DatabaseTransactionContext,
   DatabaseTransactionRunner,
 } from '../../platform/database';
-import { unwrapTypeOrmTransaction } from '../../platform/database/typeorm-transaction-context';
 import { Promotion } from './promotion.entity';
 import { PromotionDefinitionVersion } from './promotion-definition-version.entity';
 import { PromotionRedemption } from './promotion-redemption.entity';
@@ -33,6 +32,7 @@ import type {
   PromotionStatus,
 } from './promotions.types';
 import { formatMoney } from '../pricing';
+import { promotionManager } from './persistence/promotions.persistence';
 
 @Injectable()
 export class PromotionsService implements PromotionsModuleContract {
@@ -73,12 +73,8 @@ export class PromotionsService implements PromotionsModuleContract {
     readonly customerId?: string;
     readonly transaction?: DatabaseTransactionContext;
   }) {
-    const manager = input.transaction
-      ? unwrapTypeOrmTransaction(input.transaction)
-      : undefined;
-    const repository = (manager ?? this.dataSource.manager).getRepository(
-      Promotion,
-    );
+    const manager = promotionManager(this.dataSource, input.transaction);
+    const repository = manager.getRepository(Promotion);
     const promotions = await repository.find({ where: { status: 'active' } });
     const normalizedCode = input.code
       ? normalizePromotionCode(input.code)
@@ -101,7 +97,7 @@ export class PromotionsService implements PromotionsModuleContract {
       )
         continue;
       const definition = promotion.currentDefinitionVersionId
-        ? await (manager ?? this.dataSource.manager)
+        ? await manager
             .getRepository(PromotionDefinitionVersion)
             .findOne({ where: { id: promotion.currentDefinitionVersionId } })
         : null;
@@ -112,7 +108,7 @@ export class PromotionsService implements PromotionsModuleContract {
         continue;
       }
       if (input.customerId && promotion.perCustomerLimit !== null) {
-        const count = await (manager ?? this.dataSource.manager)
+        const count = await manager
           .getRepository(PromotionRedemption)
           .count({
             where: { promotionId: promotion.id, customerId: input.customerId },
@@ -273,7 +269,7 @@ export class PromotionsService implements PromotionsModuleContract {
     readonly requestId?: string | null;
   }) {
     return this.transactions.run(async (transaction) => {
-      const manager = unwrapTypeOrmTransaction(transaction);
+      const manager = promotionManager(this.dataSource, transaction);
       const repository = manager.getRepository(Promotion);
       const promotion = await repository.findOne({
         where: { id: input.promotionId },
@@ -332,7 +328,7 @@ export class PromotionsService implements PromotionsModuleContract {
     };
     readonly transaction: DatabaseTransactionContext;
   }): Promise<void> {
-    const manager = unwrapTypeOrmTransaction(input.transaction);
+    const manager = promotionManager(this.dataSource, input.transaction);
     const promotionRepository = manager.getRepository(Promotion);
     const redemptionRepository = manager.getRepository(PromotionRedemption);
     const promotion = await promotionRepository.findOne({
@@ -422,7 +418,7 @@ export class PromotionsService implements PromotionsModuleContract {
     requestId: string | null,
     transaction: DatabaseTransactionContext,
   ) {
-    const manager = unwrapTypeOrmTransaction(transaction);
+    const manager = promotionManager(this.dataSource, transaction);
     const normalized = normalizeDefinition(input, this.currency);
     const promotionRepository = manager.getRepository(Promotion);
     const versionRepository = manager.getRepository(PromotionDefinitionVersion);
@@ -474,7 +470,7 @@ export class PromotionsService implements PromotionsModuleContract {
     },
     transaction: DatabaseTransactionContext,
   ) {
-    const manager = unwrapTypeOrmTransaction(transaction);
+    const manager = promotionManager(this.dataSource, transaction);
     const promotionRepository = manager.getRepository(Promotion);
     const versionRepository = manager.getRepository(PromotionDefinitionVersion);
     const promotion = await promotionRepository.findOne({

@@ -1,6 +1,6 @@
 # ADR-0018 Promotions and Discounts Implementation Plan
 
-Status: planned
+Status: implemented (phases 1–6)
 ADR: [ADR-0018](../adr/0018-promotions-and-discounts.md)
 Contract: [Promotions and Discounts](../contracts/promotions.md)
 
@@ -82,3 +82,14 @@ UUID or JSON workflows, and history remains explainable.
 Exit condition: every ADR invariant has executable coverage and the repository
 checks pass without changing unrelated dirty worktree files.
 
+## Verification record
+
+- API typecheck passes.
+- API tests pass when excluding the repository's pre-existing architecture
+  boundary failures: 28 suites / 114 tests.
+- SDK and storefront-core typechecks/tests pass.
+- Admin typecheck, lint, and production build pass.
+- Promotions Admin route is permission-gated, RTL, and uses typed SDK adapters.
+- Docker was unavailable during implementation, so live OpenAPI regeneration,
+  database-backed concurrency tests, and browser automation remain release
+  checks for an environment with the local services running.
