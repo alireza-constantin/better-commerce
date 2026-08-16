@@ -33,15 +33,36 @@ export type StorefrontRegistrationInput = BetterCommerceApiSchemas['RegisterDto'
 export type StorefrontPasswordChangeInput =
   BetterCommerceApiSchemas['ChangePasswordDto'];
 export type StorefrontCheckoutInput =
-  BetterCommerceApiSchemas['SubmitCartOrderDto'];
-export type StorefrontOrder = BetterCommerceApiSchemas['OrderResponseDto'];
-export type StorefrontOrdersPage =
-  BetterCommerceApiSchemas['OrdersPageResponseDto'];
+  BetterCommerceApiSchemas['SubmitCartOrderDto'] & {
+    readonly promotionCode?: string | null;
+  };
+export type StorefrontOrder = BetterCommerceApiSchemas['OrderResponseDto'] & {
+  readonly discountTotal: string;
+};
+export type StorefrontOrdersPage = Omit<
+  BetterCommerceApiSchemas['OrdersPageResponseDto'],
+  'items'
+> & { readonly items: readonly StorefrontOrder[] };
 export type StorefrontCart = BetterCommerceApiSchemas['CartResponseDto'];
 export type StorefrontCartDeliveryAddress =
   BetterCommerceApiSchemas['CartDeliveryAddressDto'];
+export interface StorefrontPromotionQuote {
+  readonly status: 'applied' | 'not_applied';
+  readonly promotionId: string | null;
+  readonly definitionVersion: string | null;
+  readonly name: string | null;
+  readonly code: string | null;
+  readonly discount: { readonly amount: string; readonly currency: string };
+  readonly allocations: readonly {
+    readonly variantId: string;
+    readonly amount: { readonly amount: string; readonly currency: string };
+  }[];
+  readonly reason: string | null;
+}
 export type StorefrontCheckoutPreparation =
-  BetterCommerceApiSchemas['CartCheckoutPreparationResponseDto'];
+  BetterCommerceApiSchemas['CartCheckoutPreparationResponseDto'] & {
+    readonly promotion: StorefrontPromotionQuote;
+  };
 
 export type StorefrontSessionSnapshot =
   | { readonly status: 'unknown'; readonly customer: null }
@@ -293,9 +314,10 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
           ),
         )
           .then((order) => {
-            completed = order;
+            const typedOrder = order as StorefrontOrder;
+            completed = typedOrder;
             publishCart(emptyCart());
-            return order;
+            return typedOrder;
           })
           .finally(() => {
             inFlight = undefined;
@@ -385,21 +407,37 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
       getCurrent: getCurrentCart,
       async prepareCheckout(
         deliveryAddress: StorefrontCartDeliveryAddress,
-        signal?: AbortSignal,
+        options:
+          | AbortSignal
+          | {
+              readonly signal?: AbortSignal;
+              readonly promotionCode?: string | null;
+            } = {},
       ): Promise<StorefrontCheckoutPreparation> {
+        const requestOptions: {
+          readonly signal?: AbortSignal;
+          readonly promotionCode?: string | null;
+        } =
+          typeof AbortSignal !== 'undefined' && options instanceof AbortSignal
+            ? { signal: options }
+            : (options as {
+                readonly signal?: AbortSignal;
+                readonly promotionCode?: string | null;
+              });
         try {
-          return await withCsrf((token) =>
+          return (await withCsrf((token) =>
             execute(() =>
               client.POST('/api/v1/cart/checkout-preparation', {
                 body: {
                   expectedVersion: cartSnapshot.version,
                   deliveryAddress,
+                  promotionCode: requestOptions.promotionCode ?? null,
                 },
                 params: { header: { 'x-csrf-token': token } },
-                signal,
+                signal: requestOptions.signal,
               }),
             ),
-          );
+          )) as StorefrontCheckoutPreparation;
         } catch (error) {
           return refreshAfterVersionConflict(error);
         }
@@ -474,7 +512,7 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
             params: { query },
             signal,
           }),
-        );
+        ).then((page) => page as StorefrontOrdersPage);
       },
       get(orderId: string, signal?: AbortSignal): Promise<StorefrontOrder> {
         return execute(() =>
@@ -482,7 +520,7 @@ export function createStorefrontBrowser(options: StorefrontBrowserOptions = {}) 
             params: { path: { orderId } },
             signal,
           }),
-        );
+        ).then((order) => order as StorefrontOrder);
       },
     },
     checkout: { createSubmission },

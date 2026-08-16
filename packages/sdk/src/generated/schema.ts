@@ -1337,6 +1337,7 @@ export interface components {
                 readonly currency: string;
             };
             readonly paymentMethods: readonly ("cash_on_delivery" | "cash_on_pickup" | "bank_transfer")[];
+            readonly promotion: unknown;
             readonly shippingMethods: readonly components["schemas"]["CartShippingQuoteResponseDto"][];
         };
         readonly CartDeliveryAddressDto: {
@@ -1753,6 +1754,8 @@ export interface components {
             /** @example USD */
             readonly currency: string;
             readonly deliveryAddress: components["schemas"]["DeliveryAddressDto"];
+            /** @example 0.00 */
+            readonly discountTotal: string;
             /** @example 250.00 */
             readonly grandTotal: string;
             /** Format: uuid */
@@ -1781,6 +1784,7 @@ export interface components {
         readonly PrepareCartCheckoutDto: {
             readonly deliveryAddress: components["schemas"]["CartDeliveryAddressDto"];
             readonly expectedVersion: number;
+            readonly promotionCode?: string | null;
         };
         readonly PriceResponseDto: {
             /** @example 120.00 */
@@ -2150,6 +2154,7 @@ export interface components {
             readonly deliveryAddress: components["schemas"]["DeliveryAddressDto"];
             /** @enum {string} */
             readonly paymentMethod: "cash_on_delivery" | "cash_on_pickup" | "bank_transfer";
+            readonly promotionCode?: string | null;
             /** Format: uuid */
             readonly shippingMethodId: string;
         };
