@@ -108,11 +108,9 @@ export class PromotionsService implements PromotionsModuleContract {
         continue;
       }
       if (input.customerId && promotion.perCustomerLimit !== null) {
-        const count = await manager
-          .getRepository(PromotionRedemption)
-          .count({
-            where: { promotionId: promotion.id, customerId: input.customerId },
-          });
+        const count = await manager.getRepository(PromotionRedemption).count({
+          where: { promotionId: promotion.id, customerId: input.customerId },
+        });
         if (count >= promotion.perCustomerLimit) continue;
       }
       const quote = calculateDiscount(
@@ -229,6 +227,55 @@ export class PromotionsService implements PromotionsModuleContract {
           .findOne({ where: { id: promotion.currentDefinitionVersionId } })
       : null;
     return this.toView(promotion, definition ?? undefined);
+  }
+
+  async listRedemptions(
+    promotionId: string,
+    input: { readonly limit: number; readonly cursor?: string },
+  ) {
+    const promotion = await this.dataSource
+      .getRepository(Promotion)
+      .findOne({ where: { id: promotionId } });
+    if (!promotion) {
+      throw new PromotionDomainError(
+        'promotion.not_found',
+        'Promotion was not found',
+      );
+    }
+
+    const cursor = this.decodeCursor(input.cursor);
+    const query = this.dataSource
+      .getRepository(PromotionRedemption)
+      .createQueryBuilder('redemption')
+      .where('redemption.promotion_id = :promotionId', { promotionId })
+      .orderBy('redemption.createdAt', 'DESC')
+      .addOrderBy('redemption.id', 'DESC')
+      .take(input.limit + 1);
+    if (cursor) {
+      query.andWhere(
+        '(redemption.created_at < :cursorCreatedAt OR (redemption.created_at = :cursorCreatedAt AND redemption.id < :cursorId))',
+        { cursorCreatedAt: cursor.updatedAt, cursorId: cursor.id },
+      );
+    }
+    const rows = await query.getMany();
+    const page = rows.slice(0, input.limit);
+    return {
+      items: page.map((redemption) => ({
+        id: redemption.id,
+        orderId: redemption.orderId,
+        customerId: redemption.customerId,
+        definitionVersionId: redemption.definitionVersionId,
+        discount: formatMoney({
+          minorAmount: BigInt(redemption.discountMinorAmount),
+          currency: redemption.currency,
+        }),
+        redeemedAt: redemption.createdAt.toISOString(),
+      })),
+      nextCursor:
+        rows.length > input.limit && page.at(-1)
+          ? this.encodeCursor(page.at(-1)!.createdAt, page.at(-1)!.id)
+          : null,
+    };
   }
 
   createDraft(input: {

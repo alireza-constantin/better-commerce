@@ -147,6 +147,23 @@ export class PromotionListQueryDto {
   limit = 25;
 }
 
+export class PromotionRedemptionListQueryDto {
+  @ApiPropertyOptional({
+    description: 'Opaque cursor returned by the previous page.',
+  })
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  @ApiPropertyOptional({ default: 25, minimum: 1, maximum: 100 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit = 25;
+}
+
 export class PromotionRuleResponseDto {
   @ApiProperty({ enum: ['percentage', 'fixed_amount'] })
   kind!: string;
@@ -192,8 +209,28 @@ export class PromotionPageResponseDto {
 }
 
 export class PromotionRedemptionResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  orderId!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  customerId!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  definitionVersionId!: string;
+
   @ApiProperty({ type: Object })
-  items!: unknown[];
+  discount!: { amount: string; currency: string };
+
+  @ApiProperty({ format: 'date-time' })
+  redeemedAt!: string;
+}
+
+export class PromotionRedemptionPageResponseDto {
+  @ApiProperty({ type: () => [PromotionRedemptionResponseDto] })
+  items!: PromotionRedemptionResponseDto[];
 
   @ApiProperty({ nullable: true, type: String })
   nextCursor!: string | null;

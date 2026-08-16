@@ -654,6 +654,22 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/v1/admin/promotions/{promotionId}/redemptions": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["PromotionsAdmin_redemptions"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/v1/admin/roles": {
         readonly parameters: {
             readonly query?: never;
@@ -1982,6 +1998,23 @@ export interface components {
         readonly PromotionPageResponseDto: {
             readonly items: readonly components["schemas"]["PromotionResponseDto"][];
             readonly nextCursor: string | null;
+        };
+        readonly PromotionRedemptionPageResponseDto: {
+            readonly items: readonly components["schemas"]["PromotionRedemptionResponseDto"][];
+            readonly nextCursor: string | null;
+        };
+        readonly PromotionRedemptionResponseDto: {
+            /** Format: uuid */
+            readonly customerId: string;
+            /** Format: uuid */
+            readonly definitionVersionId: string;
+            readonly discount: Record<string, never>;
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly orderId: string;
+            /** Format: date-time */
+            readonly redeemedAt: string;
         };
         readonly PromotionResponseDto: {
             readonly code: string | null;
@@ -5333,6 +5366,55 @@ export interface operations {
             };
             /** @description promotion.version_conflict */
             readonly 409: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly PromotionsAdmin_redemptions: {
+        readonly parameters: {
+            readonly query?: {
+                /** @description Opaque cursor returned by the previous page. */
+                readonly cursor?: string;
+                readonly limit?: components["schemas"]["Object"];
+            };
+            readonly header?: never;
+            readonly path: {
+                readonly promotionId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PromotionRedemptionPageResponseDto"];
+                };
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
                 headers: {
                     /** @description Request correlation identifier. */
                     readonly "x-request-id"?: string;

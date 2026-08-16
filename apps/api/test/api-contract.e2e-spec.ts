@@ -122,5 +122,17 @@ describe('External API contract', () => {
         }),
       ]),
     );
+    expect(
+      document.paths['/api/v1/admin/promotions/{promotionId}/redemptions']?.get
+        ?.responses['200'],
+    ).toMatchObject({
+      content: {
+        'application/json': {
+          schema: {
+            $ref: '#/components/schemas/PromotionRedemptionPageResponseDto',
+          },
+        },
+      },
+    });
   });
 });

@@ -7,5 +7,7 @@ export function promotionManager(
   dataSource: DataSource,
   transaction?: DatabaseTransactionContext,
 ): EntityManager {
-  return transaction ? unwrapTypeOrmTransaction(transaction) : dataSource.manager;
+  return transaction
+    ? unwrapTypeOrmTransaction(transaction)
+    : dataSource.manager;
 }

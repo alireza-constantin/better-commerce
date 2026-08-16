@@ -28,6 +28,8 @@ import {
   CreatePromotionDto,
   PromotionListQueryDto,
   PromotionPageResponseDto,
+  PromotionRedemptionListQueryDto,
+  PromotionRedemptionPageResponseDto,
   PromotionResponseDto,
   ReplacePromotionDefinitionDto,
 } from './promotions.dto';
@@ -82,6 +84,21 @@ export class PromotionsAdminController {
   ) {
     try {
       return await this.promotions.get(id);
+    } catch (error) {
+      translatePromotionError(error);
+    }
+  }
+
+  @Get(':promotionId/redemptions')
+  @RequirePermissions(PermissionKey.PROMOTIONS_READ)
+  @ApiOkResponse({ type: PromotionRedemptionPageResponseDto })
+  async redemptions(
+    @Param('promotionId', new ParseUUIDPipe({ version: '4' }))
+    promotionId: string,
+    @Query() query: PromotionRedemptionListQueryDto,
+  ) {
+    try {
+      return await this.promotions.listRedemptions(promotionId, query);
     } catch (error) {
       translatePromotionError(error);
     }
