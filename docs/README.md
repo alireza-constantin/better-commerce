@@ -32,7 +32,7 @@ amendment or a superseding ADR.
 
 Proposed decisions under review:
 
-- None.
+- [ADR-0018 — Promotions and Discounts](adr/0018-promotions-and-discounts.md)
 
 ### Living architecture
 
