@@ -95,7 +95,7 @@ export class SubmitOrderDto {
   @Type(() => DeliveryAddressDto)
   deliveryAddress!: DeliveryAddressDto;
 
-  @ApiPropertyOptional({ maxLength: 64, nullable: true })
+  @ApiPropertyOptional({ type: String, maxLength: 64, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(64)
@@ -125,7 +125,7 @@ export class SubmitCartOrderDto {
   @Type(() => DeliveryAddressDto)
   deliveryAddress!: DeliveryAddressDto;
 
-  @ApiPropertyOptional({ maxLength: 64, nullable: true })
+  @ApiPropertyOptional({ type: String, maxLength: 64, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(64)

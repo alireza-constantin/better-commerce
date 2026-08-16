@@ -1880,7 +1880,7 @@ export interface components {
         readonly PrepareCartCheckoutDto: {
             readonly deliveryAddress: components["schemas"]["CartDeliveryAddressDto"];
             readonly expectedVersion: number;
-            readonly promotionCode?: Record<string, never> | null;
+            readonly promotionCode?: string | null;
         };
         readonly PriceResponseDto: {
             /** @example 120.00 */
@@ -2354,7 +2354,7 @@ export interface components {
             readonly deliveryAddress: components["schemas"]["DeliveryAddressDto"];
             /** @enum {string} */
             readonly paymentMethod: "cash_on_delivery" | "cash_on_pickup" | "bank_transfer";
-            readonly promotionCode?: Record<string, never> | null;
+            readonly promotionCode?: string | null;
             /** Format: uuid */
             readonly shippingMethodId: string;
         };
@@ -2363,7 +2363,7 @@ export interface components {
             readonly lines: readonly components["schemas"]["SubmitOrderLineDto"][];
             /** @enum {string} */
             readonly paymentMethod: "cash_on_delivery" | "cash_on_pickup" | "bank_transfer";
-            readonly promotionCode?: Record<string, never> | null;
+            readonly promotionCode?: string | null;
             /** Format: uuid */
             readonly shippingMethodId: string;
         };

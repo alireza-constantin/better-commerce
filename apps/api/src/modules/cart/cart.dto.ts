@@ -132,7 +132,7 @@ export class PrepareCartCheckoutDto extends CartVersionDto {
   @Type(() => CartDeliveryAddressDto)
   deliveryAddress!: CartDeliveryAddressDto;
 
-  @ApiPropertyOptional({ maxLength: 64, nullable: true })
+  @ApiPropertyOptional({ type: String, maxLength: 64, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(64)

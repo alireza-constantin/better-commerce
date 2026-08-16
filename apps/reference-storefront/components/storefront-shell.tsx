@@ -233,6 +233,7 @@ function CheckoutForm({
   const { browser, cart } = useStorefront();
   const [preparation, setPreparation] =
     useState<StorefrontCheckoutPreparation | null>(null);
+  const [promotionCode, setPromotionCode] = useState('');
   const [shippingMethodId, setShippingMethodId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<
     StorefrontCheckoutInput['paymentMethod'] | null
@@ -256,7 +257,10 @@ function CheckoutForm({
   async function prepare(form: HTMLFormElement) {
     const data = new FormData(form);
     try {
-      const result = await browser.cart.prepareCheckout(addressFrom(data));
+      const normalizedPromotionCode = promotionCode.trim();
+      const result = await browser.cart.prepareCheckout(addressFrom(data), {
+        promotionCode: normalizedPromotionCode || null,
+      });
       setPreparation(result);
       setShippingMethodId(result.shippingMethods[0]?.methodId ?? '');
       setPaymentMethod(result.paymentMethods[0] ?? null);
@@ -275,6 +279,12 @@ function CheckoutForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!cart.id || !paymentMethod) return;
+    if (promotionCode.trim() && preparation?.promotion.status !== 'applied') {
+      onMessage(
+        'کد تخفیف قابل استفاده نیست. کد را بررسی کنید و دوباره محاسبه کنید.',
+      );
+      return;
+    }
     const data = new FormData(event.currentTarget);
     try {
       const submission = browser.checkout.createSubmission({
@@ -283,6 +293,7 @@ function CheckoutForm({
         shippingMethodId,
         paymentMethod,
         deliveryAddress: addressFrom(data),
+        promotionCode: promotionCode.trim() || null,
       });
       const order = await submission.submit();
       setCompletedOrder(order);
@@ -337,6 +348,42 @@ function CheckoutForm({
         required
         onChange={invalidatePreparation}
       />
+      <div className="promotion-code-row">
+        <label htmlFor="checkout-promotion-code">کد تخفیف</label>
+        <div>
+          <input
+            id="checkout-promotion-code"
+            name="promotionCode"
+            value={promotionCode}
+            placeholder="اگر کد تخفیف دارید وارد کنید"
+            autoComplete="off"
+            onChange={(event) => {
+              setPromotionCode(event.currentTarget.value);
+              invalidatePreparation();
+            }}
+          />
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={disabled}
+            onClick={(event) => {
+              const form = event.currentTarget.form;
+              if (form?.reportValidity()) void prepare(form);
+            }}
+          >
+            اعمال کد
+          </button>
+        </div>
+        {preparation?.promotion.status === 'applied' ? (
+          <p className="promotion-feedback success" role="status">
+            کد «{preparation.promotion.name ?? 'تخفیف'}» اعمال شد.
+          </p>
+        ) : promotionCode.trim() && preparation?.promotion.reason ? (
+          <p className="promotion-feedback" role="alert">
+            {promotionReasonLabel(preparation.promotion.reason)}
+          </p>
+        ) : null}
+      </div>
       <button
         type="button"
         disabled={disabled}
@@ -393,6 +440,14 @@ function CheckoutForm({
             <dt>جمع کالاها</dt>
             <dd>{displayPreparationMoney(preparation.merchandiseSubtotal)}</dd>
           </div>
+          {preparation.promotion.discount.amount !== '0.00' ? (
+            <div className="checkout-discount">
+              <dt>تخفیف</dt>
+              <dd>
+                −{displayPreparationMoney(preparation.promotion.discount)}
+              </dd>
+            </div>
+          ) : null}
           <div>
             <dt>هزینه ارسال</dt>
             <dd>
@@ -434,6 +489,15 @@ function CheckoutConfirmation({
         سفارش شماره <bdi dir="ltr">#{order.orderNumber}</bdi>
       </h3>
       <p>{paymentStatusLabel(order.paymentStatus)}</p>
+      {order.discountTotal !== '0.00' ? (
+        <p>
+          تخفیف اعمال‌شده:{' '}
+          {displayMoney({
+            amount: order.discountTotal,
+            currency: order.currency,
+          })}
+        </p>
+      ) : null}
       <p className="confirmation-total">
         {displayMoney({ amount: order.grandTotal, currency: order.currency })}
       </p>
@@ -561,6 +625,21 @@ function displayPreparationMoney(
   money: { readonly amount: string; readonly currency: string } | undefined,
 ) {
   return money ? displayMoney(money) : 'نامشخص';
+}
+
+function promotionReasonLabel(
+  reason: NonNullable<StorefrontCheckoutPreparation['promotion']['reason']>,
+) {
+  return {
+    missing_code: 'کد تخفیف را وارد کنید.',
+    invalid_code: 'این کد تخفیف معتبر نیست.',
+    not_started: 'زمان استفاده از این کد هنوز شروع نشده است.',
+    ended: 'مهلت استفاده از این کد به پایان رسیده است.',
+    paused: 'این کد تخفیف موقتاً غیرفعال است.',
+    not_eligible: 'این کد برای اقلام سبد شما قابل استفاده نیست.',
+    limit_reached: 'سقف استفاده از این کد تخفیف تکمیل شده است.',
+    no_eligible_lines: 'این کد برای اقلام سبد شما تخفیفی ندارد.',
+  }[reason];
 }
 
 function paymentMethodNote(method: StorefrontCheckoutInput['paymentMethod']) {
