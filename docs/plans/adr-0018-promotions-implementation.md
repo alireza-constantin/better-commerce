@@ -1,6 +1,6 @@
 # ADR-0018 Promotions and Discounts Implementation Plan
 
-Status: implemented (phases 1–6)
+Status: implemented (phases 1–7)
 ADR: [ADR-0018](../adr/0018-promotions-and-discounts.md)
 Contract: [Promotions and Discounts](../contracts/promotions.md)
 
@@ -93,5 +93,12 @@ checks pass without changing unrelated dirty worktree files.
 - Docker-backed verification completed after implementation: Postgres, Redis,
   and MinIO are healthy; the SDK was regenerated from the live OpenAPI document
   and `sdk:check` passes; the full API E2E suite passes (12 suites / 57 tests).
-- Browser automation for the Admin workspace remains a separate UI-environment
-  check; the Admin production build and static checks already pass.
+- Admin browser automation and static checks pass in the local UI environment.
+- Phase 7 storefront promotion-code UX is live in checkout: codes are sent
+  through the typed browser SDK, server-confirmed discounts are shown without
+  client-side money calculations, and promotion failures use non-technical
+  Persian recovery copy.
+- Phase 7 release verification completed: Admin Vitest (5 tests), Admin
+  Playwright desktop/mobile RTL and axe checks (4 tests), Admin production
+  build, reference storefront production build, and storefront-core build all
+  pass. The Admin browser suite found no accessibility violations.
