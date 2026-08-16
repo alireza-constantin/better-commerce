@@ -590,6 +590,70 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/v1/admin/promotions": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["PromotionsAdmin_list"];
+        readonly put?: never;
+        readonly post: operations["PromotionsAdmin_create"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/promotions/{promotionId}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["PromotionsAdmin_get"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/promotions/{promotionId}/definition": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: operations["PromotionsAdmin_replace"];
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/promotions/{promotionId}/{action}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: operations["PromotionsAdmin_lifecycle"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/v1/admin/roles": {
         readonly parameters: {
             readonly query?: never;
@@ -1627,6 +1691,70 @@ export interface components {
             readonly state: "priced" | "price_on_request";
             /** Format: uuid */
             readonly variantId: string;
+        };
+        readonly PromotionRuleDto: {
+            readonly kind: "percentage" | "fixed_amount";
+            readonly percentage?: string;
+            readonly amount?: string;
+            readonly currency?: string;
+        };
+        readonly PromotionTargetDto: {
+            readonly kind: "cart" | "variants" | "categories" | "collections";
+            readonly ids: readonly string[];
+        };
+        readonly CreatePromotionDto: {
+            readonly name: string;
+            readonly description?: string | null;
+            readonly eligibility: "public" | "code_required";
+            readonly code?: string | null;
+            readonly rule: components["schemas"]["PromotionRuleDto"];
+            readonly target: components["schemas"]["PromotionTargetDto"];
+            readonly priority: number;
+            readonly startsAt: string;
+            readonly endsAt?: string | null;
+            readonly totalLimit?: number | null;
+            readonly perCustomerLimit?: number | null;
+        };
+        readonly ReplacePromotionDefinitionDto: components["schemas"]["CreatePromotionDto"] & {
+            readonly expectedVersion: number;
+        };
+        readonly PromotionRuleResponseDto: {
+            readonly kind: "percentage" | "fixed_amount";
+            readonly percentage?: string;
+            readonly amount?: { readonly amount: string; readonly currency: string };
+        };
+        readonly PromotionResponseDto: {
+            readonly id: string;
+            readonly version: number;
+            readonly definitionVersion: string;
+            readonly status: "draft" | "scheduled" | "active" | "paused" | "ended";
+            readonly name: string;
+            readonly description: string | null;
+            readonly eligibility: "public" | "code_required";
+            readonly code: string | null;
+            readonly rule: components["schemas"]["PromotionRuleResponseDto"];
+            readonly target: { readonly kind: string; readonly ids: readonly string[] };
+            readonly priority: number;
+            readonly startsAt: string;
+            readonly endsAt: string | null;
+            readonly totalLimit: number | null;
+            readonly perCustomerLimit: number | null;
+            readonly redemptions: { readonly total: number };
+            readonly createdAt: string;
+            readonly updatedAt: string;
+        };
+        readonly PromotionPageResponseDto: {
+            readonly items: readonly components["schemas"]["PromotionResponseDto"][];
+            readonly nextCursor: string | null;
+        };
+        readonly PromotionListQueryDto: {
+            readonly status?: "draft" | "scheduled" | "active" | "paused" | "ended";
+            readonly q?: string;
+            readonly cursor?: string;
+            readonly limit?: number;
+        };
+        readonly PromotionLifecycleDto: {
+            readonly expectedVersion: number;
         };
         readonly DeliveryAddressDto: {
             readonly city: string;
@@ -4914,6 +5042,66 @@ export interface operations {
                     readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
                 };
             };
+        };
+    };
+    readonly PromotionsAdmin_list: {
+        readonly parameters: {
+            readonly query: components["schemas"]["PromotionListQueryDto"];
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: { readonly headers: Record<string, never>; readonly content: { readonly "application/json": components["schemas"]["PromotionPageResponseDto"] } };
+        };
+    };
+    readonly PromotionsAdmin_get: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: { readonly promotionId: string };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: { readonly headers: Record<string, never>; readonly content: { readonly "application/json": components["schemas"]["PromotionResponseDto"] } };
+        };
+    };
+    readonly PromotionsAdmin_create: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: { readonly "x-csrf-token": string };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: { readonly content: { readonly "application/json": components["schemas"]["CreatePromotionDto"] } };
+        readonly responses: {
+            readonly 201: { readonly headers: Record<string, never>; readonly content: { readonly "application/json": components["schemas"]["PromotionResponseDto"] } };
+        };
+    };
+    readonly PromotionsAdmin_replace: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: { readonly "x-csrf-token": string };
+            readonly path: { readonly promotionId: string };
+            readonly cookie?: never;
+        };
+        readonly requestBody: { readonly content: { readonly "application/json": components["schemas"]["ReplacePromotionDefinitionDto"] } };
+        readonly responses: {
+            readonly 200: { readonly headers: Record<string, never>; readonly content: { readonly "application/json": components["schemas"]["PromotionResponseDto"] } };
+        };
+    };
+    readonly PromotionsAdmin_lifecycle: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: { readonly "x-csrf-token": string };
+            readonly path: { readonly promotionId: string; readonly action: "activate" | "pause" | "end" };
+            readonly cookie?: never;
+        };
+        readonly requestBody: { readonly content: { readonly "application/json": components["schemas"]["PromotionLifecycleDto"] } };
+        readonly responses: {
+            readonly 200: { readonly headers: Record<string, never>; readonly content: { readonly "application/json": components["schemas"]["PromotionResponseDto"] } };
         };
     };
     readonly StaffAdmin_roles: {

@@ -20,6 +20,7 @@ import {
   OrdersRoute,
   OverviewRoute,
   PricingRoute,
+  PromotionsRoute,
   ShippingRoute,
   StaffRoute,
 } from './routes/lazy-admin-routes';
@@ -126,6 +127,7 @@ const routeTree = rootRoute.addChildren([
   protectedRoute(adminRoutes.collections.path, CollectionsRoute),
   protectedRoute(adminRoutes.pricing.path, PricingRoute),
   protectedRoute(adminRoutes.inventory.path, InventoryRoute),
+  protectedRoute(adminRoutes.promotions.path, PromotionsRoute),
   protectedRoute(adminRoutes.shipping.path, ShippingRoute),
   createRoute({
     getParentRoute: () => rootRoute,

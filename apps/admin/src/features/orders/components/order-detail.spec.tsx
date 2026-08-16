@@ -18,6 +18,7 @@ const order: AdminOrder = {
     recipientName: 'مشتری نمونه',
   },
   grandTotal: '125000.00',
+  discountTotal: '0.00',
   id: 'order-1',
   lines: [{
     fulfillmentClassification: 'physical',

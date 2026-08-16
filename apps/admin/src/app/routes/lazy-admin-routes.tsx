@@ -30,6 +30,9 @@ export const InventoryRoute = lazy(async () => ({
   default: (await import('@/features/inventory/inventory-routes'))
     .InventoryRoute,
 }));
+export const PromotionsRoute = lazy(async () => ({
+  default: (await import('@/features/promotions/promotions-routes')).PromotionsRoute,
+}));
 export const ShippingRoute = lazy(async () => ({
   default: (await import('@/features/shipping/shipping-routes')).ShippingRoute,
 }));

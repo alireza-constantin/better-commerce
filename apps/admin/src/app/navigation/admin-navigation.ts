@@ -3,6 +3,7 @@ import {
   Boxes,
   FolderTree,
   LayoutDashboard,
+  Megaphone,
   PackageSearch,
   ScrollText,
   ShieldCheck,
@@ -89,6 +90,11 @@ export const adminNavigation: readonly AdminNavigationGroup[] = [
         label: 'موجودی',
         ...adminRoutes.inventory,
         icon: Boxes,
+      },
+      {
+        label: 'تخفیف‌ها و کمپین‌ها',
+        ...adminRoutes.promotions,
+        icon: Megaphone,
       },
       {
         label: 'ارسال',

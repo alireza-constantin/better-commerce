@@ -42,6 +42,10 @@ export const adminRoutes = {
     path: '/inventory',
     permissions: ['inventory.read'],
   },
+  promotions: {
+    path: '/promotions',
+    permissions: ['promotions.read'],
+  },
   shipping: {
     path: '/shipping',
     permissions: ['shipping.read'],
