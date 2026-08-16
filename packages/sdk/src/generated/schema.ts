@@ -622,22 +622,6 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/v1/admin/promotions/{promotionId}/definition": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put: operations["PromotionsAdmin_replace"];
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/api/v1/admin/promotions/{promotionId}/{action}": {
         readonly parameters: {
             readonly query?: never;
@@ -648,6 +632,22 @@ export interface paths {
         readonly get?: never;
         readonly put?: never;
         readonly post: operations["PromotionsAdmin_lifecycle"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/v1/admin/promotions/{promotionId}/definition": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: operations["PromotionsAdmin_replace"];
+        readonly post?: never;
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -1401,7 +1401,7 @@ export interface components {
                 readonly currency: string;
             };
             readonly paymentMethods: readonly ("cash_on_delivery" | "cash_on_pickup" | "bank_transfer")[];
-            readonly promotion: unknown;
+            readonly promotion: Record<string, never>;
             readonly shippingMethods: readonly components["schemas"]["CartShippingQuoteResponseDto"][];
         };
         readonly CartDeliveryAddressDto: {
@@ -1552,7 +1552,7 @@ export interface components {
         };
         readonly CommerceAuditEventResponseDto: {
             /** @enum {string} */
-            readonly action: "pricing.price_changed" | "inventory.configured" | "inventory.adjusted" | "shipping.zone_created" | "shipping.zone_updated" | "shipping.zone_archived" | "shipping.method_created" | "shipping.method_updated" | "shipping.method_archived" | "shipping.rule_created" | "shipping.rule_updated" | "shipping.rule_archived" | "orders.submitted" | "orders.accepted" | "orders.rejected" | "payments.confirmed" | "catalog.category_created" | "catalog.category_updated" | "catalog.category_moved" | "catalog.category_archived" | "catalog.category_restored" | "catalog.product_categories_replaced" | "catalog.variant_configuration_replaced" | "catalog.collection_created" | "catalog.collection_updated" | "catalog.collection_archived" | "catalog.collection_restored" | "catalog.collection_products_replaced";
+            readonly action: "pricing.price_changed" | "inventory.configured" | "inventory.adjusted" | "shipping.zone_created" | "shipping.zone_updated" | "shipping.zone_archived" | "shipping.method_created" | "shipping.method_updated" | "shipping.method_archived" | "shipping.rule_created" | "shipping.rule_updated" | "shipping.rule_archived" | "orders.submitted" | "orders.accepted" | "orders.rejected" | "payments.confirmed" | "catalog.category_created" | "catalog.category_updated" | "catalog.category_moved" | "catalog.category_archived" | "catalog.category_restored" | "catalog.product_categories_replaced" | "catalog.variant_configuration_replaced" | "catalog.collection_created" | "catalog.collection_updated" | "catalog.collection_archived" | "catalog.collection_restored" | "catalog.collection_products_replaced" | "promotions.created" | "promotions.updated" | "promotions.activated" | "promotions.paused" | "promotions.ended" | "promotions.redeemed";
             /** Format: uuid */
             readonly actorUserId: string | null;
             /** Format: date-time */
@@ -1642,6 +1642,22 @@ export interface components {
             readonly summary?: Record<string, never> | null;
             readonly title: string;
         };
+        readonly CreatePromotionDto: {
+            readonly code?: Record<string, never> | null;
+            readonly description?: Record<string, never> | null;
+            /** @enum {string} */
+            readonly eligibility: "public" | "code_required";
+            /** Format: date-time */
+            readonly endsAt?: Record<string, never> | null;
+            readonly name: string;
+            readonly perCustomerLimit?: Record<string, never> | null;
+            readonly priority: number;
+            readonly rule: components["schemas"]["PromotionRuleDto"];
+            /** Format: date-time */
+            readonly startsAt: string;
+            readonly target: components["schemas"]["PromotionTargetDto"];
+            readonly totalLimit?: Record<string, never> | null;
+        };
         readonly CreateStaffByEmailDto: {
             /** Format: email */
             readonly email: string;
@@ -1691,70 +1707,6 @@ export interface components {
             readonly state: "priced" | "price_on_request";
             /** Format: uuid */
             readonly variantId: string;
-        };
-        readonly PromotionRuleDto: {
-            readonly kind: "percentage" | "fixed_amount";
-            readonly percentage?: string;
-            readonly amount?: string;
-            readonly currency?: string;
-        };
-        readonly PromotionTargetDto: {
-            readonly kind: "cart" | "variants" | "categories" | "collections";
-            readonly ids: readonly string[];
-        };
-        readonly CreatePromotionDto: {
-            readonly name: string;
-            readonly description?: string | null;
-            readonly eligibility: "public" | "code_required";
-            readonly code?: string | null;
-            readonly rule: components["schemas"]["PromotionRuleDto"];
-            readonly target: components["schemas"]["PromotionTargetDto"];
-            readonly priority: number;
-            readonly startsAt: string;
-            readonly endsAt?: string | null;
-            readonly totalLimit?: number | null;
-            readonly perCustomerLimit?: number | null;
-        };
-        readonly ReplacePromotionDefinitionDto: components["schemas"]["CreatePromotionDto"] & {
-            readonly expectedVersion: number;
-        };
-        readonly PromotionRuleResponseDto: {
-            readonly kind: "percentage" | "fixed_amount";
-            readonly percentage?: string;
-            readonly amount?: { readonly amount: string; readonly currency: string };
-        };
-        readonly PromotionResponseDto: {
-            readonly id: string;
-            readonly version: number;
-            readonly definitionVersion: string;
-            readonly status: "draft" | "scheduled" | "active" | "paused" | "ended";
-            readonly name: string;
-            readonly description: string | null;
-            readonly eligibility: "public" | "code_required";
-            readonly code: string | null;
-            readonly rule: components["schemas"]["PromotionRuleResponseDto"];
-            readonly target: { readonly kind: string; readonly ids: readonly string[] };
-            readonly priority: number;
-            readonly startsAt: string;
-            readonly endsAt: string | null;
-            readonly totalLimit: number | null;
-            readonly perCustomerLimit: number | null;
-            readonly redemptions: { readonly total: number };
-            readonly createdAt: string;
-            readonly updatedAt: string;
-        };
-        readonly PromotionPageResponseDto: {
-            readonly items: readonly components["schemas"]["PromotionResponseDto"][];
-            readonly nextCursor: string | null;
-        };
-        readonly PromotionListQueryDto: {
-            readonly status?: "draft" | "scheduled" | "active" | "paused" | "ended";
-            readonly q?: string;
-            readonly cursor?: string;
-            readonly limit?: number;
-        };
-        readonly PromotionLifecycleDto: {
-            readonly expectedVersion: number;
         };
         readonly DeliveryAddressDto: {
             readonly city: string;
@@ -1912,7 +1864,7 @@ export interface components {
         readonly PrepareCartCheckoutDto: {
             readonly deliveryAddress: components["schemas"]["CartDeliveryAddressDto"];
             readonly expectedVersion: number;
-            readonly promotionCode?: string | null;
+            readonly promotionCode?: Record<string, never> | null;
         };
         readonly PriceResponseDto: {
             /** @example 120.00 */
@@ -2026,6 +1978,59 @@ export interface components {
         };
         readonly ProductTransitionDto: {
             readonly expectedVersion: number;
+        };
+        readonly PromotionPageResponseDto: {
+            readonly items: readonly components["schemas"]["PromotionResponseDto"][];
+            readonly nextCursor: string | null;
+        };
+        readonly PromotionResponseDto: {
+            readonly code: string | null;
+            /** Format: date-time */
+            readonly createdAt: string;
+            /** Format: uuid */
+            readonly definitionVersion: string;
+            readonly description: string | null;
+            /** @enum {string} */
+            readonly eligibility: "public" | "code_required";
+            /** Format: date-time */
+            readonly endsAt: string | null;
+            /** Format: uuid */
+            readonly id: string;
+            readonly name: string;
+            readonly perCustomerLimit: number | null;
+            readonly priority: number;
+            readonly redemptions: Record<string, never>;
+            readonly rule: components["schemas"]["PromotionRuleResponseDto"];
+            /** Format: date-time */
+            readonly startsAt: string;
+            /** @enum {string} */
+            readonly status: "draft" | "scheduled" | "active" | "paused" | "ended";
+            readonly target: Record<string, never>;
+            readonly totalLimit: number | null;
+            /** Format: date-time */
+            readonly updatedAt: string;
+            readonly version: number;
+        };
+        readonly PromotionRuleDto: {
+            /** @example 20.00 */
+            readonly amount?: string;
+            /** @example USD */
+            readonly currency?: string;
+            /** @enum {string} */
+            readonly kind: "percentage" | "fixed_amount";
+            /** @example 15.00 */
+            readonly percentage?: string;
+        };
+        readonly PromotionRuleResponseDto: {
+            readonly amount?: Record<string, never>;
+            /** @enum {string} */
+            readonly kind: "percentage" | "fixed_amount";
+            readonly percentage?: string;
+        };
+        readonly PromotionTargetDto: {
+            readonly ids: readonly string[];
+            /** @enum {string} */
+            readonly kind: "cart" | "variants" | "categories" | "collections";
         };
         readonly PublicCatalogVariantResponseDto: {
             /** @enum {string} */
@@ -2174,6 +2179,23 @@ export interface components {
             readonly expectedVersion: number;
             readonly items: readonly components["schemas"]["ProductMediaItemDto"][];
         };
+        readonly ReplacePromotionDefinitionDto: {
+            readonly code?: Record<string, never> | null;
+            readonly description?: Record<string, never> | null;
+            /** @enum {string} */
+            readonly eligibility: "public" | "code_required";
+            /** Format: date-time */
+            readonly endsAt?: Record<string, never> | null;
+            readonly expectedVersion: number;
+            readonly name: string;
+            readonly perCustomerLimit?: Record<string, never> | null;
+            readonly priority: number;
+            readonly rule: components["schemas"]["PromotionRuleDto"];
+            /** Format: date-time */
+            readonly startsAt: string;
+            readonly target: components["schemas"]["PromotionTargetDto"];
+            readonly totalLimit?: Record<string, never> | null;
+        };
         readonly ReplaceStaffRolesDto: {
             readonly roleKeys: readonly string[];
         };
@@ -2282,7 +2304,7 @@ export interface components {
             readonly deliveryAddress: components["schemas"]["DeliveryAddressDto"];
             /** @enum {string} */
             readonly paymentMethod: "cash_on_delivery" | "cash_on_pickup" | "bank_transfer";
-            readonly promotionCode?: string | null;
+            readonly promotionCode?: Record<string, never> | null;
             /** Format: uuid */
             readonly shippingMethodId: string;
         };
@@ -2291,6 +2313,7 @@ export interface components {
             readonly lines: readonly components["schemas"]["SubmitOrderLineDto"][];
             /** @enum {string} */
             readonly paymentMethod: "cash_on_delivery" | "cash_on_pickup" | "bank_transfer";
+            readonly promotionCode?: Record<string, never> | null;
             /** Format: uuid */
             readonly shippingMethodId: string;
         };
@@ -5046,62 +5069,290 @@ export interface operations {
     };
     readonly PromotionsAdmin_list: {
         readonly parameters: {
-            readonly query: components["schemas"]["PromotionListQueryDto"];
+            readonly query?: {
+                readonly cursor?: string;
+                readonly limit?: components["schemas"]["Object"];
+                readonly q?: string;
+                readonly status?: "draft" | "scheduled" | "active" | "paused" | "ended";
+            };
             readonly header?: never;
             readonly path?: never;
             readonly cookie?: never;
         };
         readonly requestBody?: never;
         readonly responses: {
-            readonly 200: { readonly headers: Record<string, never>; readonly content: { readonly "application/json": components["schemas"]["PromotionPageResponseDto"] } };
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PromotionPageResponseDto"];
+                };
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly PromotionsAdmin_create: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CreatePromotionDto"];
+            };
+        };
+        readonly responses: {
+            readonly 201: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PromotionResponseDto"];
+                };
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
         };
     };
     readonly PromotionsAdmin_get: {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
-            readonly path: { readonly promotionId: string };
+            readonly path: {
+                readonly promotionId: string;
+            };
             readonly cookie?: never;
         };
         readonly requestBody?: never;
         readonly responses: {
-            readonly 200: { readonly headers: Record<string, never>; readonly content: { readonly "application/json": components["schemas"]["PromotionResponseDto"] } };
-        };
-    };
-    readonly PromotionsAdmin_create: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header: { readonly "x-csrf-token": string };
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody: { readonly content: { readonly "application/json": components["schemas"]["CreatePromotionDto"] } };
-        readonly responses: {
-            readonly 201: { readonly headers: Record<string, never>; readonly content: { readonly "application/json": components["schemas"]["PromotionResponseDto"] } };
-        };
-    };
-    readonly PromotionsAdmin_replace: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header: { readonly "x-csrf-token": string };
-            readonly path: { readonly promotionId: string };
-            readonly cookie?: never;
-        };
-        readonly requestBody: { readonly content: { readonly "application/json": components["schemas"]["ReplacePromotionDefinitionDto"] } };
-        readonly responses: {
-            readonly 200: { readonly headers: Record<string, never>; readonly content: { readonly "application/json": components["schemas"]["PromotionResponseDto"] } };
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PromotionResponseDto"];
+                };
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
         };
     };
     readonly PromotionsAdmin_lifecycle: {
         readonly parameters: {
             readonly query?: never;
-            readonly header: { readonly "x-csrf-token": string };
-            readonly path: { readonly promotionId: string; readonly action: "activate" | "pause" | "end" };
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly action: string;
+                readonly promotionId: string;
+            };
             readonly cookie?: never;
         };
-        readonly requestBody: { readonly content: { readonly "application/json": components["schemas"]["PromotionLifecycleDto"] } };
+        readonly requestBody?: never;
         readonly responses: {
-            readonly 200: { readonly headers: Record<string, never>; readonly content: { readonly "application/json": components["schemas"]["PromotionResponseDto"] } };
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PromotionResponseDto"];
+                };
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+        };
+    };
+    readonly PromotionsAdmin_replace: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                /** @description Session-bound token returned by GET /api/v1/auth/csrf. */
+                readonly "x-csrf-token": string;
+            };
+            readonly path: {
+                readonly promotionId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["ReplacePromotionDefinitionDto"];
+            };
+        };
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PromotionResponseDto"];
+                };
+            };
+            /** @description A valid server-side session is required. */
+            readonly 401: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description The session-bound CSRF token is missing or invalid. */
+            readonly 403: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description promotion.version_conflict */
+            readonly 409: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
+            /** @description Unexpected error represented as RFC 9457 problem details. */
+            readonly default: {
+                headers: {
+                    /** @description Request correlation identifier. */
+                    readonly "x-request-id"?: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetailsDto"];
+                };
+            };
         };
     };
     readonly StaffAdmin_roles: {

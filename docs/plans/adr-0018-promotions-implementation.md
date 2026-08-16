@@ -90,6 +90,8 @@ checks pass without changing unrelated dirty worktree files.
 - SDK and storefront-core typechecks/tests pass.
 - Admin typecheck, lint, and production build pass.
 - Promotions Admin route is permission-gated, RTL, and uses typed SDK adapters.
-- Docker was unavailable during implementation, so live OpenAPI regeneration,
-  database-backed concurrency tests, and browser automation remain release
-  checks for an environment with the local services running.
+- Docker-backed verification completed after implementation: Postgres, Redis,
+  and MinIO are healthy; the SDK was regenerated from the live OpenAPI document
+  and `sdk:check` passes; the full API E2E suite passes (12 suites / 57 tests).
+- Browser automation for the Admin workspace remains a separate UI-environment
+  check; the Admin production build and static checks already pass.
