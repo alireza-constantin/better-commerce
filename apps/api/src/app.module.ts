@@ -28,6 +28,7 @@ import { ObservabilityModule } from './platform/observability';
 import { SecurityModule } from './platform/security';
 import { ObjectStorageModule } from './platform/object-storage';
 import { VariantConfigurationModule } from './modules/catalog/http/variant-configuration.module';
+import { PromotionsModule } from './modules/promotions';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { VariantConfigurationModule } from './modules/catalog/http/variant-confi
     CommerceAuditModule,
     PublicCommerceModule,
     CartModule,
+    PromotionsModule,
     SecurityModule,
     IdentityModule,
     HealthModule,
