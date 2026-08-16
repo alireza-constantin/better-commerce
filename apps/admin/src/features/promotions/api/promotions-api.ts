@@ -4,10 +4,16 @@ import { executeWithCsrf } from '@/api/csrf';
 
 export type Promotion = BetterCommerceApiSchemas['PromotionResponseDto'];
 export type PromotionPage = BetterCommerceApiSchemas['PromotionPageResponseDto'];
-export type PromotionListQuery = BetterCommerceApiSchemas['PromotionListQueryDto'];
+export interface PromotionListQuery {
+  readonly status?: Promotion['status'];
+  readonly q?: string;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
 export type CreatePromotionInput = BetterCommerceApiSchemas['CreatePromotionDto'];
 export type ReplacePromotionInput = BetterCommerceApiSchemas['ReplacePromotionDefinitionDto'];
-export type PromotionLifecycleInput = BetterCommerceApiSchemas['PromotionLifecycleDto'];
+export interface PromotionLifecycleInput { readonly expectedVersion: number }
+export type PromotionRedemptionPage = BetterCommerceApiSchemas['PromotionRedemptionPageResponseDto'];
 
 export async function listPromotions(query: PromotionListQuery = {}): Promise<PromotionPage> {
   return executeApiRequest(() =>
@@ -19,6 +25,21 @@ export async function getPromotion(promotionId: string): Promise<Promotion> {
   return executeApiRequest(() =>
     adminApiClient.GET('/api/v1/admin/promotions/{promotionId}', {
       params: { path: { promotionId } },
+    }),
+  );
+}
+
+export async function listPromotionRedemptions(input: {
+  readonly promotionId: string;
+  readonly cursor?: string;
+  readonly limit?: number;
+}): Promise<PromotionRedemptionPage> {
+  return executeApiRequest(() =>
+    adminApiClient.GET('/api/v1/admin/promotions/{promotionId}/redemptions', {
+      params: {
+        path: { promotionId: input.promotionId },
+        query: { cursor: input.cursor, limit: input.limit },
+      },
     }),
   );
 }

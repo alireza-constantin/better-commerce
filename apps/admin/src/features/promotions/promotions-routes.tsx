@@ -3,6 +3,14 @@ import { Megaphone, Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { isAdminApiError } from '@/api/client';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Button,
   Card,
   CardContent,
@@ -27,17 +35,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui';
+import { ProductVariantPicker } from '@/features/catalog/components/product-variant-picker';
+import { categoriesQuery, collectionsQuery } from '@/features/catalog/api/catalog-navigation-query';
 import { PermissionBoundary } from '@/features/auth/permissions/permission-boundary';
 import { hasPermission } from '@/features/auth/permissions/permissions';
 import { useAdminSession } from '@/features/auth/session/use-admin-session';
 import { adminRoutes } from '@/app/routes/admin-route-contract';
 import {
   createPromotionMutationOptions,
+  promotionQueryOptions,
+  promotionRedemptionsQueryOptions,
   promotionsListQueryOptions,
   promotionsQueryKeys,
+  replacePromotionMutationOptions,
   transitionPromotionMutationOptions,
 } from './api/promotions-query';
-import type { CreatePromotionInput, Promotion } from './api/promotions-api';
+import type { CreatePromotionInput, Promotion, ReplacePromotionInput } from './api/promotions-api';
 
 const statusLabels: Record<Promotion['status'], string> = {
   draft: 'پیش‌نویس',
@@ -59,6 +72,8 @@ function PromotionsContent() {
   const session = useAdminSession();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+  const [selectedPromotionId, setSelectedPromotionId] = useState('');
+  const [confirmation, setConfirmation] = useState<{ item: Promotion; action: 'activate' | 'pause' | 'end' }>();
   const [query, setQuery] = useState('');
   const promotions = useQuery(promotionsListQueryOptions(query ? { q: query } : {}));
   const canWrite = hasPermission(session.permissions, 'promotions.write');
@@ -100,9 +115,16 @@ function PromotionsContent() {
           {promotions.isPending ? <div className="space-y-3"><Skeleton className="h-10" /><Skeleton className="h-10" /><Skeleton className="h-10" /></div> : null}
           {promotions.isError ? <FeedbackPanel tone="error" title="پیشنهادها دریافت نشد">{problemMessage(promotions.error, 'دریافت پیشنهادها با مشکل روبه‌رو شد.')}</FeedbackPanel> : null}
           {promotions.data && promotions.data.items.length === 0 ? <FeedbackPanel tone="info" title="هنوز پیشنهادی ندارید">با ساختن اولین پیشنهاد، فروش‌های ویژه خود را شروع کنید.</FeedbackPanel> : null}
-          {promotions.data && promotions.data.items.length > 0 ? <PromotionTable items={promotions.data.items} canWrite={canWrite} busy={transition.isPending} onTransition={(item, action) => { void transition.mutateAsync({ promotionId: item.id, action, body: { expectedVersion: item.version } }); }} /> : null}
+          {promotions.data && promotions.data.items.length > 0 ? <PromotionTable items={promotions.data.items} canWrite={canWrite} busy={transition.isPending} onSelect={setSelectedPromotionId} onTransition={(item, action) => setConfirmation({ item, action })} /> : null}
         </CardContent>
       </Card>
+      {selectedPromotionId ? <PromotionDetailCard key={selectedPromotionId} promotionId={selectedPromotionId} canWrite={canWrite} /> : null}
+      <AlertDialog open={Boolean(confirmation)} onOpenChange={(open) => { if (!open) setConfirmation(undefined); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>تغییر وضعیت پیشنهاد؟</AlertDialogTitle><AlertDialogDescription>{confirmation ? `وضعیت «${confirmation.item.name}» تغییر می‌کند. این تغییر روی سفارش‌های ثبت‌شده اثری ندارد.` : ''}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>انصراف</AlertDialogCancel><AlertDialogAction onClick={() => { if (!confirmation) return; void transition.mutateAsync({ promotionId: confirmation.item.id, action: confirmation.action, body: { expectedVersion: confirmation.item.version } }); setConfirmation(undefined); }}>{confirmation?.action === 'end' ? 'پایان پیشنهاد' : confirmation?.action === 'pause' ? 'توقف پیشنهاد' : 'فعال‌سازی پیشنهاد'}</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
@@ -138,8 +160,93 @@ function CreatePromotionCard({ mutation }: { readonly mutation: ReturnType<typeo
   </form></CardContent></Card>;
 }
 
-function PromotionTable({ items, canWrite, busy, onTransition }: { readonly items: readonly Promotion[]; readonly canWrite: boolean; readonly busy: boolean; readonly onTransition: (item: Promotion, action: 'activate' | 'pause' | 'end') => void }) {
-  return <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>پیشنهاد</TableHead><TableHead>وضعیت</TableHead><TableHead>قانون</TableHead><TableHead>استفاده</TableHead><TableHead className="text-left">عملیات</TableHead></TableRow></TableHeader><TableBody>{items.map((item) => <TableRow key={item.id}><TableCell><div className="font-medium">{item.name}</div><div className="text-xs text-muted-foreground">{item.eligibility === 'code_required' ? <bdi dir="ltr">{item.code || 'کد ثبت نشده'}</bdi> : 'عمومی'}</div></TableCell><TableCell><StatusBadge tone={statusTones[item.status]}>{statusLabels[item.status]}</StatusBadge></TableCell><TableCell>{item.rule.kind === 'percentage' ? `${item.rule.percentage ?? '۰'}٪` : item.rule.amount ? <bdi dir="ltr">{item.rule.amount.amount} {item.rule.amount.currency}</bdi> : 'مبلغ ثابت'}</TableCell><TableCell>{item.redemptions.total.toLocaleString('fa-IR')}{item.totalLimit ? ` از ${item.totalLimit.toLocaleString('fa-IR')}` : ''}</TableCell><TableCell className="text-left">{canWrite ? <div className="flex justify-end gap-2">{item.status === 'draft' || item.status === 'paused' ? <Button disabled={busy} onClick={() => onTransition(item, 'activate')} size="sm" variant="outline">فعال‌سازی</Button> : null}{item.status === 'active' ? <Button disabled={busy} onClick={() => onTransition(item, 'pause')} size="sm" variant="outline">توقف</Button> : null}{item.status !== 'ended' ? <Button disabled={busy} onClick={() => onTransition(item, 'end')} size="sm" variant="ghost">پایان</Button> : null}</div> : 'فقط مشاهده'}</TableCell></TableRow>)}</TableBody></Table></div>;
+function PromotionTable({ items, canWrite, busy, onSelect, onTransition }: { readonly items: readonly Promotion[]; readonly canWrite: boolean; readonly busy: boolean; readonly onSelect: (id: string) => void; readonly onTransition: (item: Promotion, action: 'activate' | 'pause' | 'end') => void }) {
+  return <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>پیشنهاد</TableHead><TableHead>وضعیت</TableHead><TableHead>قانون</TableHead><TableHead>استفاده</TableHead><TableHead className="text-left">عملیات</TableHead></TableRow></TableHeader><TableBody>{items.map((item) => <TableRow key={item.id}><TableCell><button className="text-right font-medium text-primary underline-offset-4 hover:underline" onClick={() => onSelect(item.id)} type="button">{item.name}</button><div className="text-xs text-muted-foreground">{item.eligibility === 'code_required' ? <bdi dir="ltr">{item.code || 'کد ثبت نشده'}</bdi> : 'عمومی'}</div></TableCell><TableCell><StatusBadge tone={statusTones[item.status]}>{statusLabels[item.status]}</StatusBadge></TableCell><TableCell>{item.rule.kind === 'percentage' ? `${item.rule.percentage ?? '۰'}٪` : item.rule.amount ? <bdi dir="ltr">{item.rule.amount.amount} {item.rule.amount.currency}</bdi> : 'مبلغ ثابت'}</TableCell><TableCell>{item.redemptions.total.toLocaleString('fa-IR')}{item.totalLimit ? ` از ${item.totalLimit.toLocaleString('fa-IR')}` : ''}</TableCell><TableCell className="text-left"><div className="flex flex-wrap justify-end gap-2"><Button onClick={() => onSelect(item.id)} size="sm" variant="ghost">جزئیات و ویرایش</Button>{canWrite ? <>{item.status === 'draft' || item.status === 'paused' ? <Button disabled={busy} onClick={() => onTransition(item, 'activate')} size="sm" variant="outline">فعال‌سازی</Button> : null}{item.status === 'active' ? <Button disabled={busy} onClick={() => onTransition(item, 'pause')} size="sm" variant="outline">توقف</Button> : null}{item.status !== 'ended' ? <Button disabled={busy} onClick={() => onTransition(item, 'end')} size="sm" variant="ghost">پایان</Button> : null}</> : null}</div></TableCell></TableRow>)}</TableBody></Table></div>;
+}
+
+function PromotionDetailCard({ promotionId, canWrite }: { readonly promotionId: string; readonly canWrite: boolean }) {
+  const detail = useQuery(promotionQueryOptions(promotionId));
+  if (detail.isPending) return <Card><CardContent className="space-y-3 py-6"><Skeleton className="h-6 w-52" /><Skeleton className="h-40" /></CardContent></Card>;
+  if (detail.isError || !detail.data) return <FeedbackPanel tone="error" title="جزئیات پیشنهاد دریافت نشد">دوباره تلاش کنید یا فهرست پیشنهادها را تازه کنید.</FeedbackPanel>;
+
+  return <PromotionDetailEditor item={detail.data} promotionId={promotionId} canWrite={canWrite} />;
+}
+
+function PromotionDetailEditor({ item, promotionId, canWrite }: { readonly item: Promotion; readonly promotionId: string; readonly canWrite: boolean }) {
+  const redemptions = useQuery(promotionRedemptionsQueryOptions(promotionId));
+  const categories = useQuery(categoriesQuery());
+  const collections = useQuery(collectionsQuery());
+  const queryClient = useQueryClient();
+  const replace = useMutation({
+    ...replacePromotionMutationOptions(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: promotionsQueryKeys.all });
+      await queryClient.invalidateQueries({ queryKey: promotionsQueryKeys.detail(promotionId) });
+    },
+  });
+  const [name, setName] = useState(item.name);
+  const [description, setDescription] = useState(item.description ?? '');
+  const [eligibility, setEligibility] = useState<Promotion['eligibility']>(item.eligibility);
+  const [code, setCode] = useState(item.code ?? '');
+  const [ruleKind, setRuleKind] = useState<Promotion['rule']['kind']>(item.rule.kind);
+  const [amount, setAmount] = useState(item.rule.kind === 'percentage' ? item.rule.percentage ?? '' : item.rule.amount?.amount ?? '');
+  const [currency, setCurrency] = useState(item.rule.kind === 'fixed_amount' ? item.rule.amount?.currency ?? 'USD' : 'USD');
+  const [targetKind, setTargetKind] = useState<'cart' | 'variants' | 'categories' | 'collections'>(item.target.kind);
+  const [targetIds, setTargetIds] = useState<string[]>([...item.target.ids]);
+  const [priority, setPriority] = useState(String(item.priority));
+  const [startsAt, setStartsAt] = useState(toDateTimeLocal(item.startsAt));
+  const [endsAt, setEndsAt] = useState(item.endsAt ? toDateTimeLocal(item.endsAt) : '');
+  const [totalLimit, setTotalLimit] = useState(item.totalLimit === null ? '' : String(item.totalLimit));
+  const [perCustomerLimit, setPerCustomerLimit] = useState(item.perCustomerLimit === null ? '' : String(item.perCustomerLimit));
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canWrite) return;
+    const body: ReplacePromotionInput = {
+      expectedVersion: item.version,
+      name: name.trim(), description: description.trim() || null,
+      eligibility, code: eligibility === 'code_required' ? code.trim() || null : null,
+      rule: ruleKind === 'percentage' ? { kind: 'percentage', percentage: amount.trim() } : { kind: 'fixed_amount', amount: amount.trim(), currency: currency.trim().toUpperCase() },
+      target: { kind: targetKind, ids: targetKind === 'cart' ? [] : targetIds },
+      priority: Number(priority), startsAt: new Date(startsAt).toISOString(), endsAt: endsAt ? new Date(endsAt).toISOString() : null,
+      totalLimit: totalLimit ? Number(totalLimit) : null, perCustomerLimit: perCustomerLimit ? Number(perCustomerLimit) : null,
+    };
+    void replace.mutateAsync({ promotionId, body });
+  };
+  const addTarget = (id: string) => { if (id && !targetIds.includes(id)) setTargetIds((current) => [...current, id]); };
+  return <Card className="border-primary/20"><CardHeader><CardTitle>جزئیات و ویرایش پیشنهاد</CardTitle><CardDescription>هر ذخیره، نسخه جدیدی ایجاد می‌کند و سفارش‌های قبلی را تغییر نمی‌دهد.</CardDescription></CardHeader><CardContent className="space-y-6">
+    <form className="grid gap-4 md:grid-cols-2" onSubmit={submit}>
+      <FormField><FieldLabel htmlFor="promotion-edit-name">نام پیشنهاد</FieldLabel><Input id="promotion-edit-name" onChange={(event) => setName(event.target.value)} value={name} /></FormField>
+      <FormField><FieldLabel htmlFor="promotion-edit-eligibility">نحوه استفاده</FieldLabel><Select onValueChange={(value) => setEligibility(value as Promotion['eligibility'])} value={eligibility}><SelectTrigger id="promotion-edit-eligibility"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="public">برای همه مشتریان</SelectItem><SelectItem value="code_required">با کد تخفیف</SelectItem></SelectContent></Select></FormField>
+      <FormField><FieldLabel htmlFor="promotion-edit-code">کد تخفیف</FieldLabel><Input dir="ltr" disabled={eligibility !== 'code_required'} id="promotion-edit-code" onChange={(event) => setCode(event.target.value)} value={code} /></FormField>
+      <FormField><FieldLabel htmlFor="promotion-edit-rule">نوع تخفیف</FieldLabel><Select onValueChange={(value) => setRuleKind(value as Promotion['rule']['kind'])} value={ruleKind}><SelectTrigger id="promotion-edit-rule"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="percentage">درصدی</SelectItem><SelectItem value="fixed_amount">مبلغ ثابت</SelectItem></SelectContent></Select></FormField>
+      <FormField><FieldLabel htmlFor="promotion-edit-amount">مقدار تخفیف</FieldLabel><Input dir="ltr" id="promotion-edit-amount" inputMode="decimal" onChange={(event) => setAmount(event.target.value)} value={amount} /></FormField>
+      {ruleKind === 'fixed_amount' ? <FormField><FieldLabel htmlFor="promotion-edit-currency">واحد پول</FieldLabel><Input dir="ltr" id="promotion-edit-currency" maxLength={3} onChange={(event) => setCurrency(event.target.value)} value={currency} /></FormField> : null}
+      <FormField><FieldLabel htmlFor="promotion-edit-starts">شروع</FieldLabel><Input dir="ltr" id="promotion-edit-starts" onChange={(event) => setStartsAt(event.target.value)} type="datetime-local" value={startsAt} /></FormField>
+      <FormField><FieldLabel htmlFor="promotion-edit-ends">پایان (اختیاری)</FieldLabel><Input dir="ltr" id="promotion-edit-ends" onChange={(event) => setEndsAt(event.target.value)} type="datetime-local" value={endsAt} /></FormField>
+      <FormField><FieldLabel htmlFor="promotion-edit-priority">اولویت</FieldLabel><Input dir="ltr" id="promotion-edit-priority" inputMode="numeric" onChange={(event) => setPriority(event.target.value)} value={priority} /></FormField>
+      <FormField><FieldLabel htmlFor="promotion-edit-total-limit">سقف استفاده کل</FieldLabel><Input dir="ltr" id="promotion-edit-total-limit" inputMode="numeric" onChange={(event) => setTotalLimit(event.target.value)} placeholder="بدون سقف" value={totalLimit} /></FormField>
+      <FormField><FieldLabel htmlFor="promotion-edit-customer-limit">سقف استفاده هر مشتری</FieldLabel><Input dir="ltr" id="promotion-edit-customer-limit" inputMode="numeric" onChange={(event) => setPerCustomerLimit(event.target.value)} placeholder="بدون سقف" value={perCustomerLimit} /></FormField>
+      <FormField className="md:col-span-2"><FieldLabel htmlFor="promotion-edit-description">توضیح داخلی</FieldLabel><Input id="promotion-edit-description" onChange={(event) => setDescription(event.target.value)} value={description} /></FormField>
+      <FormField className="md:col-span-2"><FieldLabel htmlFor="promotion-edit-target">اعمال روی</FieldLabel><Select onValueChange={(value) => { setTargetKind(value as typeof targetKind); setTargetIds([]); }} value={targetKind}><SelectTrigger id="promotion-edit-target"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cart">کل سبد خرید</SelectItem><SelectItem value="variants">گونه‌های انتخاب‌شده</SelectItem><SelectItem value="categories">دسته‌بندی‌های انتخاب‌شده</SelectItem><SelectItem value="collections">مجموعه‌های انتخاب‌شده</SelectItem></SelectContent></Select></FormField>
+      {targetKind === 'variants' ? <div className="md:col-span-2"><ProductVariantPicker onChange={addTarget} value="" /></div> : null}
+      {targetKind === 'categories' ? <TargetOptionPicker label="دسته‌بندی" options={categories.data?.items ?? []} onAdd={addTarget} /> : null}
+      {targetKind === 'collections' ? <TargetOptionPicker label="مجموعه" options={collections.data?.items ?? []} onAdd={addTarget} /> : null}
+      {targetKind !== 'cart' ? <div className="flex flex-wrap gap-2 md:col-span-2">{targetIds.length ? targetIds.map((id) => <button className="rounded-full bg-muted px-3 py-1 text-xs" key={id} onClick={() => setTargetIds((current) => current.filter((value) => value !== id))} type="button"><bdi dir="ltr">{id}</bdi> ×</button>) : <span className="text-sm text-muted-foreground">هنوز موردی انتخاب نشده است.</span>}</div> : null}
+      <div className="flex flex-wrap items-center gap-2 md:col-span-2"><Button disabled={replace.isPending} type="submit">{replace.isPending ? 'در حال ذخیره…' : 'ذخیره تغییرات'}</Button>{replace.isError ? <span className="text-sm text-destructive">{problemMessage(replace.error, 'ذخیره انجام نشد.')}</span> : null}{replace.isSuccess ? <span className="text-sm text-success">تغییرات ذخیره شد.</span> : null}</div>
+    </form>
+    <section aria-labelledby="promotion-redemptions-title" className="border-t border-border pt-5"><h3 className="font-semibold" id="promotion-redemptions-title">تاریخچه استفاده</h3>{redemptions.isPending ? <Skeleton className="mt-3 h-20" /> : redemptions.data?.items.length ? <div className="mt-3 overflow-x-auto"><Table><TableHeader><TableRow><TableHead>زمان</TableHead><TableHead>مبلغ تخفیف</TableHead><TableHead>سفارش</TableHead><TableHead>مشتری</TableHead></TableRow></TableHeader><TableBody>{redemptions.data.items.map((item) => <TableRow key={item.id}><TableCell><bdi dir="ltr">{new Date(item.redeemedAt).toLocaleString('fa-IR')}</bdi></TableCell><TableCell><bdi dir="ltr">{item.discount.amount} {item.discount.currency}</bdi></TableCell><TableCell><bdi dir="ltr">{item.orderId}</bdi></TableCell><TableCell><bdi dir="ltr">{item.customerId}</bdi></TableCell></TableRow>)}</TableBody></Table></div> : <p className="mt-2 text-sm text-muted-foreground">هنوز استفاده‌ای ثبت نشده است.</p>}</section>
+  </CardContent></Card>;
+}
+
+function TargetOptionPicker({ label, options, onAdd }: { readonly label: string; readonly options: readonly { id: string; title: string }[]; readonly onAdd: (id: string) => void }) {
+  return <div className="md:col-span-2"><FieldLabel htmlFor={`promotion-target-${label}`}>{`انتخاب ${label}`}</FieldLabel><Select onValueChange={onAdd}><SelectTrigger id={`promotion-target-${label}`}><SelectValue placeholder={`${label} را انتخاب کنید`} /></SelectTrigger><SelectContent>{options.map((option) => <SelectItem key={option.id} value={option.id}>{option.title}</SelectItem>)}</SelectContent></Select></div>;
+}
+
+function toDateTimeLocal(value: string) {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 16);
 }
 
 function problemMessage(error: unknown, fallback: string) {

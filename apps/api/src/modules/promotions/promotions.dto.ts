@@ -20,17 +20,22 @@ export class PromotionRuleDto {
   @IsIn(['percentage', 'fixed_amount'])
   kind!: 'percentage' | 'fixed_amount';
 
-  @ApiPropertyOptional({ example: '15.00' })
+  @ApiPropertyOptional({ type: String, example: '15.00' })
   @IsOptional()
   @IsString()
   percentage?: string;
 
-  @ApiPropertyOptional({ example: '20.00' })
+  @ApiPropertyOptional({ type: String, example: '20.00' })
   @IsOptional()
   @IsString()
   amount?: string;
 
-  @ApiPropertyOptional({ example: 'USD', minLength: 3, maxLength: 3 })
+  @ApiPropertyOptional({
+    type: String,
+    example: 'USD',
+    minLength: 3,
+    maxLength: 3,
+  })
   @IsOptional()
   @IsString()
   @Length(3, 3)
@@ -54,7 +59,7 @@ export class PromotionDefinitionDto {
   @Length(1, 160)
   name!: string;
 
-  @ApiPropertyOptional({ maxLength: 2_000, nullable: true })
+  @ApiPropertyOptional({ type: String, maxLength: 2_000, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(2_000)
@@ -64,7 +69,7 @@ export class PromotionDefinitionDto {
   @IsIn(['public', 'code_required'])
   eligibility!: 'public' | 'code_required';
 
-  @ApiPropertyOptional({ maxLength: 64, nullable: true })
+  @ApiPropertyOptional({ type: String, maxLength: 64, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(64)
@@ -90,19 +95,29 @@ export class PromotionDefinitionDto {
   @IsDateString()
   startsAt!: string;
 
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   @IsOptional()
   @IsDateString()
   endsAt?: string | null;
 
-  @ApiPropertyOptional({ minimum: 1, maximum: 10_000_000, nullable: true })
+  @ApiPropertyOptional({
+    type: Number,
+    minimum: 1,
+    maximum: 10_000_000,
+    nullable: true,
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Max(10_000_000)
   totalLimit?: number | null;
 
-  @ApiPropertyOptional({ minimum: 1, maximum: 1_000, nullable: true })
+  @ApiPropertyOptional({
+    type: Number,
+    minimum: 1,
+    maximum: 1_000,
+    nullable: true,
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -119,6 +134,13 @@ export class ReplacePromotionDefinitionDto extends PromotionDefinitionDto {
   expectedVersion!: number;
 }
 
+export class PromotionLifecycleDto {
+  @ApiProperty({ minimum: 1 })
+  @IsInt()
+  @Min(1)
+  expectedVersion!: number;
+}
+
 export class PromotionListQueryDto {
   @ApiPropertyOptional({
     enum: ['draft', 'scheduled', 'active', 'paused', 'ended'],
@@ -127,18 +149,18 @@ export class PromotionListQueryDto {
   @IsIn(['draft', 'scheduled', 'active', 'paused', 'ended'])
   status?: 'draft' | 'scheduled' | 'active' | 'paused' | 'ended';
 
-  @ApiPropertyOptional({ maxLength: 160 })
+  @ApiPropertyOptional({ type: String, maxLength: 160 })
   @IsOptional()
   @IsString()
   @MaxLength(160)
   q?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
   @IsOptional()
   @IsString()
   cursor?: string;
 
-  @ApiPropertyOptional({ default: 25, minimum: 1, maximum: 100 })
+  @ApiPropertyOptional({ type: Number, default: 25, minimum: 1, maximum: 100 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -149,19 +171,28 @@ export class PromotionListQueryDto {
 
 export class PromotionRedemptionListQueryDto {
   @ApiPropertyOptional({
+    type: String,
     description: 'Opaque cursor returned by the previous page.',
   })
   @IsOptional()
   @IsString()
   cursor?: string;
 
-  @ApiPropertyOptional({ default: 25, minimum: 1, maximum: 100 })
+  @ApiPropertyOptional({ type: Number, default: 25, minimum: 1, maximum: 100 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
   limit = 25;
+}
+
+export class PromotionMoneyResponseDto {
+  @ApiProperty({ example: '15.00' })
+  amount!: string;
+
+  @ApiProperty({ example: 'USD' })
+  currency!: string;
 }
 
 export class PromotionRuleResponseDto {
@@ -171,8 +202,21 @@ export class PromotionRuleResponseDto {
   @ApiPropertyOptional()
   percentage?: string;
 
-  @ApiPropertyOptional({ type: Object })
-  amount?: { amount: string; currency: string };
+  @ApiPropertyOptional({ type: () => PromotionMoneyResponseDto })
+  amount?: PromotionMoneyResponseDto;
+}
+
+export class PromotionTargetResponseDto {
+  @ApiProperty({ enum: ['cart', 'variants', 'categories', 'collections'] })
+  kind!: string;
+
+  @ApiProperty({ type: [String] })
+  ids!: string[];
+}
+
+export class PromotionRedemptionsSummaryDto {
+  @ApiProperty()
+  total!: number;
 }
 
 export class PromotionResponseDto {
@@ -187,7 +231,8 @@ export class PromotionResponseDto {
   @ApiProperty({ nullable: true, type: String }) code!: string | null;
   @ApiProperty({ type: () => PromotionRuleResponseDto })
   rule!: PromotionRuleResponseDto;
-  @ApiProperty({ type: Object }) target!: { kind: string; ids: string[] };
+  @ApiProperty({ type: () => PromotionTargetResponseDto })
+  target!: PromotionTargetResponseDto;
   @ApiProperty() priority!: number;
   @ApiProperty({ format: 'date-time' }) startsAt!: string;
   @ApiProperty({ format: 'date-time', nullable: true, type: String }) endsAt!:
@@ -195,7 +240,8 @@ export class PromotionResponseDto {
   @ApiProperty({ nullable: true, type: Number }) totalLimit!: number | null;
   @ApiProperty({ nullable: true, type: Number }) perCustomerLimit!:
     number | null;
-  @ApiProperty({ type: Object }) redemptions!: { total: number };
+  @ApiProperty({ type: () => PromotionRedemptionsSummaryDto })
+  redemptions!: PromotionRedemptionsSummaryDto;
   @ApiProperty({ format: 'date-time' }) createdAt!: string;
   @ApiProperty({ format: 'date-time' }) updatedAt!: string;
 }
@@ -221,8 +267,8 @@ export class PromotionRedemptionResponseDto {
   @ApiProperty({ format: 'uuid' })
   definitionVersionId!: string;
 
-  @ApiProperty({ type: Object })
-  discount!: { amount: string; currency: string };
+  @ApiProperty({ type: () => PromotionMoneyResponseDto })
+  discount!: PromotionMoneyResponseDto;
 
   @ApiProperty({ format: 'date-time' })
   redeemedAt!: string;

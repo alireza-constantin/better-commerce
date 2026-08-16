@@ -1659,20 +1659,20 @@ export interface components {
             readonly title: string;
         };
         readonly CreatePromotionDto: {
-            readonly code?: Record<string, never> | null;
-            readonly description?: Record<string, never> | null;
+            readonly code?: string | null;
+            readonly description?: string | null;
             /** @enum {string} */
             readonly eligibility: "public" | "code_required";
             /** Format: date-time */
-            readonly endsAt?: Record<string, never> | null;
+            readonly endsAt?: string | null;
             readonly name: string;
-            readonly perCustomerLimit?: Record<string, never> | null;
+            readonly perCustomerLimit?: number | null;
             readonly priority: number;
             readonly rule: components["schemas"]["PromotionRuleDto"];
             /** Format: date-time */
             readonly startsAt: string;
             readonly target: components["schemas"]["PromotionTargetDto"];
-            readonly totalLimit?: Record<string, never> | null;
+            readonly totalLimit?: number | null;
         };
         readonly CreateStaffByEmailDto: {
             /** Format: email */
@@ -1995,6 +1995,15 @@ export interface components {
         readonly ProductTransitionDto: {
             readonly expectedVersion: number;
         };
+        readonly PromotionLifecycleDto: {
+            readonly expectedVersion: number;
+        };
+        readonly PromotionMoneyResponseDto: {
+            /** @example 15.00 */
+            readonly amount: string;
+            /** @example USD */
+            readonly currency: string;
+        };
         readonly PromotionPageResponseDto: {
             readonly items: readonly components["schemas"]["PromotionResponseDto"][];
             readonly nextCursor: string | null;
@@ -2008,13 +2017,16 @@ export interface components {
             readonly customerId: string;
             /** Format: uuid */
             readonly definitionVersionId: string;
-            readonly discount: Record<string, never>;
+            readonly discount: components["schemas"]["PromotionMoneyResponseDto"];
             /** Format: uuid */
             readonly id: string;
             /** Format: uuid */
             readonly orderId: string;
             /** Format: date-time */
             readonly redeemedAt: string;
+        };
+        readonly PromotionRedemptionsSummaryDto: {
+            readonly total: number;
         };
         readonly PromotionResponseDto: {
             readonly code: string | null;
@@ -2032,13 +2044,13 @@ export interface components {
             readonly name: string;
             readonly perCustomerLimit: number | null;
             readonly priority: number;
-            readonly redemptions: Record<string, never>;
+            readonly redemptions: components["schemas"]["PromotionRedemptionsSummaryDto"];
             readonly rule: components["schemas"]["PromotionRuleResponseDto"];
             /** Format: date-time */
             readonly startsAt: string;
             /** @enum {string} */
             readonly status: "draft" | "scheduled" | "active" | "paused" | "ended";
-            readonly target: Record<string, never>;
+            readonly target: components["schemas"]["PromotionTargetResponseDto"];
             readonly totalLimit: number | null;
             /** Format: date-time */
             readonly updatedAt: string;
@@ -2055,12 +2067,17 @@ export interface components {
             readonly percentage?: string;
         };
         readonly PromotionRuleResponseDto: {
-            readonly amount?: Record<string, never>;
+            readonly amount?: components["schemas"]["PromotionMoneyResponseDto"];
             /** @enum {string} */
             readonly kind: "percentage" | "fixed_amount";
             readonly percentage?: string;
         };
         readonly PromotionTargetDto: {
+            readonly ids: readonly string[];
+            /** @enum {string} */
+            readonly kind: "cart" | "variants" | "categories" | "collections";
+        };
+        readonly PromotionTargetResponseDto: {
             readonly ids: readonly string[];
             /** @enum {string} */
             readonly kind: "cart" | "variants" | "categories" | "collections";
@@ -2213,21 +2230,21 @@ export interface components {
             readonly items: readonly components["schemas"]["ProductMediaItemDto"][];
         };
         readonly ReplacePromotionDefinitionDto: {
-            readonly code?: Record<string, never> | null;
-            readonly description?: Record<string, never> | null;
+            readonly code?: string | null;
+            readonly description?: string | null;
             /** @enum {string} */
             readonly eligibility: "public" | "code_required";
             /** Format: date-time */
-            readonly endsAt?: Record<string, never> | null;
+            readonly endsAt?: string | null;
             readonly expectedVersion: number;
             readonly name: string;
-            readonly perCustomerLimit?: Record<string, never> | null;
+            readonly perCustomerLimit?: number | null;
             readonly priority: number;
             readonly rule: components["schemas"]["PromotionRuleDto"];
             /** Format: date-time */
             readonly startsAt: string;
             readonly target: components["schemas"]["PromotionTargetDto"];
-            readonly totalLimit?: Record<string, never> | null;
+            readonly totalLimit?: number | null;
         };
         readonly ReplaceStaffRolesDto: {
             readonly roleKeys: readonly string[];
@@ -5104,7 +5121,7 @@ export interface operations {
         readonly parameters: {
             readonly query?: {
                 readonly cursor?: string;
-                readonly limit?: components["schemas"]["Object"];
+                readonly limit?: number;
                 readonly q?: string;
                 readonly status?: "draft" | "scheduled" | "active" | "paused" | "ended";
             };
@@ -5267,7 +5284,11 @@ export interface operations {
             };
             readonly cookie?: never;
         };
-        readonly requestBody?: never;
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["PromotionLifecycleDto"];
+            };
+        };
         readonly responses: {
             readonly 200: {
                 headers: {
@@ -5393,7 +5414,7 @@ export interface operations {
             readonly query?: {
                 /** @description Opaque cursor returned by the previous page. */
                 readonly cursor?: string;
-                readonly limit?: components["schemas"]["Object"];
+                readonly limit?: number;
             };
             readonly header?: never;
             readonly path: {

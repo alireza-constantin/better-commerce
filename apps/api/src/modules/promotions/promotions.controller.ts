@@ -30,6 +30,7 @@ import {
   PromotionPageResponseDto,
   PromotionRedemptionListQueryDto,
   PromotionRedemptionPageResponseDto,
+  PromotionLifecycleDto,
   PromotionResponseDto,
   ReplacePromotionDefinitionDto,
 } from './promotions.dto';
@@ -155,7 +156,7 @@ export class PromotionsAdminController {
     @Param('promotionId', new ParseUUIDPipe({ version: '4' }))
     promotionId: string,
     @Param('action') action: 'activate' | 'pause' | 'end',
-    @Body('expectedVersion') expectedVersion: number,
+    @Body() dto: PromotionLifecycleDto,
   ) {
     if (!['activate', 'pause', 'end'].includes(action)) {
       throw new HttpException('Unknown promotion action', HttpStatus.NOT_FOUND);
@@ -163,7 +164,7 @@ export class PromotionsAdminController {
     try {
       await this.promotions.transition({
         promotionId,
-        expectedVersion,
+        expectedVersion: dto.expectedVersion,
         status:
           action === 'activate'
             ? 'active'
