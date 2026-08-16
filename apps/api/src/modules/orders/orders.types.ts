@@ -8,6 +8,7 @@ export interface SubmitOrderInput {
   readonly shippingMethodId: string;
   readonly paymentMethod: ManualPaymentMethod;
   readonly deliveryAddress: DeliveryAddress;
+  readonly promotionCode?: string | null;
 }
 
 export interface SubmitCartOrderInput {
@@ -16,6 +17,7 @@ export interface SubmitCartOrderInput {
   readonly shippingMethodId: string;
   readonly paymentMethod: ManualPaymentMethod;
   readonly deliveryAddress: DeliveryAddress;
+  readonly promotionCode?: string | null;
 }
 
 export interface OrderLineView {
@@ -37,6 +39,7 @@ export interface OrderView {
   readonly status: CommerceOrderStatus;
   readonly currency: string;
   readonly merchandiseSubtotal: string;
+  readonly discountTotal: string;
   readonly shippingAmount: string;
   readonly grandTotal: string;
   readonly paymentMethod: ManualPaymentMethod;

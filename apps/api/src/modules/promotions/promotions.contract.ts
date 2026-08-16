@@ -18,6 +18,13 @@ export interface PromotionQuoteInput {
 
 export interface PromotionsModuleContract {
   calculateDiscount(input: PromotionQuoteInput): PromotionQuote;
+  quoteCode(input: {
+    readonly code?: string | null;
+    readonly lines: readonly PromotionLineInput[];
+    readonly currency: string;
+    readonly customerId?: string;
+    readonly transaction?: DatabaseTransactionContext;
+  }): Promise<PromotionQuote>;
   createDraft(input: {
     readonly definition: PromotionDefinitionInput;
     readonly actorUserId: string;

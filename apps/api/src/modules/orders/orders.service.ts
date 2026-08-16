@@ -37,6 +37,11 @@ import {
   type ShippingModuleContract,
 } from '../shipping';
 import { CART_MODULE_CONTRACT, type CartModuleContract } from '../cart';
+import {
+  PROMOTIONS_MODULE_CONTRACT,
+  type PromotionsModuleContract,
+} from '../promotions';
+import { PromotionDomainError } from '../promotions/promotions.errors';
 import { CommerceOrderLine } from './commerce-order-line.entity';
 import { CommerceOrder, CommerceOrderStatus } from './commerce-order.entity';
 import type {
@@ -69,6 +74,8 @@ export class OrdersService {
     private readonly audit: CommerceAuditContract,
     @Inject(CART_MODULE_CONTRACT)
     private readonly carts: CartModuleContract,
+    @Inject(PROMOTIONS_MODULE_CONTRACT)
+    private readonly promotions: PromotionsModuleContract,
   ) {
     this.holdMinutes =
       config.getOrThrow<ApplicationConfiguration['commerce']>(
@@ -91,6 +98,7 @@ export class OrdersService {
         ...input.deliveryAddress,
         country: input.deliveryAddress.country.toUpperCase(),
       },
+      promotionCode: input.promotionCode?.trim() || null,
     };
     const fingerprint = createHash('sha256')
       .update(JSON.stringify(cartRequest))
@@ -170,9 +178,45 @@ export class OrdersService {
             priceVersionId: quote.priceVersionId,
             unitMinor: quote.unitPrice.minorAmount.toString(),
             lineMinor: lineMinor.toString(),
+            discountMinor: '0',
             currency,
           };
         });
+        const promotion = await this.promotions.quoteCode({
+          code: cartRequest.promotionCode,
+          currency,
+          customerId: userId,
+          transaction,
+          lines: normalized.lines.map((line) => {
+            const fact = facts.get(line.variantId);
+            const quote = quoteByVariant.get(line.variantId)!;
+            return {
+              variantId: line.variantId,
+              amount: {
+                minorAmount:
+                  quote.unitPrice.minorAmount * BigInt(line.quantity),
+                currency,
+              },
+              categoryIds: fact?.categoryIds,
+              collectionIds: fact?.collectionIds,
+            };
+          }),
+        });
+        if (cartRequest.promotionCode && promotion.status !== 'applied') {
+          throw new PromotionDomainError(
+            'promotion.not_eligible',
+            'The promotion code cannot be applied to this Cart',
+          );
+        }
+        const discountByVariant = new Map(
+          promotion.allocations.map((allocation) => [
+            allocation.variantId,
+            allocation.amount.minorAmount.toString(),
+          ]),
+        );
+        for (const row of lineRows) {
+          row.discountMinor = discountByVariant.get(row.variantId) ?? '0';
+        }
         const shippingQuotes = await this.shipping.quote(
           normalized.deliveryAddress,
           { minorAmount: merchandiseSubtotal, currency },
@@ -190,7 +234,9 @@ export class OrdersService {
           transaction,
         );
         const grandTotal =
-          merchandiseSubtotal + shippingQuote.charge.minorAmount;
+          merchandiseSubtotal -
+          promotion.discount.minorAmount +
+          shippingQuote.charge.minorAmount;
         const address = normalized.deliveryAddress;
         const order = await this.persistence.createOrder(
           {
@@ -199,6 +245,11 @@ export class OrdersService {
             status: CommerceOrderStatus.SUBMITTED,
             currency,
             merchandiseSubtotalMinor: merchandiseSubtotal.toString(),
+            discountMinor: promotion.discount.minorAmount.toString(),
+            promotionId: promotion.promotionId,
+            promotionDefinitionVersionId: promotion.definitionVersion,
+            promotionCode: promotion.code,
+            promotionName: promotion.name,
             shippingMinor: shippingQuote.charge.minorAmount.toString(),
             grandTotalMinor: grandTotal.toString(),
             idempotencyKey,
@@ -235,6 +286,16 @@ export class OrdersService {
           },
           transaction,
         );
+        if (promotion.status === 'applied' && promotion.promotionId) {
+          await this.promotions.claimRedemption({
+            promotionId: promotion.promotionId,
+            definitionVersionId: promotion.definitionVersion!,
+            orderId,
+            customerId: userId,
+            discount: promotion.discount,
+            transaction,
+          });
+        }
         await this.audit.record(
           {
             actorUserId: userId,
@@ -765,6 +826,7 @@ export class OrdersService {
       status: order.status,
       currency: order.currency,
       merchandiseSubtotal: money(order.merchandiseSubtotalMinor),
+      discountTotal: money(order.discountMinor ?? '0'),
       shippingAmount: money(order.shippingMinor),
       grandTotal: money(order.grandTotalMinor),
       paymentMethod: order.paymentMethod,

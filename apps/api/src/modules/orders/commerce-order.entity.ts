@@ -21,7 +21,7 @@ export enum CommerceOrderStatus {
 @Index(['status', 'submittedAt'])
 @Check(
   'CHK_commerce_orders_amounts',
-  'merchandise_subtotal_minor >= 0 AND shipping_minor >= 0 AND grand_total_minor >= 0',
+  'merchandise_subtotal_minor >= 0 AND discount_minor >= 0 AND discount_minor <= merchandise_subtotal_minor AND shipping_minor >= 0 AND grand_total_minor >= 0',
 )
 export class CommerceOrder {
   @PrimaryGeneratedColumn('uuid')
@@ -46,6 +46,35 @@ export class CommerceOrder {
 
   @Column({ name: 'merchandise_subtotal_minor', type: 'bigint' })
   merchandiseSubtotalMinor!: string;
+
+  @Column({ name: 'discount_minor', type: 'bigint', default: '0' })
+  discountMinor!: string;
+
+  @Column({ name: 'promotion_id', type: 'uuid', nullable: true })
+  promotionId!: string | null;
+
+  @Column({
+    name: 'promotion_definition_version_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  promotionDefinitionVersionId!: string | null;
+
+  @Column({
+    name: 'promotion_code',
+    type: 'varchar',
+    length: 64,
+    nullable: true,
+  })
+  promotionCode!: string | null;
+
+  @Column({
+    name: 'promotion_name',
+    type: 'varchar',
+    length: 160,
+    nullable: true,
+  })
+  promotionName!: string | null;
 
   @Column({ name: 'shipping_minor', type: 'bigint' })
   shippingMinor!: string;

@@ -158,6 +158,7 @@ export class CartController {
         this.owner(request),
         dto.expectedVersion,
         dto.deliveryAddress,
+        dto.promotionCode,
       );
     } catch (error) {
       translateCartError(error);

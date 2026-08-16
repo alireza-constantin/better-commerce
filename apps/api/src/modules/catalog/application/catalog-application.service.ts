@@ -650,6 +650,23 @@ export class CatalogApplicationService implements CatalogModuleContract {
     const ids = this.contractIds(variantIds);
     if (!ids.length) return [];
     const variants = await this.readVariants(ids);
+    const productIds = [...new Set(variants.map(({ product }) => product.id))];
+    const memberships: readonly [
+      readonly CatalogProductCategory[],
+      readonly CatalogCollectionProduct[],
+    ] = productIds.length
+      ? await this.persistence.withTransaction(async (manager) =>
+          Promise.all([
+            manager.getRepository(CatalogProductCategory).findBy({
+              productId: In(productIds),
+            }),
+            manager.getRepository(CatalogCollectionProduct).findBy({
+              productId: In(productIds),
+            }),
+          ]),
+        )
+      : [[], []];
+    const [categories, collections] = memberships;
     return variants.map(({ variant, product }) => ({
       productId: product.id,
       variantId: variant.id,
@@ -659,6 +676,12 @@ export class CatalogApplicationService implements CatalogModuleContract {
       productStatus: product.status,
       variantStatus: variant.status,
       fulfillmentClassification: variant.fulfillmentClassification,
+      categoryIds: categories
+        .filter((membership) => membership.productId === product.id)
+        .map((membership) => membership.categoryId),
+      collectionIds: collections
+        .filter((membership) => membership.productId === product.id)
+        .map((membership) => membership.collectionId),
     }));
   }
 
@@ -1366,7 +1389,8 @@ export class CatalogApplicationService implements CatalogModuleContract {
         typeof value[1] !== 'string'
       )
         throw new Error();
-      return { position: value[0], id: value[1] };
+      const [position, id] = value as [number, string];
+      return { position, id };
     } catch {
       throw this.error('catalog.validation_failed', 'cursor is invalid');
     }

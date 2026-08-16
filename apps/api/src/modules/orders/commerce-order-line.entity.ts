@@ -50,6 +50,9 @@ export class CommerceOrderLine {
   @Column({ name: 'line_minor', type: 'bigint' })
   lineMinor!: string;
 
+  @Column({ name: 'discount_minor', type: 'bigint', default: '0' })
+  discountMinor!: string;
+
   @Column({ type: 'varchar', length: 3 })
   currency!: string;
 }

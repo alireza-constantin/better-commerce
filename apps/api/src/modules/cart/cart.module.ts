@@ -5,6 +5,7 @@ import { InventoryModule } from '../inventory';
 import { PricingModule } from '../pricing';
 import { PaymentsModule } from '../payments';
 import { ShippingModule } from '../shipping';
+import { PromotionsModule } from '../promotions';
 import { CartClaim } from './cart-claim.entity';
 import { CartLine } from './cart-line.entity';
 import { CART_MODULE_CONTRACT } from './cart.contract';
@@ -22,6 +23,7 @@ import { CartPersistence } from './persistence/cart.persistence';
     InventoryModule,
     ShippingModule,
     PaymentsModule,
+    PromotionsModule,
   ],
   controllers: [CartController],
   providers: [

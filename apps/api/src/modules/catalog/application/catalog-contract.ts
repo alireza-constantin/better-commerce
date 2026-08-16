@@ -26,6 +26,8 @@ export interface VariantSnapshotFact {
   readonly productStatus: ProductStatus;
   readonly variantStatus: VariantStatus;
   readonly fulfillmentClassification: FulfillmentClassification;
+  readonly categoryIds: readonly string[];
+  readonly collectionIds: readonly string[];
 }
 
 export interface PublicCatalogQuery {

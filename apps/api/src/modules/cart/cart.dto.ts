@@ -131,6 +131,12 @@ export class PrepareCartCheckoutDto extends CartVersionDto {
   @ValidateNested()
   @Type(() => CartDeliveryAddressDto)
   deliveryAddress!: CartDeliveryAddressDto;
+
+  @ApiPropertyOptional({ maxLength: 64, nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  promotionCode?: string | null;
 }
 
 export class CartShippingQuoteResponseDto {
@@ -177,6 +183,9 @@ export class CartCheckoutPreparationResponseDto {
     required: ['amount', 'currency'],
   })
   merchandiseSubtotal!: { amount: string; currency: string };
+
+  @ApiProperty({ type: Object })
+  promotion!: unknown;
 
   @ApiProperty({ type: () => [CartShippingQuoteResponseDto] })
   shippingMethods!: CartShippingQuoteResponseDto[];

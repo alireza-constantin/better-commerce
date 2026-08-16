@@ -32,6 +32,10 @@ import { CartError } from './cart.error';
 import type { CartModuleContract } from './cart.contract';
 import type { CartOwner, CartView, CheckoutCart } from './cart.types';
 import { CartPersistence } from './persistence/cart.persistence';
+import {
+  PROMOTIONS_MODULE_CONTRACT,
+  type PromotionsModuleContract,
+} from '../promotions';
 
 const MAX_LINES = 100;
 const MAX_QUANTITY = 999;
@@ -54,6 +58,8 @@ export class CartService implements CartModuleContract {
     private readonly shipping: ShippingModuleContract,
     @Inject(PAYMENTS_MODULE_CONTRACT)
     private readonly payments: PaymentsModuleContract,
+    @Inject(PROMOTIONS_MODULE_CONTRACT)
+    private readonly promotions: PromotionsModuleContract,
   ) {
     this.configuration =
       config.getOrThrow<ApplicationConfiguration['cart']>('cart');
@@ -165,6 +171,7 @@ export class CartService implements CartModuleContract {
     owner: CartOwner,
     expectedVersion: number,
     deliveryAddress: DeliveryAddress,
+    promotionCode?: string | null,
   ) {
     const cart = await this.findActive(this.dataSource.manager, owner, false);
     if (!cart || this.isExpired(cart)) {
@@ -183,6 +190,8 @@ export class CartService implements CartModuleContract {
       this.pricing.readPublicVariantPrices(variantIds),
       this.inventory.readPublicVariantAvailability(variantIds),
     ]);
+    const snapshotFacts =
+      await this.catalog.getVariantSnapshotFacts(variantIds);
     const priceByVariant = new Map(
       prices.map((price) => [price.variantId, price.unitPrice]),
     );
@@ -218,6 +227,26 @@ export class CartService implements CartModuleContract {
       if (!price) return total;
       return total + price.minorAmount * BigInt(line.quantity);
     }, 0n);
+    const factByVariant = new Map(
+      snapshotFacts.map((fact) => [fact.variantId, fact]),
+    );
+    const promotion = await this.promotions.quoteCode({
+      code: promotionCode,
+      currency,
+      lines: lines.map((line) => {
+        const price = priceByVariant.get(line.variantId)!;
+        const fact = factByVariant.get(line.variantId);
+        return {
+          variantId: line.variantId,
+          amount: {
+            minorAmount: price.minorAmount * BigInt(line.quantity),
+            currency,
+          },
+          categoryIds: fact?.categoryIds,
+          collectionIds: fact?.collectionIds,
+        };
+      }),
+    });
     const shippingMethods = await this.shipping.quote(
       {
         ...deliveryAddress,
@@ -237,10 +266,21 @@ export class CartService implements CartModuleContract {
         methodTitle: quote.methodTitle,
         charge: formatMoney(quote.charge),
         grandTotal: formatMoney({
-          minorAmount: merchandiseSubtotal + quote.charge.minorAmount,
+          minorAmount:
+            merchandiseSubtotal -
+            promotion.discount.minorAmount +
+            quote.charge.minorAmount,
           currency,
         }),
       })),
+      promotion: {
+        ...promotion,
+        discount: formatMoney(promotion.discount),
+        allocations: promotion.allocations.map((allocation) => ({
+          variantId: allocation.variantId,
+          amount: formatMoney(allocation.amount),
+        })),
+      },
       paymentMethods: [...this.payments.listManualPaymentMethods()],
     };
   }

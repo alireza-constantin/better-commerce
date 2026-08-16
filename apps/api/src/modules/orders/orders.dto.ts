@@ -94,6 +94,12 @@ export class SubmitOrderDto {
   @ValidateNested()
   @Type(() => DeliveryAddressDto)
   deliveryAddress!: DeliveryAddressDto;
+
+  @ApiPropertyOptional({ maxLength: 64, nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  promotionCode?: string | null;
 }
 
 export class SubmitCartOrderDto {
@@ -118,6 +124,12 @@ export class SubmitCartOrderDto {
   @ValidateNested()
   @Type(() => DeliveryAddressDto)
   deliveryAddress!: DeliveryAddressDto;
+
+  @ApiPropertyOptional({ maxLength: 64, nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  promotionCode?: string | null;
 }
 
 export class OrderDecisionDto {
@@ -202,6 +214,9 @@ export class OrderResponseDto {
 
   @ApiProperty({ example: '240.00' })
   merchandiseSubtotal!: string;
+
+  @ApiProperty({ example: '0.00' })
+  discountTotal!: string;
 
   @ApiProperty({ example: '10.00' })
   shippingAmount!: string;

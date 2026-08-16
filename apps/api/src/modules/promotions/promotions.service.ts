@@ -16,7 +16,11 @@ import {
   type PromotionQuoteInput,
   type PromotionsModuleContract,
 } from './promotions.contract';
-import { calculateDiscount, normalizeDefinition } from './promotions.domain';
+import {
+  calculateDiscount,
+  normalizeDefinition,
+  normalizePromotionCode,
+} from './promotions.domain';
 import { PromotionDomainError } from './promotions.errors';
 import {
   COMMERCE_AUDIT_CONTRACT,
@@ -60,6 +64,106 @@ export class PromotionsService implements PromotionsModuleContract {
       input.lines,
       input.currency,
     );
+  }
+
+  async quoteCode(input: {
+    readonly code?: string | null;
+    readonly lines: readonly import('./promotions.types').PromotionLineInput[];
+    readonly currency: string;
+    readonly customerId?: string;
+    readonly transaction?: DatabaseTransactionContext;
+  }) {
+    const manager = input.transaction
+      ? unwrapTypeOrmTransaction(input.transaction)
+      : undefined;
+    const repository = (manager ?? this.dataSource.manager).getRepository(
+      Promotion,
+    );
+    const promotions = await repository.find({ where: { status: 'active' } });
+    const normalizedCode = input.code
+      ? normalizePromotionCode(input.code)
+      : null;
+    const candidates: Array<{
+      promotion: Promotion;
+      definition: PromotionDefinitionVersion;
+      quote: ReturnType<typeof calculateDiscount>;
+    }> = [];
+    for (const promotion of promotions) {
+      const now = new Date();
+      if (
+        promotion.startsAt > now ||
+        (promotion.endsAt && promotion.endsAt <= now)
+      )
+        continue;
+      if (
+        promotion.totalLimit !== null &&
+        promotion.redemptionCount >= promotion.totalLimit
+      )
+        continue;
+      const definition = promotion.currentDefinitionVersionId
+        ? await (manager ?? this.dataSource.manager)
+            .getRepository(PromotionDefinitionVersion)
+            .findOne({ where: { id: promotion.currentDefinitionVersionId } })
+        : null;
+      if (!definition) continue;
+      if (definition.eligibility === 'code_required') {
+        if (!normalizedCode || definition.code !== normalizedCode) continue;
+      } else if (normalizedCode) {
+        continue;
+      }
+      if (input.customerId && promotion.perCustomerLimit !== null) {
+        const count = await (manager ?? this.dataSource.manager)
+          .getRepository(PromotionRedemption)
+          .count({
+            where: { promotionId: promotion.id, customerId: input.customerId },
+          });
+        if (count >= promotion.perCustomerLimit) continue;
+      }
+      const quote = calculateDiscount(
+        {
+          id: promotion.id,
+          definitionVersion: definition.id,
+          name: definition.name,
+          code: definition.code,
+          rule:
+            definition.ruleKind === 'percentage'
+              ? {
+                  kind: 'percentage' as const,
+                  percentage: `${Math.floor((definition.percentageBasisPoints ?? 0) / 100)}.${String((definition.percentageBasisPoints ?? 0) % 100).padStart(2, '0')}`,
+                }
+              : {
+                  kind: 'fixed_amount' as const,
+                  amount: {
+                    minorAmount: BigInt(definition.fixedMinorAmount ?? '0'),
+                    currency: definition.currency,
+                  },
+                },
+          target: { kind: definition.targetKind, ids: definition.targetIds },
+        },
+        input.lines,
+        input.currency,
+      );
+      if (quote.status === 'applied')
+        candidates.push({ promotion, definition, quote });
+    }
+    const selected = candidates.sort(
+      (left, right) =>
+        right.definition.priority - left.definition.priority ||
+        left.promotion.id.localeCompare(right.promotion.id),
+    )[0];
+    if (selected) return selected.quote;
+    return {
+      status: 'not_applied' as const,
+      promotionId: null,
+      definitionVersion: null,
+      name: null,
+      code: normalizedCode,
+      discount: { minorAmount: 0n, currency: input.currency },
+      allocations: [],
+      reason: normalizedCode
+        ? ('invalid_code' as const)
+        : ('not_eligible' as const),
+    };
   }
 
   async list(input: {
