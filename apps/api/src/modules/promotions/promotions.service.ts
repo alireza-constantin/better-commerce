@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
-import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
+import { DataSource, In, Repository } from 'typeorm';
 import type { ApplicationConfiguration } from '../../platform/config';
 import {
   DatabaseTransactionContext,
@@ -17,19 +18,28 @@ import {
 } from './promotions.contract';
 import { calculateDiscount, normalizeDefinition } from './promotions.domain';
 import { PromotionDomainError } from './promotions.errors';
+import {
+  COMMERCE_AUDIT_CONTRACT,
+  CommerceAuditAction,
+  type CommerceAuditContract,
+} from '../commerce-audit';
 import type {
   PromotionDefinitionInput,
   PromotionRule,
   PromotionStatus,
 } from './promotions.types';
+import { formatMoney } from '../pricing';
 
 @Injectable()
 export class PromotionsService implements PromotionsModuleContract {
   private readonly currency: string;
 
   constructor(
+    private readonly dataSource: DataSource,
     private readonly transactions: DatabaseTransactionRunner,
     config: ConfigService<ApplicationConfiguration, true>,
+    @Inject(COMMERCE_AUDIT_CONTRACT)
+    private readonly audit: CommerceAuditContract,
   ) {
     this.currency =
       config.getOrThrow<ApplicationConfiguration['commerce']>(
@@ -52,14 +62,85 @@ export class PromotionsService implements PromotionsModuleContract {
     );
   }
 
+  async list(input: {
+    readonly limit: number;
+    readonly cursor?: string;
+    readonly status?: PromotionStatus;
+    readonly q?: string;
+  }) {
+    const cursor = this.decodeCursor(input.cursor);
+    const query = this.dataSource
+      .getRepository(Promotion)
+      .createQueryBuilder('promotion')
+      .orderBy('promotion.updatedAt', 'DESC')
+      .addOrderBy('promotion.id', 'DESC')
+      .take(input.limit + 1);
+    if (input.status)
+      query.andWhere('promotion.status = :status', { status: input.status });
+    if (input.q)
+      query.andWhere('(promotion.name ILIKE :q OR promotion.code ILIKE :q)', {
+        q: `${input.q}%`,
+      });
+    if (cursor) {
+      query.andWhere(
+        '(promotion.updated_at < :cursorUpdatedAt OR (promotion.updated_at = :cursorUpdatedAt AND promotion.id < :cursorId))',
+        { cursorUpdatedAt: cursor.updatedAt, cursorId: cursor.id },
+      );
+    }
+    const rows = await query.getMany();
+    const page = rows.slice(0, input.limit);
+    const definitionIds = page
+      .map((promotion) => promotion.currentDefinitionVersionId)
+      .filter((id): id is string => id !== null);
+    const currentDefinitions = definitionIds.length
+      ? await this.dataSource
+          .getRepository(PromotionDefinitionVersion)
+          .findBy({ id: In(definitionIds) })
+      : [];
+    const byId = new Map(
+      currentDefinitions.map((definition) => [definition.id, definition]),
+    );
+    return {
+      items: page.map((promotion) =>
+        this.toView(
+          promotion,
+          byId.get(promotion.currentDefinitionVersionId ?? ''),
+        ),
+      ),
+      nextCursor:
+        rows.length > input.limit && page.at(-1)
+          ? this.encodeCursor(page.at(-1)!.updatedAt, page.at(-1)!.id)
+          : null,
+    };
+  }
+
+  async get(id: string) {
+    const promotion = await this.dataSource
+      .getRepository(Promotion)
+      .findOne({ where: { id } });
+    if (!promotion)
+      throw new PromotionDomainError(
+        'promotion.not_found',
+        'Promotion was not found',
+      );
+    const definition = promotion.currentDefinitionVersionId
+      ? await this.dataSource
+          .getRepository(PromotionDefinitionVersion)
+          .findOne({ where: { id: promotion.currentDefinitionVersionId } })
+      : null;
+    return this.toView(promotion, definition ?? undefined);
+  }
+
   createDraft(input: {
     readonly definition: PromotionDefinitionInput;
     readonly actorUserId: string;
+    readonly requestId?: string | null;
   }) {
     return this.transactions.run((transaction) =>
       this.createDraftInTransaction(
         input.definition,
         input.actorUserId,
+        input.requestId ?? null,
         transaction,
       ),
     );
@@ -70,6 +151,7 @@ export class PromotionsService implements PromotionsModuleContract {
     readonly expectedVersion: number;
     readonly definition: PromotionDefinitionInput;
     readonly actorUserId: string;
+    readonly requestId?: string | null;
   }) {
     return this.transactions.run((transaction) =>
       this.replaceDefinitionInTransaction(input, transaction),
@@ -84,6 +166,7 @@ export class PromotionsService implements PromotionsModuleContract {
       'scheduled' | 'active' | 'paused' | 'ended'
     >;
     readonly actorUserId: string;
+    readonly requestId?: string | null;
   }) {
     return this.transactions.run(async (transaction) => {
       const manager = unwrapTypeOrmTransaction(transaction);
@@ -114,6 +197,22 @@ export class PromotionsService implements PromotionsModuleContract {
       promotion.status = input.status;
       promotion.version += 1;
       promotion.updatedByUserId = input.actorUserId;
+      await this.audit.record(
+        {
+          actorUserId: input.actorUserId,
+          action:
+            input.status === 'active'
+              ? CommerceAuditAction.PROMOTION_ACTIVATED
+              : input.status === 'paused'
+                ? CommerceAuditAction.PROMOTION_PAUSED
+                : CommerceAuditAction.PROMOTION_ENDED,
+          targetType: 'promotion',
+          targetId: promotion.id,
+          requestId: input.requestId ?? null,
+          metadata: {},
+        },
+        transaction,
+      );
       return repository.save(promotion);
     });
   }
@@ -195,11 +294,28 @@ export class PromotionsService implements PromotionsModuleContract {
     );
     promotion.redemptionCount += 1;
     await promotionRepository.save(promotion);
+    await this.audit.record(
+      {
+        actorUserId: null,
+        action: CommerceAuditAction.PROMOTION_REDEEMED,
+        targetType: 'promotion',
+        targetId: promotion.id,
+        requestId: null,
+        metadata: {
+          orderId: input.orderId,
+          definitionVersionId: input.definitionVersionId,
+          discountAmount: input.discount.minorAmount.toString(),
+          currency: input.discount.currency,
+        },
+      },
+      input.transaction,
+    );
   }
 
   private async createDraftInTransaction(
     input: PromotionDefinitionInput,
     actorUserId: string,
+    requestId: string | null,
     transaction: DatabaseTransactionContext,
   ) {
     const manager = unwrapTypeOrmTransaction(transaction);
@@ -230,6 +346,17 @@ export class PromotionsService implements PromotionsModuleContract {
     );
     promotion.currentDefinitionVersionId = definition.id;
     await promotionRepository.save(promotion);
+    await this.audit.record(
+      {
+        actorUserId,
+        action: CommerceAuditAction.PROMOTION_CREATED,
+        targetType: 'promotion',
+        targetId: promotion.id,
+        requestId,
+        metadata: { definitionVersionId: definition.id },
+      },
+      transaction,
+    );
     return promotion;
   }
 
@@ -239,6 +366,7 @@ export class PromotionsService implements PromotionsModuleContract {
       expectedVersion: number;
       definition: PromotionDefinitionInput;
       actorUserId: string;
+      requestId?: string | null;
     },
     transaction: DatabaseTransactionContext,
   ) {
@@ -285,6 +413,17 @@ export class PromotionsService implements PromotionsModuleContract {
       version: promotion.version + 1,
       updatedByUserId: input.actorUserId,
     });
+    await this.audit.record(
+      {
+        actorUserId: input.actorUserId,
+        action: CommerceAuditAction.PROMOTION_UPDATED,
+        targetType: 'promotion',
+        targetId: promotion.id,
+        requestId: input.requestId ?? null,
+        metadata: { definitionVersionId: definition.id },
+      },
+      transaction,
+    );
     return promotionRepository.save(promotion);
   }
 
@@ -343,6 +482,75 @@ export class PromotionsService implements PromotionsModuleContract {
       ended: [],
     };
     return transitions[from].includes(to);
+  }
+
+  private toView(
+    promotion: Promotion,
+    definition?: PromotionDefinitionVersion,
+  ) {
+    if (!definition)
+      throw new PromotionDomainError(
+        'promotion.not_found',
+        'Promotion definition was not found',
+      );
+    return {
+      id: promotion.id,
+      version: promotion.version,
+      definitionVersion: definition.id,
+      status: promotion.status,
+      name: definition.name,
+      description: definition.description,
+      eligibility: definition.eligibility,
+      code: definition.code,
+      rule:
+        definition.ruleKind === 'percentage'
+          ? {
+              kind: 'percentage' as const,
+              percentage: `${Math.floor((definition.percentageBasisPoints ?? 0) / 100)}.${String((definition.percentageBasisPoints ?? 0) % 100).padStart(2, '0')}`,
+            }
+          : {
+              kind: 'fixed_amount' as const,
+              amount: formatMoney({
+                minorAmount: BigInt(definition.fixedMinorAmount ?? '0'),
+                currency: definition.currency,
+              }),
+            },
+      target: { kind: definition.targetKind, ids: definition.targetIds },
+      priority: definition.priority,
+      startsAt: definition.startsAt.toISOString(),
+      endsAt: definition.endsAt?.toISOString() ?? null,
+      totalLimit: definition.totalLimit,
+      perCustomerLimit: definition.perCustomerLimit,
+      redemptions: { total: promotion.redemptionCount },
+      createdAt: promotion.createdAt.toISOString(),
+      updatedAt: promotion.updatedAt.toISOString(),
+    };
+  }
+
+  private encodeCursor(updatedAt: Date, id: string): string {
+    return Buffer.from(
+      JSON.stringify({ updatedAt: updatedAt.toISOString(), id }),
+    ).toString('base64url');
+  }
+
+  private decodeCursor(
+    value?: string,
+  ): { updatedAt: string; id: string } | undefined {
+    if (!value) return undefined;
+    try {
+      const parsed = JSON.parse(
+        Buffer.from(value, 'base64url').toString('utf8'),
+      ) as { updatedAt?: unknown; id?: unknown };
+      if (
+        typeof parsed.updatedAt !== 'string' ||
+        Number.isNaN(Date.parse(parsed.updatedAt)) ||
+        typeof parsed.id !== 'string'
+      )
+        throw new Error();
+      return { updatedAt: parsed.updatedAt, id: parsed.id };
+    } catch {
+      throw new BadRequestException('Invalid promotion cursor');
+    }
   }
 }
 

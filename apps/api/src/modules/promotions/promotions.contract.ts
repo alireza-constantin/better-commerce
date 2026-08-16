@@ -21,12 +21,14 @@ export interface PromotionsModuleContract {
   createDraft(input: {
     readonly definition: PromotionDefinitionInput;
     readonly actorUserId: string;
+    readonly requestId?: string | null;
   }): Promise<unknown>;
   replaceDefinition(input: {
     readonly promotionId: string;
     readonly expectedVersion: number;
     readonly definition: PromotionDefinitionInput;
     readonly actorUserId: string;
+    readonly requestId?: string | null;
   }): Promise<unknown>;
   transition(input: {
     readonly promotionId: string;
@@ -36,6 +38,7 @@ export interface PromotionsModuleContract {
       'scheduled' | 'active' | 'paused' | 'ended'
     >;
     readonly actorUserId: string;
+    readonly requestId?: string | null;
   }): Promise<unknown>;
   claimRedemption(input: {
     readonly promotionId: string;

@@ -62,6 +62,17 @@ const ALLOWED_METADATA: Readonly<
   [CommerceAuditAction.COLLECTION_ARCHIVED]: [],
   [CommerceAuditAction.COLLECTION_RESTORED]: [],
   [CommerceAuditAction.COLLECTION_PRODUCTS_REPLACED]: ['productCount'],
+  [CommerceAuditAction.PROMOTION_CREATED]: ['definitionVersionId'],
+  [CommerceAuditAction.PROMOTION_UPDATED]: ['definitionVersionId'],
+  [CommerceAuditAction.PROMOTION_ACTIVATED]: [],
+  [CommerceAuditAction.PROMOTION_PAUSED]: [],
+  [CommerceAuditAction.PROMOTION_ENDED]: [],
+  [CommerceAuditAction.PROMOTION_REDEEMED]: [
+    'orderId',
+    'definitionVersionId',
+    'discountAmount',
+    'currency',
+  ],
 });
 
 export function assertCommerceAuditMetadata(

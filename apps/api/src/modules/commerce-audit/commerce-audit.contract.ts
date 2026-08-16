@@ -31,6 +31,12 @@ export const CommerceAuditAction = {
   COLLECTION_ARCHIVED: 'catalog.collection_archived',
   COLLECTION_RESTORED: 'catalog.collection_restored',
   COLLECTION_PRODUCTS_REPLACED: 'catalog.collection_products_replaced',
+  PROMOTION_CREATED: 'promotions.created',
+  PROMOTION_UPDATED: 'promotions.updated',
+  PROMOTION_ACTIVATED: 'promotions.activated',
+  PROMOTION_PAUSED: 'promotions.paused',
+  PROMOTION_ENDED: 'promotions.ended',
+  PROMOTION_REDEEMED: 'promotions.redeemed',
 } as const;
 
 export type CommerceAuditAction =
