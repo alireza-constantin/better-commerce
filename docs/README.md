@@ -53,6 +53,7 @@ external consumers exist, a compatibility/versioning decision.
 - [Catalog contract](contracts/catalog.md)
 - [Catalog navigation contract](contracts/catalog-navigation.md)
 - [Commerce operations and audit](contracts/commerce-operations.md)
+- [Promotions and discounts](contracts/promotions.md)
 - [External HTTP API and SDK](contracts/external-http-api.md)
 
 ### Contributor handbook
@@ -87,6 +88,7 @@ authority.
 - [ADR-0011 reference renderer evaluation](plans/adr-0011-renderer-evaluation.md)
 - [ADR-0015 Cart implementation plan](plans/adr-0015-cart-implementation.md)
 - [ADR-0017 Categories and Collections implementation plan](plans/adr-0017-implementation.md)
+- [ADR-0018 Promotions implementation plan](plans/adr-0018-promotions-implementation.md)
 - [Completed ADR-0005 Catalog implementation plan](plans/adr-0005-implementation.md)
 - [Completed ADR-0003 implementation plan](plans/adr-0003-implementation.md)
 
