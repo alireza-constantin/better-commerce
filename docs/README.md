@@ -32,7 +32,7 @@ amendment or a superseding ADR.
 
 Proposed decisions under review:
 
-- [ADR-0018 — Promotions and Discounts](adr/0018-promotions-and-discounts.md)
+- None.
 
 ### Living architecture
 
@@ -105,7 +105,7 @@ conflict through an amendment, superseding decision, or contract revision.
 
 ## Current decision sequence
 
-ADR-0001 through ADR-0008 and ADR-0010 through ADR-0017
+ADR-0001 through ADR-0008 and ADR-0010 through ADR-0018
 are accepted. ADR-0005 Catalog implementation is complete. The first combined
 physical-shipping/manual-payment Checkout implementation is present and
 typechecks. ADR-0015 Cart, checkout preparation, selectable manual payments,

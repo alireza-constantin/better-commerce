@@ -1,7 +1,9 @@
 # ADR-0018 — Promotions and Discounts
 
-Status: Proposed
+Status: Accepted
 Date: 2026-08-16
+Accepted: 2026-08-16
+Frozen: 2026-08-16
 
 ## Context
 
@@ -215,4 +217,3 @@ The follow-up contract and test matrix must define:
 10. permission denial, CSRF, idempotency, rollback, and retry behavior;
 11. generated SDK and storefront-core result types, including typed failures;
 12. Admin management and redemption-history read/write workflows.
-
