@@ -4,8 +4,8 @@ export class SafeUserResponseDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
 
-  @ApiProperty({ format: 'email', example: 'customer@example.test' })
-  email: string;
+  @ApiProperty({ format: 'email', nullable: true, example: 'customer@example.test' })
+  email: string | null;
 
   @ApiProperty({ nullable: true, example: '989120000000' })
   mobile: string | null;

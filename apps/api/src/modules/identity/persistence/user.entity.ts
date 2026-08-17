@@ -27,15 +27,15 @@ export class User {
   id: string;
 
   /** The address as entered by the user, retained for display and delivery. */
-  @Column({ type: 'varchar', length: 320 })
-  email: string;
+  @Column({ type: 'varchar', length: 320, nullable: true })
+  email: string | null;
 
   /**
    * The canonical lookup key. Application services must populate this with the
    * shared email-normalization function before persisting a user.
    */
-  @Column({ name: 'email_normalized', type: 'varchar', length: 320 })
-  emailNormalized: string;
+  @Column({ name: 'email_normalized', type: 'varchar', length: 320, nullable: true })
+  emailNormalized: string | null;
 
   /** Canonical Iranian mobile digits without the leading plus sign. */
   @Column({ name: 'mobile', type: 'varchar', length: 16, nullable: true })

@@ -38,6 +38,40 @@ import {
   ApiCsrfProtected,
   ApiSessionAuthenticated,
 } from '../../../platform/openapi';
+import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { MobileRegistrationService } from './mobile-registration.service';
+
+class MobileRegisterDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  displayName: string;
+
+  @IsString()
+  @MaxLength(24)
+  mobile: string;
+
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(254)
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(12)
+  @MaxLength(128)
+  password?: string;
+}
+
+class VerifyMobileDto {
+  @IsString()
+  challengeId: string;
+
+  @IsString()
+  @MinLength(6)
+  @MaxLength(6)
+  code: string;
+}
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -47,6 +81,7 @@ export class AuthController {
     private readonly auth: AuthService,
     @Inject(SESSION_CONFIGURATION)
     private readonly sessionConfiguration: SessionConfiguration,
+    private readonly mobileRegistration: MobileRegistrationService,
   ) {}
 
   @Public()
@@ -61,6 +96,28 @@ export class AuthController {
     @Req() request: Request,
   ): Promise<SafeUserResponse> {
     return this.auth.register(dto, request);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Start customer registration with an Iranian mobile number' })
+  @ApiCsrfProtected()
+  @ApiCreatedResponse()
+  @Post('register/mobile')
+  registerWithMobile(@Body() dto: MobileRegisterDto) {
+    return this.mobileRegistration.register(dto);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Verify the mobile registration code' })
+  @ApiCsrfProtected()
+  @ApiOkResponse({ type: SafeUserResponseDto })
+  @HttpCode(HttpStatus.OK)
+  @Post('register/mobile/verify')
+  verifyMobile(
+    @Body() dto: VerifyMobileDto,
+    @Req() request: Request,
+  ): Promise<SafeUserResponse> {
+    return this.mobileRegistration.verify(dto, request);
   }
 
   @Public()

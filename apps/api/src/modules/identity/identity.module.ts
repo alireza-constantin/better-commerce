@@ -16,12 +16,17 @@ import { User } from './persistence/user.entity';
 import { MobileOtpChallenge } from './persistence/mobile-otp-challenge.entity';
 import { SessionModule } from './session';
 import { SecurityModule } from '../../platform/security';
+import { CustomersModule } from '../customers';
+import { CommunicationsModule } from '../communications/communications.module';
+import { MobileRegistrationService } from './auth/mobile-registration.service';
 
 @Module({
   imports: [
     ConfigModule,
     SessionModule,
     SecurityModule,
+    CustomersModule,
+    CommunicationsModule,
     TypeOrmModule.forFeature([
       User,
       PasswordCredential,
@@ -36,6 +41,7 @@ import { SecurityModule } from '../../platform/security';
     DevelopmentAccountBootstrapService,
     SessionAuthGuard,
     EmailVerificationService,
+    MobileRegistrationService,
     IdentityAdministrationPersistence,
     {
       provide: IDENTITY_ADMINISTRATION,

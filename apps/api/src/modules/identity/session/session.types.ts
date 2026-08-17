@@ -1,6 +1,6 @@
 import 'express-session';
 
-export type AuthenticationMethod = 'password' | 'email_otp';
+export type AuthenticationMethod = 'password' | 'email_otp' | 'mobile_otp';
 
 declare module 'express-session' {
   interface SessionData {

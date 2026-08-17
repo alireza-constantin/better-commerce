@@ -1,13 +1,13 @@
 export interface AuthenticatedUser {
   id: string;
-  email: string;
+  email: string | null;
   mobile: string | null;
   emailVerified: boolean;
 }
 
 export interface SafeUserResponse {
   id: string;
-  email: string;
+  email: string | null;
   mobile: string | null;
   emailVerified: boolean;
 }

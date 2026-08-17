@@ -7,7 +7,7 @@ import type { DatabaseTransactionContext } from '../../platform/database';
  */
 export interface IdentityReference {
   readonly id: string;
-  readonly email: string;
+  readonly email: string | null;
 }
 
 export type IdentitySummary = IdentityReference;

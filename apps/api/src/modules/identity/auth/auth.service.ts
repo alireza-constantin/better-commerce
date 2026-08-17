@@ -33,7 +33,7 @@ function isActive(user: User): boolean {
   return user.status === UserStatus.ACTIVE;
 }
 
-function toSafeUser(user: User): SafeUserResponse {
+export function toSafeUser(user: User): SafeUserResponse {
   const candidate = user as unknown as {
     emailVerifiedAt: Date | null;
   };

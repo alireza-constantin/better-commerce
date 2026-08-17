@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthorizationModule } from '../authorization';
 import { MessageDeliveryAttempt } from './message-delivery-attempt.entity';
 import { MessageIntent } from './message-intent.entity';
 import { MessageProviderRoute } from './message-provider-route.entity';
@@ -14,7 +13,6 @@ import { CommunicationsService } from './communications.service';
       MessageDeliveryAttempt,
       MessageProviderRoute,
     ]),
-    AuthorizationModule,
   ],
   controllers: [CommunicationsController],
   providers: [CommunicationsService],

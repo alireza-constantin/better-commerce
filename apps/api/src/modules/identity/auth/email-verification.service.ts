@@ -86,6 +86,7 @@ export class EmailVerificationService implements OnModuleInit {
     });
 
     try {
+      if (!user.email) throw new BadRequestException('Email is not configured');
       await this.delivery.sendVerificationEmail({
         email: user.email,
         token,
@@ -134,6 +135,7 @@ export class EmailVerificationService implements OnModuleInit {
     return {
       id: user.id,
       email: user.email,
+      mobile: user.mobile,
       emailVerified: true,
     };
   }

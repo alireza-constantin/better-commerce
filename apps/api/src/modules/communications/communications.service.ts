@@ -18,6 +18,12 @@ export interface CreateTestMessageInput {
   readonly body: string;
 }
 
+export interface QueueMessageInput {
+  readonly purpose: MessagePurpose;
+  readonly destination: string;
+  readonly body: string;
+}
+
 export interface MessageHistory {
   readonly id: string;
   readonly purpose: MessagePurpose;
@@ -57,11 +63,30 @@ export class CommunicationsService {
   ) {}
 
   async queueTestMessage(input: CreateTestMessageInput): Promise<MessageHistory> {
-    const providerKey = await this.ensureRoute(MessagePurpose.TEST);
+    return this.queueMessage({
+      purpose: MessagePurpose.TEST,
+      destination: process.env.COMMUNICATIONS_TEST_DESTINATION ?? '989120000000',
+      body: input.body,
+    });
+  }
+
+  async queueAuthenticationOtp(
+    destination: string,
+    code: string,
+  ): Promise<MessageHistory> {
+    return this.queueMessage({
+      purpose: MessagePurpose.AUTHENTICATION,
+      destination,
+      body: `Your verification code is ${code}`,
+    });
+  }
+
+  private async queueMessage(input: QueueMessageInput): Promise<MessageHistory> {
+    const providerKey = await this.ensureRoute(input.purpose);
     const intent = await this.intents.save(
       this.intents.create({
-        purpose: MessagePurpose.TEST,
-        destination: process.env.COMMUNICATIONS_TEST_DESTINATION ?? '989120000000',
+        purpose: input.purpose,
+        destination: input.destination,
         renderedBody: input.body,
         providerKey,
         status: MessageIntentStatus.QUEUED,
