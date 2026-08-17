@@ -95,6 +95,14 @@ export class CommunicationsService {
     });
   }
 
+  async queueWishlistAlert(destination: string, body: string): Promise<MessageHistory> {
+    return this.queueMessage({
+      purpose: MessagePurpose.WISHLIST,
+      destination,
+      body,
+    });
+  }
+
   private async queueMessage(input: QueueMessageInput): Promise<MessageHistory> {
     const providerKey = await this.ensureRoute(input.purpose);
     const intent = await this.intents.save(

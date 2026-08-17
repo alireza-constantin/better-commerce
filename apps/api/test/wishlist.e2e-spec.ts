@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import request, { type SuperAgentTest } from 'supertest';
 import type { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
+import { OwnerBootstrapService } from '../src/modules/authorization/bootstrap/owner-bootstrap.service';
 import {
   CatalogProduct,
   CatalogVariant,
@@ -20,11 +21,13 @@ describe('Customer wishlist HTTP contract', () => {
   let app: INestApplication;
   let server: App;
   let dataSource: DataSource;
+  let ownerBootstrap: OwnerBootstrapService;
 
   beforeAll(async () => {
     app = await createFullApplication();
     server = app.getHttpServer() as App;
     dataSource = app.get(DataSource);
+    ownerBootstrap = app.get(OwnerBootstrapService);
   });
 
   beforeEach(async () => {
@@ -93,9 +96,49 @@ describe('Customer wishlist HTTP contract', () => {
       .set('x-csrf-token', addCsrf.token)
       .send({ variantId: variant.id })
       .expect(201);
+    const alertCsrf = await csrf(customer);
+    await customer
+      .post(`/api/v1/customer/wishlist/items/${variant.id}/availability-alert`)
+      .set('Origin', ORIGIN)
+      .set('Cookie', alertCsrf.cookie)
+      .set('x-csrf-token', alertCsrf.token)
+      .expect(201);
+    await customer.get('/api/v1/customer/wishlist/availability-alerts').expect(200).expect((response) => {
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0].status).toBe('pending');
+    });
     const list = await customer.get('/api/v1/customer/wishlist').expect(200);
     expect(list.body).toMatchObject({ count: 1 });
     expect(list.body.data[0].variantId).toBe(variant.id);
+
+    const ownerEmail = 'wishlist-owner@example.test';
+    const ownerRegistration = request.agent(server);
+    const ownerRegisterCsrf = await csrf(ownerRegistration);
+    await ownerRegistration
+      .post('/api/v1/auth/register')
+      .set('Origin', ORIGIN)
+      .set('Cookie', ownerRegisterCsrf.cookie)
+      .set('x-csrf-token', ownerRegisterCsrf.token)
+      .send({ email: ownerEmail, password: 'correct horse battery staple' })
+      .expect(201);
+    await ownerBootstrap.bootstrap(ownerEmail);
+    const owner = request.agent(server);
+    const ownerLoginCsrf = await csrf(owner);
+    await owner
+      .post('/api/v1/auth/login')
+      .set('Origin', ORIGIN)
+      .set('Cookie', ownerLoginCsrf.cookie)
+      .set('x-csrf-token', ownerLoginCsrf.token)
+      .send({ email: ownerEmail, password: 'correct horse battery staple' })
+      .expect(200);
+    const evaluateCsrf = await csrf(owner);
+    await owner
+      .post('/api/v1/admin/wishlist-alerts/evaluate')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', evaluateCsrf.token)
+      .send({ variantId: variant.id, episodeKey: 'current', available: true })
+      .expect(201)
+      .expect({ sent: 1 });
 
     const removeCsrf = await csrf(customer);
     await customer

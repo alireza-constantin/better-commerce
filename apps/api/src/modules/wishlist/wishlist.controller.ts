@@ -4,6 +4,7 @@ import { IsUUID } from 'class-validator';
 import type { Request } from 'express';
 import { ApiCsrfProtected, ApiSessionAuthenticated } from '../../platform/openapi';
 import { WishlistService } from './wishlist.service';
+import { WishlistAlertService } from './wishlist-alert.service';
 
 class WishlistItemDto {
   @IsUUID()
@@ -14,7 +15,10 @@ class WishlistItemDto {
 @ApiSessionAuthenticated()
 @Controller('customer/wishlist')
 export class WishlistController {
-  constructor(private readonly wishlist: WishlistService) {}
+  constructor(
+    private readonly wishlist: WishlistService,
+    private readonly alerts: WishlistAlertService,
+  ) {}
 
   @Get()
   @ApiOkResponse()
@@ -27,6 +31,22 @@ export class WishlistController {
   @ApiCreatedResponse()
   add(@Body() dto: WishlistItemDto, @Req() request: Request) {
     return this.wishlist.add(request.authUser!.id, dto.variantId);
+  }
+
+  @Post('items/:variantId/availability-alert')
+  @ApiCsrfProtected()
+  @ApiCreatedResponse()
+  subscribeAlert(
+    @Param('variantId', new ParseUUIDPipe({ version: '4' })) variantId: string,
+    @Req() request: Request,
+  ) {
+    return this.alerts.subscribe(request.authUser!.id, variantId);
+  }
+
+  @Get('availability-alerts')
+  @ApiOkResponse()
+  listAlerts(@Req() request: Request) {
+    return this.alerts.list(request.authUser!.id);
   }
 
   @Delete('items/:variantId')
