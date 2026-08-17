@@ -31,6 +31,7 @@ import { VariantConfigurationModule } from './modules/catalog/http/variant-confi
 import { PromotionsModule } from './modules/promotions';
 import { CommunicationsModule } from './modules/communications/communications.module';
 import { CustomersModule } from './modules/customers';
+import { WishlistModule } from './modules/wishlist';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { CustomersModule } from './modules/customers';
     PromotionsModule,
     CommunicationsModule,
     CustomersModule,
+    WishlistModule,
     SecurityModule,
     IdentityModule,
     HealthModule,
