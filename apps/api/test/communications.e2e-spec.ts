@@ -163,5 +163,12 @@ describe('Customer Communications HTTP contract', () => {
       .set('x-csrf-token', confirmCsrf.token)
       .expect(201);
     expect(confirmed.body).toMatchObject({ status: 'scheduled', frozenProviderKey: 'deterministic' });
+    const dispatchCsrf = await csrf(owner);
+    const dispatched = await owner
+      .post(`/api/v1/admin/communications/campaigns/${created.body.id}/dispatch`)
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', dispatchCsrf.token)
+      .expect(201);
+    expect(dispatched.body).toMatchObject({ campaignId: created.body.id, status: 'completed' });
   });
 });

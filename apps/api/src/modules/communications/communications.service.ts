@@ -122,6 +122,10 @@ export class CommunicationsService {
     });
   }
 
+  async queueCampaignMessage(recipientUserId: string, destination: string, body: string): Promise<MessageHistory> {
+    return this.queueMessage({ purpose: MessagePurpose.CAMPAIGN, destination, body, recipientUserId });
+  }
+
   private async queueMessage(input: QueueMessageInput): Promise<MessageHistory> {
     const providerKey = await this.ensureRoute(input.purpose);
     const intent = await this.intents.save(

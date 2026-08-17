@@ -9,6 +9,7 @@ import { TemplateAdminController } from './template-admin.controller';
 import { CommunicationCampaign } from './campaign.entity';
 import { CampaignService } from './campaign.service';
 import { CampaignAdminController } from './campaign-admin.controller';
+import { CampaignDelivery } from './campaign-delivery.entity';
 import { MessageProviderRoute } from './message-provider-route.entity';
 import { CommunicationsController } from './communications.controller';
 import { CommunicationsService } from './communications.service';
@@ -22,6 +23,7 @@ import { CommunicationsService } from './communications.service';
       User,
       CommunicationTemplate,
       CommunicationCampaign,
+      CampaignDelivery,
     ]),
   ],
   controllers: [CommunicationsController, TemplateAdminController, CampaignAdminController],

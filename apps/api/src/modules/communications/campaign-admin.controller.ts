@@ -25,4 +25,6 @@ export class CampaignAdminController {
   @Get() @RequirePermissions(PermissionKey.COMMUNICATIONS_READ) @ApiOkResponse() list() { return this.campaigns.list(); }
   @Post() @ApiCsrfProtected() @RequirePermissions(PermissionKey.COMMUNICATIONS_WRITE) @ApiCreatedResponse() create(@Body() dto: CreateCampaignDto) { return this.campaigns.create(dto); }
   @Post(':campaignId/confirm') @ApiCsrfProtected() @RequirePermissions(PermissionKey.COMMUNICATIONS_WRITE, PermissionKey.COMMUNICATIONS_SEND) @ApiOkResponse() confirm(@Param('campaignId', new ParseUUIDPipe({ version: '4' })) id: string) { return this.campaigns.confirm(id); }
+  @Post(':campaignId/dispatch') @ApiCsrfProtected() @RequirePermissions(PermissionKey.COMMUNICATIONS_SEND) @ApiOkResponse() dispatch(@Param('campaignId', new ParseUUIDPipe({ version: '4' })) id: string) { return this.campaigns.dispatch(id); }
+  @Post(':campaignId/cancel') @ApiCsrfProtected() @RequirePermissions(PermissionKey.COMMUNICATIONS_SEND) @ApiOkResponse() cancel(@Param('campaignId', new ParseUUIDPipe({ version: '4' })) id: string) { return this.campaigns.cancel(id); }
 }
