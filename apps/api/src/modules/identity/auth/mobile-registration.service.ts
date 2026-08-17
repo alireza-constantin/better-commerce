@@ -125,6 +125,7 @@ export class MobileRegistrationService {
       return txChallenges.save(
         txChallenges.create({
           mobileNormalized: mobile,
+          userId: user.id,
           codeDigest: this.digest(code),
           status: MobileOtpChallengeStatus.PENDING,
           attemptCount: 0,
@@ -204,6 +205,7 @@ export class MobileRegistrationService {
     const challenge = await this.challenges.save(
       this.challenges.create({
         mobileNormalized: mobile,
+        userId: user.id,
         codeDigest: this.digest(code),
         status: MobileOtpChallengeStatus.PENDING,
         attemptCount: 0,
@@ -249,6 +251,68 @@ export class MobileRegistrationService {
       userId: user.id,
       authVersion: user.authVersion,
       authenticationMethod: 'mobile_otp',
+    });
+    return toSafeUser(user);
+  }
+
+  async requestEnrollment(
+    userId: string,
+    mobileInput: string,
+  ): Promise<MobileLoginChallengeResult> {
+    const mobile = normalizeIranianMobile(mobileInput);
+    const existing = await this.users.findOneBy({ mobileNormalized: mobile });
+    if (existing && existing.id !== userId) {
+      throw new ConflictException('This mobile number is already registered');
+    }
+    const user = await this.users.findOneBy({ id: userId });
+    if (!user || user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException();
+    }
+    const code = String(randomInt(100000, 1000000));
+    const challenge = await this.challenges.save(
+      this.challenges.create({
+        mobileNormalized: mobile,
+        userId,
+        codeDigest: this.digest(code),
+        status: MobileOtpChallengeStatus.PENDING,
+        attemptCount: 0,
+        maxAttempts: 5,
+        expiresAt: new Date(Date.now() + 5 * 60_000),
+        consumedAt: null,
+      }),
+    );
+    await this.communications.queueAuthenticationOtp(mobile, code);
+    return {
+      challengeId: challenge.id,
+      mobile,
+      status: 'pending',
+      ...(process.env.NODE_ENV === 'test' ? { testCode: code } : {}),
+    };
+  }
+
+  async verifyEnrollment(input: VerifyMobileInput, userId: string) {
+    const challenge = await this.challenges.findOneBy({
+      id: input.challengeId,
+      userId,
+    });
+    if (
+      !challenge ||
+      challenge.status !== MobileOtpChallengeStatus.PENDING ||
+      challenge.expiresAt.getTime() <= Date.now() ||
+      this.digest(input.code) !== challenge.codeDigest
+    ) {
+      throw new UnauthorizedException('The verification code is expired or invalid');
+    }
+    const user = await this.users.findOneBy({ id: userId });
+    if (!user || user.status !== UserStatus.ACTIVE) throw new UnauthorizedException();
+    user.mobile = challenge.mobileNormalized;
+    user.mobileNormalized = challenge.mobileNormalized;
+    user.mobileVerifiedAt = new Date();
+    challenge.status = MobileOtpChallengeStatus.CONSUMED;
+    challenge.consumedAt = new Date();
+    await this.dataSource.transaction(async (manager) => {
+      await manager.getRepository(User).save(user);
+      await manager.getRepository(MobileOtpChallenge).save(challenge);
     });
     return toSafeUser(user);
   }

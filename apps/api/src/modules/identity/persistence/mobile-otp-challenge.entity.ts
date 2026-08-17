@@ -22,6 +22,9 @@ export class MobileOtpChallenge {
   @Column({ name: 'mobile_normalized', type: 'varchar', length: 16 })
   mobileNormalized!: string;
 
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
+  userId!: string | null;
+
   /** Store only a one-way digest; the six digit code is never persisted. */
   @Column({ name: 'code_digest', type: 'varchar', length: 128 })
   codeDigest!: string;

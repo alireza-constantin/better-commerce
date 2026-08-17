@@ -123,4 +123,35 @@ describe('Mobile customer registration HTTP contract', () => {
       });
     await loginAgent.get('/api/v1/auth/me').expect(200);
   });
+
+  it('lets an existing email account enroll a verified mobile number', async () => {
+    const agent = request.agent(server);
+    const registerCsrf = await csrf(agent);
+    await agent
+      .post('/api/v1/auth/register')
+      .set('Origin', ORIGIN)
+      .set('Cookie', registerCsrf.cookie)
+      .set('x-csrf-token', registerCsrf.token)
+      .send({ email: 'enrollment@example.test', password: 'correct horse battery staple' })
+      .expect(201);
+    const enrollCsrf = await csrf(agent);
+    const enrollment = await agent
+      .post('/api/v1/auth/mobile/enroll/request')
+      .set('Origin', ORIGIN)
+      .set('Cookie', enrollCsrf.cookie)
+      .set('x-csrf-token', enrollCsrf.token)
+      .send({ mobile: '09121112233' })
+      .expect(201);
+    const verifyCsrf = await csrf(agent);
+    await agent
+      .post('/api/v1/auth/mobile/enroll/verify')
+      .set('Origin', ORIGIN)
+      .set('Cookie', verifyCsrf.cookie)
+      .set('x-csrf-token', verifyCsrf.token)
+      .send({ challengeId: enrollment.body.challengeId, code: enrollment.body.testCode })
+      .expect(200);
+    await agent.get('/api/v1/auth/me').expect(200).expect((response) => {
+      expect(response.body.mobile).toBe('989121112233');
+    });
+  });
 });

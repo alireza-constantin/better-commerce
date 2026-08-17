@@ -79,6 +79,12 @@ class MobileLoginDto {
   mobile: string;
 }
 
+class MobileEnrollmentDto {
+  @IsString()
+  @MaxLength(24)
+  mobile: string;
+}
+
 @ApiTags('Authentication')
 @Controller('auth')
 @UseInterceptors(new AbuseProtectionInterceptor())
@@ -146,6 +152,31 @@ export class AuthController {
     @Req() request: Request,
   ): Promise<SafeUserResponse> {
     return this.mobileRegistration.verifyLoginOtp(dto, request);
+  }
+
+  @ApiOperation({ summary: 'Send a code to enroll a mobile number on an existing account' })
+  @ApiSessionAuthenticated()
+  @ApiCsrfProtected()
+  @ApiCreatedResponse()
+  @Post('mobile/enroll/request')
+  requestMobileEnrollment(
+    @Body() dto: MobileEnrollmentDto,
+    @Req() request: Request,
+  ) {
+    return this.mobileRegistration.requestEnrollment(request.authUser!.id, dto.mobile);
+  }
+
+  @ApiOperation({ summary: 'Verify an enrolled mobile number' })
+  @ApiSessionAuthenticated()
+  @ApiCsrfProtected()
+  @ApiOkResponse({ type: SafeUserResponseDto })
+  @HttpCode(HttpStatus.OK)
+  @Post('mobile/enroll/verify')
+  verifyMobileEnrollment(
+    @Body() dto: VerifyMobileDto,
+    @Req() request: Request,
+  ): Promise<SafeUserResponse> {
+    return this.mobileRegistration.verifyEnrollment(dto, request.authUser!.id);
   }
 
   @Public()
