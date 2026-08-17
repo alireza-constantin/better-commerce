@@ -8,6 +8,7 @@ import request from 'supertest';
 import type { App } from 'supertest/types';
 import { AuthController } from '../src/modules/identity/auth/auth.controller';
 import { AuthService } from '../src/modules/identity/auth/auth.service';
+import { MobileRegistrationService } from '../src/modules/identity/auth/mobile-registration.service';
 import {
   SESSION_CONFIGURATION,
   type SessionConfiguration,
@@ -43,6 +44,7 @@ describe('Authentication HTTP contract', () => {
       controllers: [AuthController],
       providers: [
         { provide: AuthService, useValue: auth },
+        { provide: MobileRegistrationService, useValue: {} },
         { provide: SESSION_CONFIGURATION, useValue: sessionConfiguration },
       ],
     }).compile();
