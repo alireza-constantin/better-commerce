@@ -29,10 +29,20 @@ amendment or a superseding ADR.
 - [ADR-0015 — Persistent Cart Ownership, Merge, and Concurrency](adr/0015-cart.md)
 - [ADR-0016 — Product Media and Asset Delivery](adr/0016-product-media.md)
 - [ADR-0017 — Categories, Collections, and Catalog Navigation](adr/0017-categories-collections-navigation.md)
+- [ADR-0018 — Promotions and Discounts](adr/0018-promotions-and-discounts.md)
+- [ADR-0019 — Customers, Wishlists, and Customer Communications](adr/0019-customers-wishlists-and-communications.md)
 
 Proposed decisions under review:
 
 - None.
+
+### Product requirements
+
+Product requirements describe approved user outcomes, workflows, scope, and
+acceptance scenarios. They defer architecture and behavioral authority to the
+linked ADRs and contracts.
+
+- [Phase 8 Customers, Wishlists, and Customer Communications](prd/phase-8-customers-wishlists-and-communications.md)
 
 ### Living architecture
 
@@ -107,7 +117,7 @@ conflict through an amendment, superseding decision, or contract revision.
 
 ## Current decision sequence
 
-ADR-0001 through ADR-0008 and ADR-0010 through ADR-0018
+ADR-0001 through ADR-0008 and ADR-0010 through ADR-0019
 are accepted. ADR-0005 Catalog implementation is complete. The first combined
 physical-shipping/manual-payment Checkout implementation is present and
 typechecks. ADR-0015 Cart, checkout preparation, selectable manual payments,
