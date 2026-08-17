@@ -141,5 +141,17 @@ describe('Customer directory HTTP contract', () => {
       .get(`/api/v1/admin/communications/messages/${orderMessage.body.id}`)
       .expect(200)
       .expect((response) => expect(response.body.status).toBe('accepted'));
+
+    const segmentCsrf = await csrf(owner);
+    const segment = await owner
+      .post('/api/v1/admin/customers/segments')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', segmentCsrf.token)
+      .send({ name: 'مشتریان موبایلی', filters: { hasMobile: true, status: 'active' } })
+      .expect(201);
+    expect(segment.body.name).toBe('مشتریان موبایلی');
+    await owner.get('/api/v1/admin/customers/segments').expect(200).expect((response) => {
+      expect(response.body[0].id).toBe(segment.body.id);
+    });
   });
 });
