@@ -73,6 +73,12 @@ class VerifyMobileDto {
   code: string;
 }
 
+class MobileLoginDto {
+  @IsString()
+  @MaxLength(24)
+  mobile: string;
+}
+
 @ApiTags('Authentication')
 @Controller('auth')
 @UseInterceptors(new AbuseProtectionInterceptor())
@@ -118,6 +124,28 @@ export class AuthController {
     @Req() request: Request,
   ): Promise<SafeUserResponse> {
     return this.mobileRegistration.verify(dto, request);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Send a mobile login code' })
+  @ApiCsrfProtected()
+  @ApiCreatedResponse()
+  @Post('login/mobile/request')
+  requestMobileLogin(@Body() dto: MobileLoginDto) {
+    return this.mobileRegistration.requestLoginOtp(dto.mobile);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Verify a mobile login code' })
+  @ApiCsrfProtected()
+  @ApiOkResponse({ type: SafeUserResponseDto })
+  @HttpCode(HttpStatus.OK)
+  @Post('login/mobile/verify')
+  verifyMobileLogin(
+    @Body() dto: VerifyMobileDto,
+    @Req() request: Request,
+  ): Promise<SafeUserResponse> {
+    return this.mobileRegistration.verifyLoginOtp(dto, request);
   }
 
   @Public()

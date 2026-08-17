@@ -44,6 +44,13 @@ export interface VerifyMobileInput {
   readonly code: string;
 }
 
+export interface MobileLoginChallengeResult {
+  readonly challengeId: string;
+  readonly mobile: string;
+  readonly status: 'pending';
+  readonly testCode?: string;
+}
+
 @Injectable()
 export class MobileRegistrationService {
   constructor(
@@ -179,6 +186,65 @@ export class MobileRegistrationService {
         { status: CustomerProfileStatus.ACTIVE },
       );
     });
+    await this.sessions.establishAuthenticatedSession(request, {
+      userId: user.id,
+      authVersion: user.authVersion,
+      authenticationMethod: 'mobile_otp',
+    });
+    return toSafeUser(user);
+  }
+
+  async requestLoginOtp(mobileInput: string): Promise<MobileLoginChallengeResult> {
+    const mobile = normalizeIranianMobile(mobileInput);
+    const user = await this.users.findOneBy({ mobileNormalized: mobile });
+    if (!user || user.status !== UserStatus.ACTIVE || !user.mobileVerifiedAt) {
+      throw new UnauthorizedException('Invalid mobile number');
+    }
+    const code = String(randomInt(100000, 1000000));
+    const challenge = await this.challenges.save(
+      this.challenges.create({
+        mobileNormalized: mobile,
+        codeDigest: this.digest(code),
+        status: MobileOtpChallengeStatus.PENDING,
+        attemptCount: 0,
+        maxAttempts: 5,
+        expiresAt: new Date(Date.now() + 5 * 60_000),
+        consumedAt: null,
+      }),
+    );
+    await this.communications.queueAuthenticationOtp(mobile, code);
+    return {
+      challengeId: challenge.id,
+      mobile,
+      status: 'pending',
+      ...(process.env.NODE_ENV === 'test' ? { testCode: code } : {}),
+    };
+  }
+
+  async verifyLoginOtp(input: VerifyMobileInput, request: Request) {
+    const challenge = await this.challenges.findOneBy({ id: input.challengeId });
+    if (
+      !challenge ||
+      challenge.status !== MobileOtpChallengeStatus.PENDING ||
+      challenge.expiresAt.getTime() <= Date.now()
+    ) {
+      throw new UnauthorizedException('The verification code is expired or invalid');
+    }
+    challenge.attemptCount += 1;
+    if (this.digest(input.code) !== challenge.codeDigest) {
+      if (challenge.attemptCount >= challenge.maxAttempts) {
+        challenge.status = MobileOtpChallengeStatus.LOCKED;
+      }
+      await this.challenges.save(challenge);
+      throw new UnauthorizedException('The verification code is expired or invalid');
+    }
+    const user = await this.users.findOneBy({ mobileNormalized: challenge.mobileNormalized });
+    if (!user || user.status !== UserStatus.ACTIVE || !user.mobileVerifiedAt) {
+      throw new UnauthorizedException('The verification code is expired or invalid');
+    }
+    challenge.status = MobileOtpChallengeStatus.CONSUMED;
+    challenge.consumedAt = new Date();
+    await this.challenges.save(challenge);
     await this.sessions.establishAuthenticatedSession(request, {
       userId: user.id,
       authVersion: user.authVersion,

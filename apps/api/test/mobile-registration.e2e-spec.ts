@@ -81,4 +81,46 @@ describe('Mobile customer registration HTTP contract', () => {
       .getRepository(MobileOtpChallenge)
       .findOneByOrFail({ id: registration.body.challengeId, status: 'consumed' });
   });
+
+  it('supports mobile OTP login for an activated customer', async () => {
+    const registrationAgent = request.agent(server);
+    const registrationCsrf = await csrf(registrationAgent);
+    const registration = await registrationAgent
+      .post('/api/v1/auth/register/mobile')
+      .set('Origin', ORIGIN)
+      .set('Cookie', registrationCsrf.cookie)
+      .set('x-csrf-token', registrationCsrf.token)
+      .send({ displayName: 'ورود آزمایشی', mobile: '09129876543' })
+      .expect(201);
+    const verificationCsrf = await csrf(registrationAgent);
+    await registrationAgent
+      .post('/api/v1/auth/register/mobile/verify')
+      .set('Origin', ORIGIN)
+      .set('Cookie', verificationCsrf.cookie)
+      .set('x-csrf-token', verificationCsrf.token)
+      .send({ challengeId: registration.body.challengeId, code: registration.body.testCode })
+      .expect(200);
+
+    const loginAgent = request.agent(server);
+    const loginRequestCsrf = await csrf(loginAgent);
+    const loginRequest = await loginAgent
+      .post('/api/v1/auth/login/mobile/request')
+      .set('Origin', ORIGIN)
+      .set('Cookie', loginRequestCsrf.cookie)
+      .set('x-csrf-token', loginRequestCsrf.token)
+      .send({ mobile: '09129876543' })
+      .expect(201);
+    const loginVerifyCsrf = await csrf(loginAgent);
+    await loginAgent
+      .post('/api/v1/auth/login/mobile/verify')
+      .set('Origin', ORIGIN)
+      .set('Cookie', loginVerifyCsrf.cookie)
+      .set('x-csrf-token', loginVerifyCsrf.token)
+      .send({ challengeId: loginRequest.body.challengeId, code: loginRequest.body.testCode })
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.mobile).toBe('989129876543');
+      });
+    await loginAgent.get('/api/v1/auth/me').expect(200);
+  });
 });
