@@ -37,6 +37,12 @@ export class MessageIntent {
   @Column({ name: 'recipient_user_id', type: 'uuid', nullable: true })
   recipientUserId!: string | null;
 
+  @Column({ name: 'order_id', type: 'uuid', nullable: true })
+  orderId!: string | null;
+
+  @Column({ name: 'lifecycle_event', type: 'varchar', length: 32, nullable: true })
+  lifecycleEvent!: string | null;
+
   @Column({ name: 'destination', type: 'varchar', length: 32 })
   destination!: string;
 

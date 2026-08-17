@@ -23,6 +23,8 @@ export interface QueueMessageInput {
   readonly destination: string;
   readonly body: string;
   readonly recipientUserId?: string;
+  readonly orderId?: string;
+  readonly lifecycleEvent?: string;
 }
 
 export interface MessageHistory {
@@ -103,6 +105,23 @@ export class CommunicationsService {
     });
   }
 
+  async queueTransactionalOrderMessage(
+    recipientUserId: string,
+    destination: string,
+    orderId: string,
+    lifecycleEvent: string,
+    body: string,
+  ): Promise<MessageHistory> {
+    return this.queueMessage({
+      purpose: MessagePurpose.TRANSACTIONAL,
+      destination,
+      body,
+      recipientUserId,
+      orderId,
+      lifecycleEvent,
+    });
+  }
+
   private async queueMessage(input: QueueMessageInput): Promise<MessageHistory> {
     const providerKey = await this.ensureRoute(input.purpose);
     const intent = await this.intents.save(
@@ -111,6 +130,8 @@ export class CommunicationsService {
         destination: input.destination,
         renderedBody: input.body,
         recipientUserId: input.recipientUserId ?? null,
+        orderId: input.orderId ?? null,
+        lifecycleEvent: input.lifecycleEvent ?? null,
         providerKey,
         status: MessageIntentStatus.QUEUED,
         lastErrorCode: null,

@@ -122,5 +122,24 @@ describe('Customer directory HTTP contract', () => {
       .expect((response) => {
         expect(response.body.status).toBe('accepted');
       });
+
+    const orderCsrf = await csrf(owner);
+    const orderMessage = await owner
+      .post('/api/v1/admin/communications/order-messages')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', orderCsrf.token)
+      .send({
+        customerId: registration.body.userId,
+        orderId: '8b5f3c42-6d3f-4acb-9ab7-30b3f7da3af8',
+        lifecycleEvent: 'accepted',
+        body: 'سفارش شما پذیرفته شد',
+      })
+      .expect(201);
+    expect(orderMessage.body.purpose).toBe('transactional');
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    await owner
+      .get(`/api/v1/admin/communications/messages/${orderMessage.body.id}`)
+      .expect(200)
+      .expect((response) => expect(response.body.status).toBe('accepted'));
   });
 });

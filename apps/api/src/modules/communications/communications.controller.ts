@@ -49,6 +49,24 @@ class CreateDirectMessageDto {
   confirmed!: boolean;
 }
 
+class CreateOrderMessageDto {
+  @IsUUID()
+  customerId!: string;
+
+  @IsUUID()
+  orderId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(32)
+  lifecycleEvent!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  body!: string;
+}
+
 @AdminApi()
 @ApiTags('Communications administration')
 @ApiSessionAuthenticated()
@@ -84,6 +102,24 @@ export class CommunicationsController {
       throw new NotFoundException('Customer does not have an available verified mobile');
     }
     return this.communications.queueDirectMessage(customer.id, customer.mobile, dto.body);
+  }
+
+  @Post('order-messages')
+  @ApiCsrfProtected()
+  @RequirePermissions(PermissionKey.ORDERS_READ, PermissionKey.COMMUNICATIONS_SEND)
+  @ApiCreatedResponse()
+  async queueOrderMessage(@Body() dto: CreateOrderMessageDto) {
+    const customer = await this.users.findOneBy({ id: dto.customerId });
+    if (!customer || customer.status !== UserStatus.ACTIVE || !customer.mobileVerifiedAt || !customer.mobile) {
+      throw new NotFoundException('Customer does not have an available verified mobile');
+    }
+    return this.communications.queueTransactionalOrderMessage(
+      customer.id,
+      customer.mobile,
+      dto.orderId,
+      dto.lifecycleEvent,
+      dto.body,
+    );
   }
 
   @Get('routes')
