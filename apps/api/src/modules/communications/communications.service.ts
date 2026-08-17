@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, OnModuleDestroy } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -52,9 +52,11 @@ export interface ProviderRouteView {
 }
 
 @Injectable()
-export class CommunicationsService {
+export class CommunicationsService implements OnModuleDestroy {
   private readonly provider: MessageProvider =
     new DeterministicMessageProvider();
+  private shuttingDown = false;
+  private readonly pendingJobs = new Set<Promise<void>>();
 
   constructor(
     @InjectRepository(MessageIntent)
@@ -144,8 +146,16 @@ export class CommunicationsService {
 
     // The durable worker introduced in the next ticket will claim queued rows.
     // Keeping this asynchronous preserves the public queued contract today.
-    setImmediate(() => void this.process(intent.id));
+    if (!this.shuttingDown) {
+      const job = this.process(intent.id).finally(() => this.pendingJobs.delete(job));
+      this.pendingJobs.add(job);
+    }
     return this.getHistory(intent.id);
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    this.shuttingDown = true;
+    await Promise.allSettled([...this.pendingJobs]);
   }
 
   async listRoutes(): Promise<readonly ProviderRouteView[]> {
@@ -163,7 +173,7 @@ export class CommunicationsService {
     enabled: boolean,
   ): Promise<ProviderRouteView> {
     if (providerKey !== this.provider.key) {
-      throw new Error('Provider is not configured');
+      throw new BadRequestException('Provider is not configured');
     }
     const existing = await this.routes.findOneBy({ purpose });
     const route = existing ?? this.routes.create({ purpose });
