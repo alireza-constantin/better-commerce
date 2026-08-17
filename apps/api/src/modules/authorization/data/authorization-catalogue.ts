@@ -37,6 +37,11 @@ export const PermissionKey = {
   PAYMENTS_MANUAL_CONFIRM: 'payments.manual_confirm',
   CUSTOMERS_READ: 'customers.read',
   CUSTOMERS_UPDATE: 'customers.update',
+  CUSTOMERS_WISHLISTS_READ: 'customers.wishlists.read',
+  COMMUNICATIONS_READ: 'communications.read',
+  COMMUNICATIONS_WRITE: 'communications.write',
+  COMMUNICATIONS_SEND: 'communications.send',
+  COMMUNICATIONS_CONFIGURE: 'communications.configure',
   PROMOTIONS_READ: 'promotions.read',
   PROMOTIONS_WRITE: 'promotions.write',
   REPORTS_READ: 'reports.read',
@@ -151,6 +156,26 @@ export const PERMISSION_CATALOGUE: readonly PermissionDefinition[] =
     },
     { key: PermissionKey.CUSTOMERS_READ, description: 'View customers.' },
     { key: PermissionKey.CUSTOMERS_UPDATE, description: 'Update customers.' },
+    {
+      key: PermissionKey.CUSTOMERS_WISHLISTS_READ,
+      description: 'View customer wishlists.',
+    },
+    {
+      key: PermissionKey.COMMUNICATIONS_READ,
+      description: 'View communications and delivery history.',
+    },
+    {
+      key: PermissionKey.COMMUNICATIONS_WRITE,
+      description: 'Create and edit communication content.',
+    },
+    {
+      key: PermissionKey.COMMUNICATIONS_SEND,
+      description: 'Send direct and campaign communications.',
+    },
+    {
+      key: PermissionKey.COMMUNICATIONS_CONFIGURE,
+      description: 'Configure communication providers and routes.',
+    },
     { key: PermissionKey.PROMOTIONS_READ, description: 'View promotions.' },
     {
       key: PermissionKey.PROMOTIONS_WRITE,
@@ -213,11 +238,16 @@ const orderPermissions = [
 const customerPermissions = [
   PermissionKey.CUSTOMERS_READ,
   PermissionKey.CUSTOMERS_UPDATE,
+  PermissionKey.CUSTOMERS_WISHLISTS_READ,
 ] as const;
 const marketingReportingPermissions = [
   PermissionKey.PROMOTIONS_READ,
   PermissionKey.PROMOTIONS_WRITE,
   PermissionKey.REPORTS_READ,
+  PermissionKey.COMMUNICATIONS_READ,
+  PermissionKey.COMMUNICATIONS_WRITE,
+  PermissionKey.COMMUNICATIONS_SEND,
+  PermissionKey.COMMUNICATIONS_CONFIGURE,
 ] as const;
 
 const allPermissionKeys = PERMISSION_CATALOGUE.map(({ key }) => key);

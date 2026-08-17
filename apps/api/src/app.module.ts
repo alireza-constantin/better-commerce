@@ -29,6 +29,7 @@ import { SecurityModule } from './platform/security';
 import { ObjectStorageModule } from './platform/object-storage';
 import { VariantConfigurationModule } from './modules/catalog/http/variant-configuration.module';
 import { PromotionsModule } from './modules/promotions';
+import { CommunicationsModule } from './modules/communications/communications.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { PromotionsModule } from './modules/promotions';
     PublicCommerceModule,
     CartModule,
     PromotionsModule,
+    CommunicationsModule,
     SecurityModule,
     IdentityModule,
     HealthModule,
