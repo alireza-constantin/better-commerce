@@ -6,6 +6,9 @@ import { User } from '../identity/persistence/user.entity';
 import { CommunicationTemplate } from './communication-template.entity';
 import { TemplateService } from './template.service';
 import { TemplateAdminController } from './template-admin.controller';
+import { CommunicationCampaign } from './campaign.entity';
+import { CampaignService } from './campaign.service';
+import { CampaignAdminController } from './campaign-admin.controller';
 import { MessageProviderRoute } from './message-provider-route.entity';
 import { CommunicationsController } from './communications.controller';
 import { CommunicationsService } from './communications.service';
@@ -18,10 +21,11 @@ import { CommunicationsService } from './communications.service';
       MessageProviderRoute,
       User,
       CommunicationTemplate,
+      CommunicationCampaign,
     ]),
   ],
-  controllers: [CommunicationsController, TemplateAdminController],
-  providers: [CommunicationsService, TemplateService],
+  controllers: [CommunicationsController, TemplateAdminController, CampaignAdminController],
+  providers: [CommunicationsService, TemplateService, CampaignService],
   exports: [CommunicationsService],
 })
 export class CommunicationsModule {}

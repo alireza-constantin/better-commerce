@@ -30,6 +30,7 @@ describe('Customer Communications HTTP contract', () => {
       'TRUNCATE TABLE message_delivery_attempts, message_intents, message_provider_routes CASCADE',
     );
     await dataSource.query('TRUNCATE TABLE communication_templates CASCADE');
+    await dataSource.query('TRUNCATE TABLE communication_campaigns CASCADE');
   });
 
   afterAll(async () => app.close());
@@ -143,5 +144,24 @@ describe('Customer Communications HTTP contract', () => {
     const listed = await owner.get('/api/v1/admin/communications/templates').expect(200);
     expect(listed.body).toHaveLength(2);
     expect(listed.body.map((template: { version: number }) => template.version)).toEqual([2, 1]);
+  });
+
+  it('creates a campaign draft and freezes it on confirmation', async () => {
+    const owner = await ownerAgent();
+    const createCsrf = await csrf(owner);
+    const created = await owner
+      .post('/api/v1/admin/communications/campaigns')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', createCsrf.token)
+      .send({ name: 'اعلام تابستانی', audienceType: 'all_messageable', body: 'پیشنهاد جدید فروشگاه' })
+      .expect(201);
+    expect(created.body.status).toBe('draft');
+    const confirmCsrf = await csrf(owner);
+    const confirmed = await owner
+      .post(`/api/v1/admin/communications/campaigns/${created.body.id}/confirm`)
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', confirmCsrf.token)
+      .expect(201);
+    expect(confirmed.body).toMatchObject({ status: 'scheduled', frozenProviderKey: 'deterministic' });
   });
 });
