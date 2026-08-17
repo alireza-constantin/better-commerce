@@ -13,12 +13,14 @@ import { EmailVerificationToken } from './email-verification-token.entity';
 import { PasswordCredential } from './password-credential.entity';
 
 export enum UserStatus {
+  PENDING = 'pending',
   ACTIVE = 'active',
   DISABLED = 'disabled',
 }
 
 @Entity({ name: 'users' })
 @Index('UQ_users_email_normalized', ['emailNormalized'], { unique: true })
+@Index('UQ_users_mobile_normalized', ['mobileNormalized'], { unique: true })
 @Check('CHK_users_auth_version_non_negative', '"auth_version" >= 0')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -35,6 +37,13 @@ export class User {
   @Column({ name: 'email_normalized', type: 'varchar', length: 320 })
   emailNormalized: string;
 
+  /** Canonical Iranian mobile digits without the leading plus sign. */
+  @Column({ name: 'mobile', type: 'varchar', length: 16, nullable: true })
+  mobile: string | null;
+
+  @Column({ name: 'mobile_normalized', type: 'varchar', length: 16, nullable: true })
+  mobileNormalized: string | null;
+
   @Column({
     type: 'enum',
     enum: UserStatus,
@@ -49,6 +58,9 @@ export class User {
 
   @Column({ name: 'email_verified_at', type: 'timestamptz', nullable: true })
   emailVerifiedAt: Date | null;
+
+  @Column({ name: 'mobile_verified_at', type: 'timestamptz', nullable: true })
+  mobileVerifiedAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

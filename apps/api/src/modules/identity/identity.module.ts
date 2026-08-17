@@ -13,6 +13,7 @@ import { IdentityAdministrationPersistence } from './persistence/identity-admini
 import { EmailVerificationToken } from './persistence/email-verification-token.entity';
 import { PasswordCredential } from './persistence/password-credential.entity';
 import { User } from './persistence/user.entity';
+import { MobileOtpChallenge } from './persistence/mobile-otp-challenge.entity';
 import { SessionModule } from './session';
 import { SecurityModule } from '../../platform/security';
 
@@ -25,6 +26,7 @@ import { SecurityModule } from '../../platform/security';
       User,
       PasswordCredential,
       EmailVerificationToken,
+      MobileOtpChallenge,
     ]),
   ],
   controllers: [AuthController, EmailVerificationController],

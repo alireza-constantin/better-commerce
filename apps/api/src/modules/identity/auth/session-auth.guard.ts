@@ -60,6 +60,7 @@ export class SessionAuthGuard implements CanActivate {
     request.authUser = {
       id: user.id,
       email: user.email,
+      mobile: user.mobile,
       emailVerified: user.emailVerifiedAt !== null,
     };
     return true;

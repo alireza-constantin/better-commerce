@@ -40,6 +40,7 @@ function toSafeUser(user: User): SafeUserResponse {
   return {
     id: user.id,
     email: user.email,
+    mobile: user.mobile,
     emailVerified: candidate.emailVerifiedAt !== null,
   };
 }

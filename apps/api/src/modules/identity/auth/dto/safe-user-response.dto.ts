@@ -7,6 +7,9 @@ export class SafeUserResponseDto {
   @ApiProperty({ format: 'email', example: 'customer@example.test' })
   email: string;
 
+  @ApiProperty({ nullable: true, example: '989120000000' })
+  mobile: string | null;
+
   @ApiProperty({
     description: 'Whether ownership of the email address has been confirmed.',
   })
