@@ -170,5 +170,13 @@ describe('Customer Communications HTTP contract', () => {
       .set('x-csrf-token', dispatchCsrf.token)
       .expect(201);
     expect(dispatched.body).toMatchObject({ campaignId: created.body.id, status: 'completed' });
+    await owner
+      .get(`/api/v1/admin/communications/campaigns/${created.body.id}/deliveries`)
+      .expect(200)
+      .expect([]);
+    await owner
+      .get(`/api/v1/admin/communications/campaigns/${created.body.id}/export`)
+      .expect(200)
+      .expect('user_id,status,message_intent_id');
   });
 });

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, Header, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { IsArray, IsEnum, IsISO8601, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { ApiCsrfProtected, ApiSessionAuthenticated } from '../../platform/openapi';
@@ -27,4 +27,6 @@ export class CampaignAdminController {
   @Post(':campaignId/confirm') @ApiCsrfProtected() @RequirePermissions(PermissionKey.COMMUNICATIONS_WRITE, PermissionKey.COMMUNICATIONS_SEND) @ApiOkResponse() confirm(@Param('campaignId', new ParseUUIDPipe({ version: '4' })) id: string) { return this.campaigns.confirm(id); }
   @Post(':campaignId/dispatch') @ApiCsrfProtected() @RequirePermissions(PermissionKey.COMMUNICATIONS_SEND) @ApiOkResponse() dispatch(@Param('campaignId', new ParseUUIDPipe({ version: '4' })) id: string) { return this.campaigns.dispatch(id); }
   @Post(':campaignId/cancel') @ApiCsrfProtected() @RequirePermissions(PermissionKey.COMMUNICATIONS_SEND) @ApiOkResponse() cancel(@Param('campaignId', new ParseUUIDPipe({ version: '4' })) id: string) { return this.campaigns.cancel(id); }
+  @Get(':campaignId/deliveries') @RequirePermissions(PermissionKey.COMMUNICATIONS_READ) @ApiOkResponse() deliveries(@Param('campaignId', new ParseUUIDPipe({ version: '4' })) id: string) { return this.campaigns.deliveriesFor(id); }
+  @Get(':campaignId/export') @RequirePermissions(PermissionKey.COMMUNICATIONS_READ) @Header('content-type', 'text/csv; charset=utf-8') export(@Param('campaignId', new ParseUUIDPipe({ version: '4' })) id: string) { return this.campaigns.exportCsv(id); }
 }

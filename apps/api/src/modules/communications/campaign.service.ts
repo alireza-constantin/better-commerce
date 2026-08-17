@@ -58,4 +58,15 @@ export class CampaignService {
     campaign.status = CampaignStatus.CANCELLED;
     return this.campaigns.save(campaign);
   }
+
+  async deliveriesFor(id: string) {
+    const campaign = await this.campaigns.findOneBy({ id });
+    if (!campaign) throw new NotFoundException('Campaign was not found');
+    return this.deliveries.find({ where: { campaignId: id }, order: { createdAt: 'ASC' } });
+  }
+
+  async exportCsv(id: string): Promise<string> {
+    const rows = await this.deliveriesFor(id);
+    return ['user_id,status,message_intent_id', ...rows.map((row) => `${row.userId},${row.status},${row.messageIntentId ?? ''}`)].join('\n');
+  }
 }
