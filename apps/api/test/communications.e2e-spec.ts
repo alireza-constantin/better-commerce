@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import request, { type SuperAgentTest } from 'supertest';
 import type { App } from 'supertest/types';
+import { DataSource } from 'typeorm';
 import { OwnerBootstrapService } from '../src/modules/authorization/bootstrap/owner-bootstrap.service';
 import {
   clearFullStackTestData,
@@ -14,14 +15,21 @@ describe('Customer Communications HTTP contract', () => {
   let app: INestApplication;
   let server: App;
   let ownerBootstrap: OwnerBootstrapService;
+  let dataSource: DataSource;
 
   beforeAll(async () => {
     app = await createFullApplication();
     server = app.getHttpServer() as App;
     ownerBootstrap = app.get(OwnerBootstrapService);
+    dataSource = app.get(DataSource);
   });
 
-  beforeEach(async () => clearFullStackTestData(app));
+  beforeEach(async () => {
+    await clearFullStackTestData(app);
+    await dataSource.query(
+      'TRUNCATE TABLE message_delivery_attempts, message_intents, message_provider_routes CASCADE',
+    );
+  });
 
   afterAll(async () => app.close());
 
@@ -91,5 +99,25 @@ describe('Customer Communications HTTP contract', () => {
       expect.objectContaining({ status: 'accepted', attemptNumber: 1 }),
     ]);
     expect(JSON.stringify(history)).not.toContain('پیام آزمایشی');
+  });
+
+  it('exposes purpose routes and lets an authorized operator switch a configured provider', async () => {
+    const owner = await ownerAgent();
+    const routes = await owner
+      .get('/api/v1/admin/communications/routes')
+      .expect(200);
+    expect(routes.body).toEqual([]);
+
+    const configured = await owner
+      .put('/api/v1/admin/communications/routes/test')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', (await csrf(owner)).token)
+      .send({ providerKey: 'deterministic', enabled: true })
+      .expect(200);
+    expect(configured.body).toEqual({
+      purpose: 'test',
+      providerKey: 'deterministic',
+      enabled: true,
+    });
   });
 });

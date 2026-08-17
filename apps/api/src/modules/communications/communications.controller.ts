@@ -1,16 +1,35 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { ApiCsrfProtected, ApiSessionAuthenticated } from '../../platform/openapi';
 import { AdminApi, RequirePermissions } from '../authorization/enforcement';
 import { PermissionKey } from '../authorization/data';
 import { CommunicationsService } from './communications.service';
+import { MessagePurpose } from './message-intent.entity';
 
 class CreateTestMessageDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(500)
   body!: string;
+}
+
+class ConfigureRouteDto {
+  @IsString()
+  @IsNotEmpty()
+  providerKey!: string;
+
+  @IsBoolean()
+  enabled!: boolean;
 }
 
 @AdminApi()
@@ -26,6 +45,25 @@ export class CommunicationsController {
   @ApiCreatedResponse()
   queueTestMessage(@Body() dto: CreateTestMessageDto) {
     return this.communications.queueTestMessage(dto);
+  }
+
+  @Get('routes')
+  @RequirePermissions(PermissionKey.COMMUNICATIONS_READ)
+  listRoutes() {
+    return this.communications.listRoutes();
+  }
+
+  @Put('routes/:purpose')
+  @ApiCsrfProtected()
+  @RequirePermissions(PermissionKey.COMMUNICATIONS_CONFIGURE)
+  configureRoute(
+    @Param('purpose') purpose: MessagePurpose,
+    @Body() dto: ConfigureRouteDto,
+  ) {
+    if (!Object.values(MessagePurpose).includes(purpose)) {
+      throw new BadRequestException('Unsupported message purpose');
+    }
+    return this.communications.configureRoute(purpose, dto.providerKey, dto.enabled);
   }
 
   @Get('messages/:messageId')
