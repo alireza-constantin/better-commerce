@@ -12,6 +12,5 @@ import { SegmentAdminController } from './segment-admin.controller';
   imports: [TypeOrmModule.forFeature([CustomerProfile, User, CustomerSegment])],
   controllers: [SegmentAdminController, CustomersAdminController],
   providers: [CustomerDirectoryService, SegmentService],
-  exports: [TypeOrmModule],
 })
 export class CustomersModule {}

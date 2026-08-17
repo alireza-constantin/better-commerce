@@ -277,4 +277,24 @@ describe('ADR-0003 module boundaries', () => {
       },
     ]);
   });
+
+  it('keeps Phase 8 public module surfaces free of persistence internals', () => {
+    const publicSurfaces = [
+      'modules/identity/index.ts',
+      'modules/customers/index.ts',
+      'modules/wishlist/index.ts',
+    ].map((name) => readFileSync(resolve(sourceRoot, name), 'utf8'));
+
+    for (const source of publicSurfaces) {
+      expect(source).not.toMatch(
+        /(?:\.entity|Repository|TypeOrmModule|DataSource)/,
+      );
+    }
+
+    const customersModule = readFileSync(
+      resolve(sourceRoot, 'modules/customers/customers.module.ts'),
+      'utf8',
+    );
+    expect(customersModule).not.toMatch(/exports:\s*\[\s*TypeOrmModule/);
+  });
 });
