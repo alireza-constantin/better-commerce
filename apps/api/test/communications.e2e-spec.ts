@@ -29,6 +29,7 @@ describe('Customer Communications HTTP contract', () => {
     await dataSource.query(
       'TRUNCATE TABLE message_delivery_attempts, message_intents, message_provider_routes CASCADE',
     );
+    await dataSource.query('TRUNCATE TABLE communication_templates CASCADE');
   });
 
   afterAll(async () => app.close());
@@ -119,5 +120,28 @@ describe('Customer Communications HTTP contract', () => {
       providerKey: 'deterministic',
       enabled: true,
     });
+  });
+
+  it('creates immutable versioned templates and lists every version', async () => {
+    const owner = await ownerAgent();
+    const firstCsrf = await csrf(owner);
+    const first = await owner
+      .post('/api/v1/admin/communications/templates')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', firstCsrf.token)
+      .send({ key: 'order.accepted', purpose: 'transactional', body: 'Order accepted {{orderNumber}}' })
+      .expect(201);
+    expect(first.body.version).toBe(1);
+    const secondCsrf = await csrf(owner);
+    const second = await owner
+      .post('/api/v1/admin/communications/templates')
+      .set('Origin', ORIGIN)
+      .set('x-csrf-token', secondCsrf.token)
+      .send({ key: 'order.accepted', purpose: 'transactional', body: 'Your order {{orderNumber}} was accepted.' })
+      .expect(201);
+    expect(second.body.version).toBe(2);
+    const listed = await owner.get('/api/v1/admin/communications/templates').expect(200);
+    expect(listed.body).toHaveLength(2);
+    expect(listed.body.map((template: { version: number }) => template.version)).toEqual([2, 1]);
   });
 });
