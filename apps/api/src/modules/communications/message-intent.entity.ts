@@ -34,6 +34,9 @@ export class MessageIntent {
   @Column({ type: 'varchar', length: 32 })
   purpose!: MessagePurpose;
 
+  @Column({ name: 'recipient_user_id', type: 'uuid', nullable: true })
+  recipientUserId!: string | null;
+
   @Column({ name: 'destination', type: 'varchar', length: 32 })
   destination!: string;
 

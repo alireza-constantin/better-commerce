@@ -22,6 +22,7 @@ export interface QueueMessageInput {
   readonly purpose: MessagePurpose;
   readonly destination: string;
   readonly body: string;
+  readonly recipientUserId?: string;
 }
 
 export interface MessageHistory {
@@ -81,6 +82,19 @@ export class CommunicationsService {
     });
   }
 
+  async queueDirectMessage(
+    recipientUserId: string,
+    destination: string,
+    body: string,
+  ): Promise<MessageHistory> {
+    return this.queueMessage({
+      purpose: MessagePurpose.DIRECT,
+      destination,
+      body,
+      recipientUserId,
+    });
+  }
+
   private async queueMessage(input: QueueMessageInput): Promise<MessageHistory> {
     const providerKey = await this.ensureRoute(input.purpose);
     const intent = await this.intents.save(
@@ -88,6 +102,7 @@ export class CommunicationsService {
         purpose: input.purpose,
         destination: input.destination,
         renderedBody: input.body,
+        recipientUserId: input.recipientUserId ?? null,
         providerKey,
         status: MessageIntentStatus.QUEUED,
         lastErrorCode: null,

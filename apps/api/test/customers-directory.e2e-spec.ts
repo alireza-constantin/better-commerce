@@ -101,5 +101,26 @@ describe('Customer directory HTTP contract', () => {
       .get(`/api/v1/admin/customers/${registration.body.userId}`)
       .expect(200);
     expect(detail.body.displayName).toBe('فروشگاه نمونه');
+
+    const sendCsrf = await csrf(owner);
+    const message = await owner
+      .post('/api/v1/admin/communications/direct-messages')
+      .set('Origin', ORIGIN)
+      .set('Cookie', sendCsrf.cookie)
+      .set('x-csrf-token', sendCsrf.token)
+      .send({
+        customerId: registration.body.userId,
+        body: 'سفارش شما آماده پیگیری است',
+        confirmed: true,
+      })
+      .expect(201);
+    expect(message.body).toMatchObject({ purpose: 'direct', status: 'queued' });
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    await owner
+      .get(`/api/v1/admin/communications/messages/${message.body.id}`)
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.status).toBe('accepted');
+      });
   });
 });
