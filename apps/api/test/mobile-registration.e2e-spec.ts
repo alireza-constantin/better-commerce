@@ -2,7 +2,10 @@ import type { INestApplication } from '@nestjs/common';
 import request, { type SuperAgentTest } from 'supertest';
 import type { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
-import { CustomerProfile, CustomerProfileStatus } from '../src/modules/customers';
+import {
+  CustomerProfile,
+  CustomerProfileStatus,
+} from '../src/modules/customers/customer-profile.entity';
 import { MobileOtpChallenge } from '../src/modules/identity/persistence/mobile-otp-challenge.entity';
 import {
   clearFullStackTestData,
